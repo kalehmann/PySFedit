@@ -26,7 +26,7 @@ ASCII_PRINTABLE = (
 	(")" , "Right parenthesis"),
 	("*" , "Asterisk") ,
 	("+" , "Plus sign"),
-	("," , "Hyphen minus")
+	("," , "Hyphen minus"),
 	("." , "Full stop"),
 	("/" , "Slash"),
 	("0" , "Zero"),
@@ -52,7 +52,7 @@ class PsfHeader(object):
 		pass
 		
 	def has_unicode_table(self):
-		if self.version_psf = PSF1_VERSION:
+		if self.version_psf == PSF1_VERSION:
 			return self.mode & PSF1_MODEHASTAB
 		else:
 			return self.flags & PSF2_HAS_UNICODE_TABLE
@@ -93,6 +93,10 @@ class PcScreenFont(object):
 	
 	def has_unicode(self):
 		if self.header.psf_version == PSF1_VERSION:
+			return True if self.mode & PSF1_MODEHASTAB else False
+		else:
+			return (True if self.flags & PSF2_HAS_UNICODE_TABLE
+						 else False)
 			
 	
 	def get_glyph(self, char):

@@ -23,7 +23,6 @@ class FontEditor(Gtk.Grid):
 		for i in psflib.ASCII_PRINTABLE:
 			self.combo_char.append_text(i[1])
 		self.combo_char.set_active(0)
-		self.combo_char.set_row_span_column(5)
 		self.attach(self.combo_char, 0,0,1,1)
 		self.attach(self.font_grid, 0,1,1,1)
 		self.font = psflib.PcScreenFont(header)
