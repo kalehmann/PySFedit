@@ -12,8 +12,8 @@ PSF1_STARTSEQ = 0xFFFE
 PSF2_MAXVERSION = 0
 PSF2_HAS_UNICODE_TABLE = 0x1
 
-ASCII_PRINTABLE_OLD = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-ASCII_PRINTABLE = (
+ASCII_PRINTABLE_OLDER = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+ASCII_PRINTABLE_OLD = (
 	(" " , "Space"),
 	("!" , "Exclamation mark"),
 	('"' , "Quotation mark"),
@@ -32,6 +32,75 @@ ASCII_PRINTABLE = (
 	("0" , "Zero"),
 	("1" , "One")
 )
+ASCII_PRINTABLE = {}
+
+TYPE_PLAIN_ASM = 42
+TYPE_BINARY_PSF = 43
+
+def get_unicode_str(char):
+	if 0x20 <= char <= 0x7e or 0xa0 <= char <= 0xff:
+		return unichr(char)
+		
+def get_ord(txt):
+	if len(txt) != 1: return None
+	n = ord(txt)
+	if 0x20 <= n <= 0x7e or 0xa0 <= n <= 0xff:
+		return n
+	return None
+
+class AsmExporter(object):
+	def __init__(self, font):
+		self.font = font
+		self.header = font.header
+		if self.header.version_psf == PSF1_VERSION:
+			self.version = 1
+		elif self.header.version_psf == PSF2_VERSION:
+			self.version = 2
+		self.string = ""
+		
+	def create_header(self):
+		self.string += "font:\n"
+		if self.version == 1:
+			magic_bytes = (hex(self.header.magic_bytes[0]),
+						   hex(self.header.magic_bytes[1]))
+			self.string += "magic_bytes: db %s, %s" % hex(s)
+			self.string += "mode:	db %s" % hex(self.header.mode)
+			self.string += "charsize: db %s" % hex(self.header.charsize)
+
+class PsfExporter(object):
+	def __init__(self, font):
+		self.font = font
+		self.header = font.header
+		if self.header.version_psf == PSF1_VERSION:
+			self.version = 1
+		elif self.header.version_psf == PSF2_VERSION:
+			self.version = 2
+		self.bytes = bytearray()
+	
+	def int_to_bytes(self, n):
+		bts = []
+		if 0 <= n <= 4294967295:
+			for i in range(4):
+				bts.append(n % 0x100)
+				n = n / 0x100
+		return bts.reverse()
+	
+	def create_header(self):
+		for i in self.header.magic_bytes:
+			self.bytes.append(i)
+		if self.version == 1:
+			self.bytes.append(self.header.mode)
+			self.bytes.append(self.header.charsize)
+		elif self.version == 2:
+			self.bytes.append(self.int_to_bytes(self.header.version))
+			self.bytes.append(self.int_to_bytes(self.header.headersize))
+			self.bytes.append(self.int_to_bytes(self.header.flags))
+			self.bytes.append(self.int_to_bytes(self.header.length))
+			self.bytes.append(self.int_to_bytes(self.header.charsize))
+			self.bytes.append(self.int_to_bytes(self.header.height))
+			self.bytes.append(self.int_to_bytes(self.header.width))
+
+
 
 class PsfHeader(object):
 	def __init__(self, version, size):
@@ -79,6 +148,7 @@ class PsfHeaderv2(PsfHeader):
 		self.version = PSF2_MAXVERSION
 		self.header_size = 32	# Values are encoded as 4byte integers
 		self.flags = 0
+		self.charsize = size[1] * (size[0]+7) / 8
 
 	def set_flags(self, flags):
 		if flags != 1:
@@ -88,7 +158,7 @@ class PsfHeaderv2(PsfHeader):
 class PcScreenFont(object):
 	def __init__(self, header):
 		self.header = header
-		self.glyphs = {}
+		self.glyphs = []
 		self.size = header.size
 	
 	def has_unicode(self):
@@ -99,26 +169,48 @@ class PcScreenFont(object):
 						 else False)
 			
 	
-	def get_glyph(self, char):
-		if char not in self.glyphs():
-			self.glyphs[char] = Glyph()
-		return self.glyphs[char]
+	def get_glyph(self, uc):
+		for glyph in self.glyphs:
+			if glyph.has_unicode_representation(uc):
+				return glyph
+		glyph = Glyph(self.size)
+		glyph.add_unicode_representation(uc)
+		self.glyphs.append(glyph)
+		return glyph
 
 	def is_touched(self):
 		for glyph in self.glyphs.items():
 			if glyph.touched: return True
 		return False
 
-class Glyhp(object):
+class Glyph(object):
 	def __init__(self, size):
 		self.data = [[0 for i in range(size[0])]
 						for j in range(size[1])]
 		self.touched = False
+		self.width = size[0]
+		self.height = size[1]
+		self.unicode_representations = []
 		
-	def __getitem__(self, key):
+	def add_unicode_representation(self, uc):
+		self.unicode_representations.append(uc)	
+	
+	def has_unicode_representation(self, uc):
+		return uc in self.unicode_representations
+	
+	def copy_data(self, data):
 		self.touched = True
-		return self.data[key]
+		for i in range(self.height):
+			for j in range(self.width):
+				self.data[i][j] = data[i][j]
 		
+	def __repr__(self):
+		out = ""
+		for i in self.data:
+			for j in i:
+				out += "#" if j else "."
+			out += "\n"
+		return out.encode('UTF-8')
 
 if __name__ == "__main__":
 	pass
