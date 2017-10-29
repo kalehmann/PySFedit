@@ -320,6 +320,9 @@ class Glyph(object):
 			new_cp (int) : New value of the unicode representation which
 				should be updated
 		"""
+		if new_cp in self.unicode_representations:
+			self.unicode_representations.remove(old_cp)
+			return
 		for i, cp in zip(range(len(self.unicode_representations)),
 						 self.unicode_representations):
 			if cp == old_cp:
