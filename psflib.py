@@ -261,7 +261,7 @@ class PcScreenFont(object):
 			codepoint (int) : The primary codepoint of the glyph which
 				should be removed
 		"""
-		if codepoint in self.glyhs.keys():
+		if codepoint in self.glyphs.keys():
 			del self.glyphs[codepoint]
 	
 	def __str__(self):
@@ -300,6 +300,16 @@ class Glyph(object):
 		"""
 		if codepoint not in self.unicode_representations:
 			self.unicode_representations.append(codepoint)	
+	
+	def remove_unicode_representation(self, codepoint):
+		"""Remove an unicode value from the glyph
+		
+		Args:
+			codepoint (int) : codepoint which should be removed from the
+				glyph
+		"""
+		if codepoint in self.unicode_representations:
+			self.unicode_representations.remove(codepoint)
 	
 	def update_unicode_representation(self, old_cp, new_cp):
 		"""Update the unicode representation of the glyph
@@ -357,7 +367,6 @@ class Glyph(object):
 		
 	def __repr__(self):
 		out = "Unicode representations:\n"
-		print(self.unicode_representations)
 		for uc in self.unicode_representations:
 			unistr = get_unicode_str(uc)
 			out += "  %s : (%d) \n" % (unistr if unistr else "", uc)

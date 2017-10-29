@@ -28,9 +28,9 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=1
-FILE_NAME_0=4247;Python;0;EUTF-8;1;1;0;%2Fhome%2Fkarsten%2FDokumente%2FCoding%2FPySFedit%2Fpysfedit.py;0;4
-FILE_NAME_1=824;Python;0;EUTF-8;1;1;0;%2Fhome%2Fkarsten%2FDokumente%2FCoding%2FPySFedit%2Fpsflib.py;0;4
+current_page=0
+FILE_NAME_0=16853;Python;0;EUTF-8;1;1;0;%2Fhome%2Fkarsten%2FDokumente%2FCoding%2FPySFedit%2Fpysfedit.py;0;4
+FILE_NAME_1=7401;Python;0;EUTF-8;1;1;0;%2Fhome%2Fkarsten%2FDokumente%2FCoding%2FPySFedit%2Fpsflib.py;0;4
 
 [build-menu]
 EX_00_LB=_Execute

@@ -6,6 +6,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 from gi.repository import GdkPixbuf
 from gi.repository import GLib
+from gi.repository import Gdk
 from PIL import Image, ImageDraw
 
 import psflib
@@ -13,92 +14,151 @@ import psflib
 class FontEditor(Gtk.Grid):
 	def __init__(self, header):
 		Gtk.Grid.__init__(self)
-		print(header.size)
+		
+		self.size = header.size
 		self.font_grid = FontGrid(header.size)
 		self.top_grid = Gtk.Grid()
 		self.attach(self.top_grid, 0, 0, 1, 1)
 		
-		self.entry_char = Gtk.Entry()
-		self.entry_char.set_width_chars(2)
-		self.spin_char = Gtk.SpinButton()
-		self.spin_char.set_numeric(True)
-		adj = Gtk.Adjustment(0,0,255,1,0,0)
-		self.spin_char.set_adjustment(adj)		
-		
-		self.active_char = 0
-		self.char_selector = CharSelector()
-		self.top_grid.attach(self.spin_char, 0,0,1,1)
-		self.top_grid.attach(self.entry_char, 1, 0, 1, 1)
-		self.top_grid.attach(self.char_selector, 1, 1, 1, 1)
-		self.attach(self.font_grid, 0,1,1,1)
 		self.font = psflib.PcScreenFont(header)
+		self.active_char = None
+		self.clean_pixbuf = self.get_pixbuf()
+				
+		self.button_add = Gtk.Button(None,
+				image=Gtk.Image(stock=Gtk.STOCK_ADD))
+		self.button_remove = Gtk.Button(None,
+				image=Gtk.Image(stock=Gtk.STOCK_REMOVE))
+		self.glyph_selector = GlyphSelector()	
 		
-		self.glyph_selector = GlyphSelector()
-		self.glyph_selector.set_changed_callback(self.on_selector_changed)
-		#self.spin_char.connect("value_changed", self.on_spin_char_changed)
-		self.entry_char.connect("activate", self.on_entry_char_activate)
+		self.button_debug = Gtk.Button("Debug")
+		self.button_debug.connect("clicked", self.on_debug)
+		self.top_grid.attach(self.button_debug, 2, 0, 1, 1)
 		
-	def on_entry_char_activate(self, entry):
-		char = psflib.get_ord(entry.get_text())
-		if char:
-			self.spin_char.set_value(char)
-		elif psflib.get_unicode_str(self.active_char):
-			entry.set_text(psflib.get_unicode_str(self.active_char))
-		else:
-			entry.set_text("")
+		self.top_grid.attach(self.button_add, 0, 0, 1, 1)
+		self.top_grid.attach(self.button_remove, 1, 0, 1, 1)
+		self.attach(self.glyph_selector, 1, 1, 2, 2)
+		self.attach(self.font_grid, 0,1,1,1)
+		
+		
+		self.glyph_selector.set_changed_callback(
+				self.on_selector_changed)
+		self.glyph_selector.set_edited_callback(
+				self.on_char_edited)
+		self.glyph_selector.set_repr_added_callback(
+				self.on_repr_added)
+		self.glyph_selector.set_repr_removed_callback(
+				self.on_repr_removed)
+				
+		self.button_add.connect("clicked", self.on_button_add_clicked)
+		self.button_remove.connect("clicked",
+				self.on_button_remove_clicked)
 
+	def get_pixbuf(self):
+		img = Image.new('RGBA', self.size, (0,0,0,0))
+		draw = ImageDraw.Draw(img)
+		for y, row in zip(range(self.size[1]),
+								self.font_grid.get_data()):
+			for x, pixel in zip(range(self.size[0]), row):
+				if pixel == 1:
+					draw.point((x, y), (0,0,0,255))
+		data = img.tobytes()
+		w, h = img.size
+		data = GLib.Bytes.new(data)		
+		pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(data,
+					GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4)
+		return pixbuf
 		
-	def on_selector_changed(self, uc):
-		data = self.font_grid.get_data()
-		self.font.get_glyph(self.active_char).copy_data(data)
+	def on_button_add_clicked(self, button):		
+		pixbuf = self.clean_pixbuf
+		char_id = self.glyph_selector.get_new_id()
+		self.glyph_selector.add_char(char_id, pixbuf)
+				
+	def on_char_change(self, new_id):
+		if self.active_char == None:
+			self.glyph_selector.update_pixbuf(new_id, self.get_pixbuf())
+			glyph = self.font.get_glyph(new_id)
+			glyph.copy_data(self.font_grid.get_data())
+			return
+		glyph = self.font.get_glyph(self.active_char)
+		glyph.copy_data(self.font_grid.get_data())
+		pixbuf = self.get_pixbuf()
+		self.font_grid.reset()
+		self.glyph_selector.update_pixbuf(self.active_char, pixbuf)
+		glyph = self.font.get_glyph(new_id)
+		self.font_grid.set_data(glyph.get_data())
 		
-		self.active_char = spin.get_value_as_int()
-		txt = psflib.get_unicode_str(self.active_char)
-		if not txt: txt = ""
-		self.entry_char.set_text(txt)
-		
-		self.font_grid.set_data(self.font.get_glyph(self.active_char).data)
+	def on_button_remove_clicked(self, button):
+		if self.active_char:
+			char_id = self.active_char
+			self.glyph_selector.remove_char(self.active_char)
+			self.font.remove_glyph(char_id)
+			self.active_char = self.glyph_selector.get_selected_id()
+			
+	def on_selector_changed(self, char_id):
+		self.on_char_change(char_id)
+		self.active_char = char_id
 
-
+	def on_char_edited(self, primary_cp, old_cp, new_cp):
+		self.font.update_unicode_representation(primary_cp, old_cp,
+				new_cp)
+		if primary_cp == old_cp:
+			self.active_char = new_cp
+			
+	def on_repr_added(self, primary_cp, repr_cp):
+		glyph = self.font.get_glyph(primary_cp)
+		glyph.add_unicode_representation(repr_cp)
+		
+	def on_repr_removed(self, primary_cp, repr_cp):
+		glyph = self.font.get_glyph(primary_cp)
+		glyph.remove_unicode_representation(repr_cp)
+		
+	def on_debug(self, button):
+		print(self.font)
+		
 class FontGrid(Gtk.Grid):
+	"""Grid with checkbuttons to edit the pixel representation of a char
+	
+		Arguments:
+			size -> size of the character in pixels. 2-value tuple
+					first value is the width and second the height
+	"""
 	def __init__(self, size):
 		Gtk.Grid.__init__(self)
 		self.size = size
-		self.data = [[ 0 for i in range(size[0])]
-						for j in range(size[1])]		
-		self.check_boxes = []
-		self.touched = False
+		self.checkbuttons = []
 	
-		for i in range(size[0]):
-			self.check_boxes.append([])
-			for j in range(size[1]):
-				rb = Gtk.CheckButton()
-				rb.connect("toggled", self.rb_toggled, i, j)
-				self.attach(rb, i, j, 1, 1)
-				self.check_boxes[i].append(rb)
+		for y in range(size[1]):
+			self.checkbuttons.append([])
+			for x in range(size[0]):
+				cb = Gtk.CheckButton()
+				self.attach(cb, x, y, 1, 1)
+				self.checkbuttons[y].append(cb)
 		self.show_all()
 		
-	def rb_toggled(self, button, row, col):
-		self.data[row][col] = 1 if button.get_active() else 0
-		self.touched = True
-		
 	def get_data(self):
-		return self.data
+		data = []
+		for row in self.checkbuttons:
+			r = []
+			for checkbutton in row:
+				r.append(1 if checkbutton.get_active() else 0)
+			data.append(r)
+		return data
+		
+	def is_touched(self):
+		for row in self.get_data():
+			for i in row:
+				if i == 1:
+					return True
+		return False
 	
 	def set_data(self, data):
-		for i in range(self.size[1]):
-			for j in range(self.size[0]):
-				self.check_boxes[i][j].set_active(
-					data[i][j] == 1)
+		for i, row in zip(range(self.size[1]), data):
+			for j, element in zip(range(self.size[0]), row):
+				self.checkbuttons[i][j].set_active(element == 1)
 						
 	def reset(self):
 		for child in self.get_children():
 			child.set_active(False)
-		self.data = [[ 0 for i in range(self.size[0])]
-						for j in range(self.size[1])]
-						
-	def get_touched(self):
-		return self.touched
 
 class PySFeditWindow(Gtk.Window):
 	def __init__(self):
@@ -141,15 +201,7 @@ class PySFeditWindow(Gtk.Window):
 		self.top_grid.attach(self.button_new,0,1,1,1)
 		self.font_editor = None
 
-		img = Image.new('RGBA', (20, 20), (0,0,0) )
-		draw = ImageDraw.Draw(img,)
-		draw.rectangle([(0,0), (10,10)], (200,0,0), 5)
-		dat = img.tobytes()
-		w, h = img.size
-		dat = GLib.Bytes.new(dat)
 		
-		pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(dat, GdkPixbuf.Colorspace.RGB,
-												 True, 8, w, h, w * 4)
 
 	def on_but_new_clicked(self, button):
 		self.new_font_dialog()
@@ -163,12 +215,17 @@ class PySFeditWindow(Gtk.Window):
 			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
 			 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 		filter_psf = Gtk.FileFilter()
-		filter_psf.set_name("PSF files")
+		filter_psf.set_name("PSF files	.psf")
 		filter_psf.add_mime_type("application/x-font-linux-psf")
 		dialog.add_filter(filter_psf)
+		
+		filter_asm = Gtk.FileFilter()
+		filter_asm.set_name("ASM files	.asm")
+		filter_asm.add_mime_type("text/x-asm")
+		dialog.add_filter(filter_asm)
 
 		filter_any = Gtk.FileFilter()
-		filter_any.set_name("Any files")
+		filter_any.set_name("Any files	.*")
 		filter_any.add_pattern("*")
 		dialog.add_filter(filter_any)
 
@@ -229,7 +286,8 @@ class ExportFontDialog(Gtk.Dialog):
 		self.format_combo = Gtk.ComboBoxText.new()
 		for i in self.__formats:
 			self.format_combo.append_text(i[0])
-		self.format_combo.connect("changed", self.on_format_combo_changed)
+		self.format_combo.connect("changed",
+				self.on_format_combo_changed)
 		self.format_combo.set_active(0)
 	
 		l1 = Gtk.Label()
@@ -248,8 +306,8 @@ class ExportFontDialog(Gtk.Dialog):
 class NewFontDialog(Gtk.Dialog):
 	def __init__(self, parent):
 		Gtk.Dialog.__init__(self, "New Font", parent, 0,
-			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-			 Gtk.STOCK_OK, Gtk.ResponseType.OK))
+			(Gtk.STOCK_OK, Gtk.ResponseType.OK,
+			 Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
 		self.set_default_size(200,200)
 		
 		box = self.get_content_area()
@@ -273,10 +331,12 @@ class NewFontDialog(Gtk.Dialog):
 		box_version = Gtk.Box()
 		grid.attach(box_version, 1, 2, 1, 1)
 		
-		self.but_v1 = Gtk.RadioButton.new_with_label_from_widget(None, "PSFv1")
+		self.but_v1 = Gtk.RadioButton.new_with_label_from_widget(None,
+						"PSFv1")
 		box_version.pack_start(self.but_v1, False, False, 0)
 		
-		self.but_v2 = Gtk.RadioButton.new_with_label_from_widget(self.but_v1, "PSFv2")
+		self.but_v2 = Gtk.RadioButton.new_with_label_from_widget(
+						self.but_v1, "PSFv2")
 		box_version.pack_start(self.but_v2, False, False, 0)
 		
 		l3 = Gtk.Label("Include unicode table:")
@@ -299,55 +359,412 @@ class NewFontDialog(Gtk.Dialog):
 			if unicode_tab: header.set_mode(
 				psflib.PSF2_HAS_UNICODE_TABLE)
 		return header
+		
+class NewUnicodeRepresentationDialog(Gtk.Dialog):
+	def __init__(self, parent, codepoint):
+		Gtk.Dialog.__init__(self, "New Font", parent, 0,
+			(Gtk.STOCK_OK, Gtk.ResponseType.OK,
+			 Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
+		self.set_default_size(150,100)
+		
+		self.codepoint = codepoint
+		
+		box = self.get_content_area()
+		grid = Gtk.Grid()
+		box.add(grid)
+		
+		l1 = Gtk.Label("Unicode")
+		l2 = Gtk.Label("Codepoint")
+		
+		self.entry_uc = Gtk.Entry()
+		self.entry_uc.set_text(psflib.get_unicode_str(codepoint))
+		self.entry_uc.connect("activate", self.__on_entry_uc_changed)
+		
+		adjustment = Gtk.Adjustment(0, 0, 65535, 1, 1, 0)
+		self.spin_cp = Gtk.SpinButton()
+		self.spin_cp.set_numeric(True)
+		self.spin_cp.connect("value-changed", self.__on_spin_cp_changed)
+		self.spin_cp.set_adjustment(adjustment)
+		self.spin_cp.set_value(codepoint)
+		
+		grid.attach(l1, 0, 0, 1, 1)
+		grid.attach(l2, 1, 0, 1, 1)
+		grid.attach(self.entry_uc, 0, 1, 1, 1)
+		grid.attach(self.spin_cp, 1, 1, 1, 1)
+		
+		self.show_all()
+		
+	def __on_spin_cp_changed(self, spin):
+		self.codepoint = int(spin.get_value())
+		uc = psflib.get_unicode_str(self.codepoint)
+		self.entry_uc.set_text(uc)
 
-class GlyphSelector(Gtk.ScrolledWindow):
+	def __on_entry_uc_changed(self, entry):
+		txt = entry.get_text()
+		codepoint = psflib.get_codepoint(txt)
+		if codepoint:
+			self.codepoint = codepoint
+			self.spin_cp.set_value(codepoint)
+		else:
+			uc = psflib.get_unicode_str(self.codepoint)
+			entry.set_text(uc)
+
+	def get_codepoint(self):
+		return self.codepoint
+
+class GlyphSelector(Gtk.Grid):
+	
+	TITLE_CODEPOINT = "Codepoint"
+	TITLE_UNICODE = "Unicode"
+	
 	def __init__(self):
 		Gtk.ScrolledWindow.__init__(self)
 		
 		self.changed_callback = None
-		self.unicode_strings = {}
+		self.edited_callback = None
+		self.repr_added_callback = None
+		self.repr_removed_callback = None
 		
-		self.model = Gtk.ListStore(GdkPixbuf.Pixbuf, str)
+		self.chars = {}
+		self.char_display_size = (24, 24)
+		
+		self.clean_pixbuf = GdkPixbuf.Pixbuf.new(
+								GdkPixbuf.Colorspace.RGB, True, 8, 1, 1)
+		self.clean_pixbuf.fill(0)
+		
+		self.scrolled_window = Gtk.ScrolledWindow()
+		
+		self.model = Gtk.TreeStore(GdkPixbuf.Pixbuf, str, str)
 		self.tree_view = Gtk.TreeView.new_with_model(self.model)
 
 		char_renderer = Gtk.CellRendererPixbuf()
-		char_column = Gtk.TreeViewColumn("Char", char_renderer, pixbuf=0)
+		char_column = Gtk.TreeViewColumn("Char", char_renderer,
+						pixbuf=0)
 		self.tree_view.append_column(char_column)
 		
-		text_renderer = Gtk.CellRendererText()
-		text_column = Gtk.TreeViewColumn("Unicode", text_renderer, text=1)
-		self.tree_view.append_column(text_column)
-		self.add(self.tree_view)
+		unicode_renderer = Gtk.CellRendererText(mode=Gtk.CellRendererMode.EDITABLE)
+		unicode_renderer.set_property("editable", True)
+		unicode_renderer.connect("edited", self.on_unicode_edited)
+		unicode_column = Gtk.TreeViewColumn("Unicode", unicode_renderer,
+							text=1)
+		self.tree_view.append_column(unicode_column)
 		
-		self.set_property("min-content-width", 200)
-		self.set_property("min-content-height", 100)
+		codepoint_renderer = Gtk.CellRendererText(mode=Gtk.CellRendererMode.EDITABLE)
+		codepoint_renderer.set_property("editable", True)
+		codepoint_renderer.connect("edited", self.on_codepoint_edited)
+		codepoint_column = Gtk.TreeViewColumn("Codepoint",
+							codepoint_renderer, text=2)
+		self.tree_view.append_column(codepoint_column)
 		
-		selection = self.tree_view.get_selection()
-		selection.set_mode(Gtk.SelectionMode.SINGLE)
-		selection.connect("changed", self.on_selection_changed)
+		self.scrolled_window.add(self.tree_view)		
+		self.scrolled_window.set_property("min-content-width", 250)
+		self.scrolled_window.set_property("min-content-height", 300)
 		
-	def add_entry(self, pixbuf, unicode_str):
-		iter = self.model.append([pixbuf, unicode_str])
-		if unicode_str in self.unicode_strings.keys():
-			self.unicode_strings[unicode_str].append(iter)	
-		else:
-			self.unicode_strings[unicode_str] = [iter]				
+		self.selection = self.tree_view.get_selection()
+		self.selection.set_mode(Gtk.SelectionMode.SINGLE)
+		self.selection.connect("changed", self.on_selection_changed)
+		self.tree_view.connect("button-press-event", self.on_button_clicked_event)
+		self.tree_view.set_enable_tree_lines(True)
 		
-	def has_entry(self, unicode_str):
-		return unicode_str in self.unicode_strings
+		self.attach(self.scrolled_window, 0, 1, 1, 1)
 		
+	def set_char_display_size(self, size):
+		self.char_display_size = size
+		iter = self.model.get_iter_first()
+		while iter:
+			pixbuf = self.model.get(iter, 0)[0]
+			pixbuf = pixbuf.scale_simple(self.char_display_size[0],
+						self.char_display_size[1],
+						GdkPixbuf.InterpType.NEAREST)
+			self.model.set_value(iter, 0, pixbuf)
+			iter = self.model.iter_next(iter)
+		
+	def add_char(self, char_id, pixbuf):
+		pixbuf = pixbuf.scale_simple(self.char_display_size[0],
+						self.char_display_size[1],
+						GdkPixbuf.InterpType.NEAREST)
+		uc = psflib.get_unicode_str(char_id)
+		iter = self.model.append(None, [pixbuf, uc, str(char_id)])
+		path = self.model.get_path(iter)
+		if self.has_char(char_id):
+			self.remove_char(char_id)
+		self.chars[char_id] = []
+		self.selection.select_iter(iter)
+		self.add_repr(char_id, char_id)
+		
+	def add_repr(self, char_id, codepoint):
+		if codepoint in self.chars[char_id]:
+			return
+		self.chars[char_id].append(codepoint)
+		iter = self.get_iter_by_id(char_id)
+		uc = psflib.get_unicode_str(codepoint)
+		self.model.append(iter, [self.clean_pixbuf, uc, str(codepoint)])
+		if self.repr_added_callback:
+			self.repr_added_callback(char_id, codepoint)
+		
+	def remove_char(self, char_id):
+		iter = self.get_iter_by_id(char_id)
+		if iter:	
+			self.model.remove(iter)
+		del chars[char_id]
+		
+		to_select = self.model.get_iter_first()
+		if to_select:
+			self.selection.select_iter(to_select)
+			
+	def remove_repr(self, char_id, codepoint):
+		iter = self.get_iter_by_id(char_id)
+		child = self.model.iter_children(iter)
+		while child:
+			child_cp = int(self.model.get(child, 2)[0])
+			if child_cp == codepoint:
+				self.model.remove(child)
+				break
+			child = self.model.iter_next(child)
+		to_select = self.get_iter_by_id(char_id)
+		if to_select:
+			self.selection.select_iter(to_select)
+		if self.repr_removed_callback:
+			self.repr_removed_callback(char_id, codepoint)
+		
+	def update_pixbuf(self, char_id, pixbuf):
+		iter = self.get_iter_by_id(char_id)
+		if iter:
+			pixbuf = pixbuf.scale_simple(self.char_display_size[0],
+						self.char_display_size[1],
+						GdkPixbuf.InterpType.NEAREST)
+			self.model.set_value(iter, 0, pixbuf)
+		
+	def get_iter_by_id(self, char_id):
+		iter = self.model.get_iter_first()
+		while iter:
+			if int(self.model.get(iter, 2)[0]) == char_id:
+				return iter
+			iter = self.model.iter_next(iter)
+		return None
+		
+	def has_char(self, char_id):
+		return char_id in self.chars.keys()
+		
+	def get_new_id(self):
+		for i in self.chars.keys():
+			if not i+1 in self.chars.keys():
+				return i+1
+		return 0
+	
 	def set_changed_callback(self, callback):
+		"""Sets a callback that gets called, when a new char is selected
+		
+			Arguments passed to the callback:
+				-> the primary codepoint of the newly selected char
+		"""
 		self.changed_callback = callback
+		
+	def set_edited_callback(self, callback):
+		"""Sets a callback that gets called, when the unicode
+		   information of a char gets edited
+		   
+		   Arguments passed to the callback:
+				-> the primary codepoint of the char
+				-> the old unicode representation
+				-> the new unicode representation
+		   """
+		self.edited_callback = callback
+		
+	def set_repr_added_callback(self, callback):
+		"""Sets a callback that gets called when a unicode
+		representation is added to a glyph.
+		
+		Arguments passed to the callback:
+			-> the primary codepoint of the glyph
+			-> the codepoint of the newly added representation
+		"""
+		self.repr_added_callback = callback
+		
+	def set_repr_removed_callback(self, callback):
+		"""Sets a callback that gets called when a unicode
+		representation is removed from a glyph.
+		
+		Arguments passed to the callback:
+			-> the primary codepoint of the glyph
+			-> the codepoint of the removed representation
+		"""
+		self.repr_removed_callback = callback
 		
 	def on_selection_changed(self, treeselection):
 		model, treepaths = treeselection.get_selected_rows()
 		for path in treepaths:
-			tree_iter = model.get_iter(path)
-			uc = model.get_value(tree_iter, 1)
-			if self.changed_callback:
-				self.changed_callback(uc)
+			iter = model.get_iter(path)
 			
+			while iter:
+				char_id = model.get_value(iter, 2)
+				iter = self.model.iter_parent(iter)
+		
+			if self.changed_callback:
+				self.changed_callback(int(char_id))
+				
+	def get_selected_id(self):
+		model, iter = self.selection.get_selected()
+		if iter:
+			return int(model.get_value(iter, 2))
+		return None
+		
+	def on_codepoint_edited(self, cellrenderer, path, new_text):
+		iter = self.model.get_iter(path)
+		try:
+			old_codepoint = int(self.model.get(iter, 2)[0])
+			new_codepoint = int(new_text)
+		except ValueError:
+			return
+		if old_codepoint == new_codepoint:
+			return
+		
+		new_uc = psflib.get_unicode_str(new_codepoint)
+		parent_iter = self.model.iter_parent(iter)
+		if parent_iter:
+			# Additional representation
+			primary_codepoint = int(self.model.get(parent_iter, 2)[0])
+			if new_codepoint in self.chars[primary_codepoint]:
+				return
+			self.chars[primary_codepoint].remove(old_codepoint)
+			self.chars[primary_codepoint].append(new_codepoint)
+			if old_codepoint == primary_codepoint:
+				self.chars[new_codepoint] = self.chars[old_codepoint]
+				del self.chars[old_codepoint]
+				parent_uc = psflib.get_unicode_str(new_codepoint)
+				self.model.set_value(parent_iter, 1, parent_uc)
+				self.model.set_value(parent_iter, 2, str(new_codepoint))
+				
+		else:
+			# Primary representation
+			if new_codepoint in self.chars.keys():
+				return
+			primary_codepoint = old_codepoint
+			self.chars[new_codepoint] = self.chars[old_codepoint]
+			del self.chars[old_codepoint]
+			child = self.model.iter_children(iter)
+			child_old_cp = None
+			child_new_cp = None
+			while child:
+				child_cp = int(self.model.get(child, 2)[0])
+				if child_cp == old_codepoint:
+					child_old_cp = child
+				elif child_cp == new_codepoint:
+					child_new_cp = child
+				child = self.model.iter_next(child)
+			if not child_new_cp:
+				self.model.set_value(child_old_cp, 1, new_uc)
+				self.model.set_value(child_old_cp, 2,
+					str(new_codepoint))
+				self.chars[new_codepoint].remove(old_codepoint)
+				self.chars[new_codepoint].append(new_codepoint)
+					
+		self.model.set_value(iter, 1, new_uc)
+		self.model.set_value(iter, 2, str(new_codepoint))
+		if self.edited_callback:
+			self.edited_callback(primary_codepoint, old_codepoint,
+					new_codepoint)
+			
+	def on_unicode_edited(self, cellrenderer, path, new_uc):
+		iter = self.model.get_iter(path)
+		old_codepoint = int(self.model.get(iter, 2)[0])
+		new_codepoint = psflib.get_codepoint(new_uc)
+		if not new_codepoint:
+			return
+		parent_iter = self.model.iter_parent(iter)
+		if parent_iter:
+			#Additional representation
+			primary_codepoint = int(self.model.get(parent_iter, 2)[0])
+			if old_codepoint == primary_codepoint:
+				self.chars.remove(old_codepoint)
+				self.chars.append(new_codepoint)
+				parent_uc = psflib.get_unicode_str(new_codepoint)
+				self.model.set_value(parent_iter, 1, parent_uc)
+				self.model.set_value(parent_iter, 2, str(new_codepoint))
+		else:
+			#Primary representation
+			primary_codepoint = old_codepoint
+			if new_codepoint in self.chars:
+				return		
+			self.chars.remove(old_codepoint)
+			self.chars.append(new_codepoint)
+			child = self.model.iter_children(iter)
+			while child:
+				if int(self.model.get(child, 2)[0]) == old_codepoint:
+					self.model.set_value(child, 1, new_uc)
+					self.model.set_value(child, 2, str(new_codepoint))
+				child = self.model.iter_next(child)
+			
+		self.model.set_value(iter, 1, new_uc)
+		self.model.set_value(iter, 2, str(new_codepoint))
+		if self.edited_callback:
+				self.edited_callback(primary_codepoint, old_codepoint,
+						new_codepoint)
+			
+	def on_button_clicked_event(self, treeview, event):
+		if event.button == 3:
+			data = treeview.get_path_at_pos(int(event.x), int(event.y))
+			if data: #and event.type == Gdk.EventType._2BUTTON_PRESS:
+				path, column, x, y = data
+				iter = self.model.get_iter(path)
+				
+				menu = Gtk.Menu()
+				
+				parent_iter = self.model.iter_parent(iter)
+				if parent_iter:
+					# Addtional representation
+					parent_cp = int(self.model.get(parent_iter, 2)[0])
+					menu_add_repr = Gtk.MenuItem(
+						"Remove Unicode Representation")
+					menu_add_repr.connect("activate",
+						self.on_remove_representation_clicked,
+						parent_cp,	int(self.model.get(iter, 2)[0]))
+					menu.append(menu_add_repr)
+				else:
+					# Primary representation
+					menu_add_repr = Gtk.MenuItem(
+						"Add Unicode Representation")
+					menu_add_repr.connect("activate",
+						self.on_add_representation_clicked, 
+						int(self.model.get(iter, 2)[0]))
+					menu.append(menu_add_repr)
+					
+				menu.show_all()
+				menu.popup(None, None, None, self, 3, event.time)
 
+	def on_add_representation_clicked(self, menuitem, codepoint):
+		d = NewUnicodeRepresentationDialog(self.get_toplevel(),
+				codepoint)
+		r = d.run()
+		if r == Gtk.ResponseType.OK:
+			cp = d.get_codepoint()
+			self.add_repr(codepoint, cp)
+		d.destroy()
+		
+	def on_remove_representation_clicked(self, menuitem, primary_cp,
+			codepoint):		
+		if codepoint == primary_cp:
+			d = Gtk.MessageDialog(self.get_toplevel(), 0,
+				Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
+				"Confirmation")
+			d.format_secondary_text(
+				"You cannot remove this representation, because it is "+
+				"the primary representation for this glyph")
+			d.run()
+			d.destroy()
+			return
+		
+		d = Gtk.MessageDialog(self.get_toplevel(), 0,
+				Gtk.MessageType.QUESTION, (Gtk.STOCK_OK,
+				Gtk.ResponseType.OK, Gtk.STOCK_CANCEL,
+				Gtk.ResponseType.CANCEL), "Confirmation")
+		d.format_secondary_text("Please confirm, that you want to "+
+							   "remove this additional unicode "+
+							   "representation")		
+		r = d.run()
+		if r == Gtk.ResponseType.OK:
+			self.remove_repr(primary_cp, codepoint)
+		d.destroy()
 
 window = PySFeditWindow()
 window.show_all()
