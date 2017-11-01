@@ -52,6 +52,9 @@ class FontEditor(Gtk.Grid):
 		self.button_add.connect("clicked", self.on_button_add_clicked)
 		self.button_remove.connect("clicked",
 				self.on_button_remove_clicked)
+	def get_font(self):
+		return self.font
+
 
 	def get_pixbuf(self):
 		img = Image.new('RGBA', self.size, (0,0,0,0))
@@ -179,8 +182,8 @@ class PySFeditWindow(Gtk.Window):
 		menuitem = Gtk.MenuItem(label="New")
 		menuitem.connect("activate", self.on_menu_new_clicked)
 		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label="Open")
-		menuitem.connect("activate", self.on_menu_open_clicked)
+		menuitem = Gtk.MenuItem(label="Import")
+		menuitem.connect("activate", self.on_menu_import_clicked)
 		submenu.append(menuitem)
 		menuitem = Gtk.MenuItem(label="Export")
 		menuitem.connect("activate", self.on_menu_export_clicked)
@@ -201,17 +204,13 @@ class PySFeditWindow(Gtk.Window):
 		self.top_grid.attach(self.button_new,0,1,1,1)
 		self.font_editor = None
 
-		
-
-	def on_but_new_clicked(self, button):
-		self.new_font_dialog()
-
-	def on_menu_new_clicked(self, submenu):
-		self.new_font_dialog()
-
-	def on_menu_open_clicked(self, submenu):
-		dialog = Gtk.FileChooserDialog("Open file", self,
-			Gtk.FileChooserAction.OPEN,
+	def get_file_path(self, title, _type="open"):
+		if _type == "open":
+			action = Gtk.FileChooserAction.OPEN
+		elif _type == "save":
+			action = Gtk.FileChooserAction.SAVE
+		dialog = Gtk.FileChooserDialog(title, self,
+			action,
 			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
 			 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
 		filter_psf = Gtk.FileFilter()
@@ -231,8 +230,20 @@ class PySFeditWindow(Gtk.Window):
 
 		response = dialog.run()
 		if response == Gtk.ResponseType.OK:
-			print("File: %s" % dialog.get_filename())
+			path = dialog.get_filename()
+			dialog.destroy()
+			return path
 		dialog.destroy()
+
+	def on_but_new_clicked(self, button):
+		self.new_font_dialog()
+
+	def on_menu_new_clicked(self, submenu):
+		self.new_font_dialog()
+
+	def on_menu_import_clicked(self, submenu):
+		path = self.get_file_path("Import file")
+		print("File : %s" % path)
 
 	def on_menu_export_clicked(self, submenu):
 		self.export_font_dialog()
@@ -250,12 +261,6 @@ class PySFeditWindow(Gtk.Window):
 		d.destroy()
 	
 	def export_font_dialog(self):
-		d = ExportFontDialog(self)
-		r = d.run()
-		if r == Gtk.ResponseType.OK:
-			export_format = d.get_export_format()
-			print(export_format)
-		d.destroy()
 		if not self.font_editor:
 			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
 				Gtk.ButtonsType.OK, "Error!")
@@ -264,6 +269,17 @@ class PySFeditWindow(Gtk.Window):
 			dialog.run()
 			dialog.destroy()
 			return
+		d = ExportFontDialog(self)
+		r = d.run()
+		if r == Gtk.ResponseType.OK:
+			export_format = d.get_export_format()
+			if export_format == psflib.TYPE_PLAIN_ASM:
+				exporter = psflib.AsmExporter(
+					self.font_editor.get_font())
+				path = self.get_file_path("Export file", "save")
+				if path:
+					exporter.export(path)
+		d.destroy()
 		
 		
 

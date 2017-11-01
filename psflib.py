@@ -71,6 +71,291 @@ def get_codepoint(char):
 	codepoint = ord(char)
 	return codepoint
 
+class Byte(object):
+	"""This class represents a byte
+	
+	Args:
+		bits (list/tuple) (optional) : The bits of the byte. Should have
+			a length of 8. All Elements should be either 0 or 1.
+			The element at index 0 represents the most significant bit
+			and the element at index 7 the least significant bit.
+			The standard value for the bits is 8 times a zero
+			
+	Raises:
+		ValueError if the length of bits is not 8 or if there is a bit
+			with an other value than 0 or 1
+	"""	
+	def __init__(self, bits = [0,0,0,0,0,0,0,0]):
+		if len(bits) != 8:
+			raise ValueError("A byte should have 8 bits")
+		for bit in bits:
+			if bit not in (0, 1):
+				raise ValueError("A bit should be either 0 or 1")
+		self.__bits = list(bits)
+		
+	@staticmethod	
+	def from_int(integer):
+		"""Creates a Byte object from an integer
+		
+		Args:
+			integer (int) : The integer to create the byte from
+			
+		Returns:
+			Byte ()
+			
+		Notes:
+			Since the range of values of a byte is 0 to 255, if given
+			integer is larger than 255, int(byte) will be integer % 255
+			This method automatically converts the integer to a positive
+			value		
+		"""
+		quotient = abs(integer % 256)	# Thats actually a remainder
+		bits = []
+		for _ in range(8):
+			remainder = quotient % 2
+			quotient = quotient // 2
+			bits.append(remainder)
+		bits = list(reversed(bits))
+		return Byte(bits)
+		
+	def __getitem__(self, key):
+		"""Returns the bit with the given key as index
+		
+		Args:
+			key (int) : The index of the bit. Should be between 0 and 7.
+				7 returns the most significant bit and 0 the least
+				significant
+		
+		Raises:
+			IndexError if the key is not between 0 and 7		
+		"""
+		if not 0 <= key < 8:
+			raise IndexError("The index of a bit in a byte should be " +
+					"between 0 and 7, %d given" % key)
+		return self.__bits[key]
+		
+	def __setitem__(self, key, value):
+		"""Sets the bit with the given key to value
+		
+		Args:
+			key (int) : The index of the bit. Should be between 0 and 7.
+				7 sets the most significant bit and 0 the least
+				significant
+			value (int) : The value to set the bit to. Should be 0 or 1
+			
+		Raises:
+			IndexError if the key is not between 0 and 7
+			ValueError if the value is not zero or one
+		
+		"""
+		if not 0 <= key < 8:
+			raise IndexError("The index of a bit in a byte should be " +
+					"between 0 and 7, %d given" % key)
+		if value not in (0, 1):
+			raise ValueError("A bit should be either 0 or 1")
+		self.__bits[key] = value
+
+	def __len__(self):
+		"""Returns the Number of bits a byte has.
+		
+		Returns:
+			int : Always 8		
+		"""
+		return 8
+
+	def __rand__(self, other):
+		"""Performs a binary and between other and the byte
+		
+		Args:
+			other (int or at least convertable to int): The value to
+				perform the binary and with
+				
+		Returns:
+			Byte : The new byte.
+		"""
+		return Byte.from_int(int(other) & self.__int__())
+		
+	def __ror__(self, other):
+		"""Performs a binary or between other and the byte
+		
+		Args:
+			other (int or at least convertable to int): The value to
+				perform the binary or with
+				
+		Returns:
+			Byte : The new byte.
+		"""
+		return Byte.from_int(int(other) | self.__int__())
+		
+	def __rxor__(self, other):
+		"""Performs a binary xor between other and the byte
+		
+		Args:
+			other (int or at least convertable to int): The value to
+				perform the binary xor with
+				
+		Returns:
+			Byte : The new byte.
+		"""
+		return Byte.from_int(int(other) ^ self.__int__())
+
+	def __int__(self):
+		"""Convert the byte to an integer value
+		
+		Returns:
+			int : The integer value of the byte		
+		"""
+		integer = 0
+		for i, bit in zip(range(7,-1,-1), self.__bits):
+			integer += 2 ** i * bit
+		return integer
+		
+	def __hex__(self):
+		"""Converts the byte to an hexdecimal value
+		
+		Returns:
+			str : A string with the hexadecimal value of the byte		
+		"""
+		return hex(self.__int__())
+		
+	def __eq__(self, other):
+		"""Checks if the int value of the byte is equal to the int value
+		of another object
+	
+		Args:
+			other (int or at least convertable to an integer) : The
+				object to compare the byte with
+	
+		Returns:
+			bool : True if the nt value of the byte is equal to the int
+				value of the other object else False
+		"""
+		if int(other) == self.__int__():
+			return True
+		return False
+	
+	def __eq__(self, other):
+		"""Checks if the int value of the byte is equal to the int value
+		of another object
+	
+		Args:
+			other (int or at least convertable to an integer) : The
+				object to compare the byte with
+	
+		Returns:
+			bool : True if the int value of the byte is equal to the int
+				value of the other object else False
+		"""
+		if int(other) == self.__int__():
+			return True
+		return False
+		
+	def __le__(self, other):
+		"""Checks if the int value of the byte is lower or equal to the
+		int value of another object
+	
+		Args:
+			other (int or at least convertable to an integer) : The
+				object to compare the byte with
+	
+		Returns:
+			bool : True if the int value of the byte is lower or equal
+				to the int value of the other object else False
+		"""
+		if self.__int__() <= int(other):
+			return True
+		return False
+		
+	def __lt__(self, other):
+		"""Checks if the int value of the byte is lower than the int
+		value of another object
+	
+		Args:
+			other (int or at least convertable to an integer) : The
+				object to compare the byte with
+	
+		Returns:
+			bool : True if the int value of the byte is lower than the
+				int value of the other object else False
+		"""
+		if self.__int__() < int(other):
+			return True
+		return False
+		
+	def __ge__(self, other):
+		"""Checks if the int value of the byte is greater or equal to the
+		int value of another object
+	
+		Args:
+			other (int or at least convertable to an integer) : The
+				object to compare the byte with
+	
+		Returns:
+			bool : True if the int value of the byte is greater or equal
+				to the int value of the other object else False
+		"""
+		if self.__int__() <= int(other):
+			return True
+		return False
+		
+	def __gt__(self, other):
+		"""Checks if the int value of the byte is greater than the int
+		value of another object
+	
+		Args:
+			other (int or at least convertable to an integer) : The
+				object to compare the byte with
+	
+		Returns:
+			bool : True if the int value of the byte is greater than the
+				int value of the other object else False
+		"""
+		if self.__int__() > int(other):
+			return True
+		return False
+		
+	def __ne__(self, other):
+		"""Checks if the int value of the byte is not equal to the int
+		value of another object
+	
+		Args:
+			other (int or at least convertable to an integer) : The
+				object to compare the byte with
+	
+		Returns:
+			bool : True if the int value of the byte is not equal to the
+				int value of the other object else False
+		"""
+		if int(other) != self.__int__():
+			return True
+		return False
+		
+	def __str__(self):
+		"""Converts the byte to a string
+		
+		Returns:
+			str : A string with the hexadecimal value of the bytess		
+		"""
+		return self.__hex__()
+
+class BitObject(object):
+	def __init__(self):
+		self.__bytes = [[]]
+		
+	def add_bits(*bits):
+		for bit in self.bits:
+			if bit == 0 or bit == 1:
+				if len(self.__bytes[len(self.__bytes)-1]) == 8:
+					self.__bytes.append([]) 
+				self.__bytes[len(self.__bytes)-1].append(bit)
+		
+	def bytes(self):
+		return self.__bytes
+		
+	def bytestring(self, label):
+		
+		pass
+
 class AsmExporter(object):
 	def __init__(self, font):
 		self.font = font
@@ -86,9 +371,31 @@ class AsmExporter(object):
 		if self.version == 1:
 			magic_bytes = (hex(self.header.magic_bytes[0]),
 						   hex(self.header.magic_bytes[1]))
-			self.string += "magic_bytes: db %s, %s" % hex(s)
-			self.string += "mode:	db %s" % hex(self.header.mode)
-			self.string += "charsize: db %s" % hex(self.header.charsize)
+			self.string += "magic_bytes: db %s, %s\n" % magic_bytes
+			self.string += "mode: db %s\n" % hex(self.header.mode)
+			self.string += "charsize: db %s\n\n" % hex(self.header.charsize)
+		elif self.version == 2:
+			magic_bytes = (hex(self.header.magic_bytes[0]),
+						   hex(self.header.magic_bytes[1]),
+						   hex(self.header.magic_bytes[2]),
+						   hex(self.header.magic_bytes[3]))
+			self.string += ("magic_bytes: db %s, %s, %s, %s\n" %
+							magic_bytes)
+			self.string += "version: dd %s\n" % hex(self.header.version)
+			self.string += "headersize: dd %s\”" % hex(
+								self.header.headersize)
+			self.string += "flags: dd %s\n" % hex(self.header.flags)
+			self.string += "length: %s\n" % hex(self.header.length)
+			self.string += "charsize: %s\n" % hex(self.header.charsize)
+			self.string += "height: %s\n" % hex(self.header.height)
+			self.string += "width: %s\n\n" % hex(self.header.width)
+
+	def export(self, path):
+		self.create_header()
+		
+		f = open(path, "w")
+		f.write(self.string)
+		f.close()
 
 class PsfExporter(object):
 	def __init__(self, font):
