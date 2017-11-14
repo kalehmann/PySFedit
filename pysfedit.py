@@ -373,8 +373,8 @@ class NewFontDialog(Gtk.Dialog):
 			if unicode_tab: header.set_mode(psflib.PSF1_MODEHASTAB)
 		else:
 			header = psflib.PsfHeaderv2(size)
-			if unicode_tab: header.set_mode(
-				psflib.PSF2_HAS_UNICODE_TABLE)
+			if unicode_tab:
+				header.set_flags(psflib.PSF2_HAS_UNICODE_TABLE)
 		return header
 		
 class NewUnicodeRepresentationDialog(Gtk.Dialog):
@@ -854,7 +854,7 @@ class GlyphSelector(Gtk.Grid):
 					menu_add_repr = Gtk.MenuItem(
 						"Add Unicode Representation")
 					menu_add_repr.connect("activate",
-						self.__on_add_representation_clicked, cp)
+						self.__on_add_representation_clicked, parent_cp)
 					menu_rm_repr = Gtk.MenuItem(
 						"Remove Unicode Representation")
 					menu_rm_repr.connect("activate",

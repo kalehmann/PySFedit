@@ -210,13 +210,16 @@ class Byte(object):
 			integer += 2 ** i * bit
 		return integer
 		
-	def __hex__(self):
+	def __index__(self):
+		return self.__int__()
+		
+	def hex(self):
 		"""Converts the byte to an hexdecimal value
 		
 		Returns:
 			str : A string with the hexadecimal value of the byte		
 		"""
-		return hex(self.__int__())
+		return "0x%02x" % self.__int__()
 		
 	def __eq__(self, other):
 		"""Checks if the int value of the byte is equal to the int value
@@ -337,24 +340,90 @@ class Byte(object):
 			str : A string with the hexadecimal value of the bytess		
 		"""
 		return self.__hex__()
+		
+	def __bool__(self):
+		"""The __bool__ function is used for truth-testing
+		
+		Returns:
+			bool : False if all bits of the byte are zeros else True
+		"""
+		return self.__int__() != 0
 
-class BitObject(object):
-	def __init__(self):
-		self.__bytes = [[]]
+class ByteArray(object):
+	def __init__(self, _bytes=[]):
+		self.__check_bytes(_bytes)
+		self.__bytes = _bytes
 		
-	def add_bits(*bits):
-		for bit in self.bits:
-			if bit == 0 or bit == 1:
-				if len(self.__bytes[len(self.__bytes)-1]) == 8:
-					self.__bytes.append([]) 
-				self.__bytes[len(self.__bytes)-1].append(bit)
+	@staticmethod
+	def from_bit_array(bits):
+		_bytes = []
+		if len(bits) % 8:
+			raise ValueError("The length of the bit array must be a " +
+					"multiple of 8")
+		for i in range(int(len(bits) / 8)):
+			_bytes.append(Byte(bits[i*8:(i+1)*8]))
+		return ByteArray(_bytes)
 		
-	def bytes(self):
+	def __getitem__(self, key):
+		return self.__bytes[key]
+		
+	def __setitem__(self, key, value):
+		self._bytes[key] = value
+		
+	def __len__(self):
+		return len(self.__bytes)
+		
+	def add_byte(self, byte):
+		self.add_bytes([byte])
+		
+	def add_bytes(self, _bytes):
+		self.__check_bytes(_bytes)
+		for byte in _bytes:
+			self.__bytes.append(byte)
+		
+	def get_bytes(self):
 		return self.__bytes
 		
-	def bytestring(self, label):
+	def to_bytearray(self):
+		ba = bytearray()
+		for byte in self.__bytes:
+			ba.append(int(byte))
+		return ba
 		
-		pass
+	def to_asm(self, label, linelength=80, intent=0, tab_size=4):
+		# Check if intent, linelength and the length of the label are
+		# matching.
+		if len(label) + 5 + intent * tab_size > linelength:
+			raise Exception(
+				("There is a missmatch between the max linelength " +
+				 "(%d), the intent (%d) + tabulator size (%d) and " + 
+				 "the length of the label (%d)") %
+				 (linelength, intent, tab_size, len(label)))
+					
+		line = " " * intent * tab_size
+		line += "%s: db " % label 
+		lines = []
+		for i, byte in zip(range(len(self.__bytes)), self.__bytes):
+			to_add = "%s" % byte.hex()
+			if len(line) + len(to_add) > linelength:
+				# create new line
+				lines.append(line)
+				line = " " * (intent + 1) * tab_size + "db " + to_add
+			else:
+				if i + 1 < len(self.__bytes):
+					to_add += ", "
+				line += to_add
+		lines.append(line)
+		out = ""
+		for line in lines:
+			out += "%s\n" % line
+		return out
+		
+	def __check_bytes(self, _bytes):
+		for byte in _bytes:
+			if type(byte) != Byte:
+				raise TypeError("Expected _bytes to be instances of " +
+						"Byte")
 
 class AsmExporter(object):
 	def __init__(self, font):
@@ -367,31 +436,55 @@ class AsmExporter(object):
 		self.string = ""
 		
 	def create_header(self):
-		self.string += "font:\n"
+		self.string += "font_header:\n"
 		if self.version == 1:
-			magic_bytes = (hex(self.header.magic_bytes[0]),
-						   hex(self.header.magic_bytes[1]))
-			self.string += "magic_bytes: db %s, %s\n" % magic_bytes
+			magic_bytes = ByteArray(self.header.magic_bytes)
+			self.string += magic_bytes.to_asm("magic_bytes")
 			self.string += "mode: db %s\n" % hex(self.header.mode)
 			self.string += "charsize: db %s\n\n" % hex(self.header.charsize)
 		elif self.version == 2:
-			magic_bytes = (hex(self.header.magic_bytes[0]),
-						   hex(self.header.magic_bytes[1]),
-						   hex(self.header.magic_bytes[2]),
-						   hex(self.header.magic_bytes[3]))
-			self.string += ("magic_bytes: db %s, %s, %s, %s\n" %
-							magic_bytes)
+			magic_bytes = ByteArray(self.header.magic_bytes)
+			self.string += magic_bytes.to_asm("magic_bytes")
 			self.string += "version: dd %s\n" % hex(self.header.version)
-			self.string += "headersize: dd %s\”" % hex(
+			self.string += "headersize: dd %s\n" % hex(
 								self.header.headersize)
 			self.string += "flags: dd %s\n" % hex(self.header.flags)
-			self.string += "length: %s\n" % hex(self.header.length)
-			self.string += "charsize: %s\n" % hex(self.header.charsize)
-			self.string += "height: %s\n" % hex(self.header.height)
-			self.string += "width: %s\n\n" % hex(self.header.width)
+			self.string += "length: dd %s\n" % hex(self.header.length)
+			self.string += "charsize: dd %s\n" % hex(
+								self.header.charsize)
+			self.string += "height: dd %s\n" % hex(self.header.height)
+			self.string += "width: dd %s\n\n" % hex(self.header.width)
+
+	def glyph_to_asm(self, glyph, label):
+		bits = []
+		for row in glyph.data:
+			for bit in row:
+				bits.append(bit)
+			missing_bits = 8 - len(row) % 8
+			if missing_bits < 8:
+				for _ in range(8 - len(row) % 8):
+					bits.append(0)		
+		# -- The following is bullshit --		
+		# The number of bits must be a multiple of 8
+		#if bits_count % 8:
+		#	for _ in range(8- (bits_cound%8)):
+		#		bits.append(0)
+		_bytes = ByteArray.from_bit_array(bits)		
+		return _bytes.to_asm(label)
+
+
+	def create_bitmaps(self):
+		self.string += "font_bitmaps:\n"
+		if self.header.has_unicode_table():
+			for i, glyph in zip(range(len(self.font.glyphs)),
+								self.font.glyphs.values()):
+				self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
+		else:
+			pass
 
 	def export(self, path):
 		self.create_header()
+		self.create_bitmaps()
 		
 		f = open(path, "w")
 		f.write(self.string)
@@ -459,7 +552,7 @@ class PsfHeader(object):
 class PsfHeaderv1(PsfHeader):
 	def __init__(self, size):
 		PsfHeader.__init__(self, PSF1_VERSION, size)
-		self.magic_bytes = [0x36, 0x04]
+		self.magic_bytes = [Byte.from_int(0x36), Byte.from_int(0x04)]
 		
 		if (size[0] != 8):
 			raise Exception("Error, for PSF1 the font width must be 8")
@@ -474,14 +567,15 @@ class PsfHeaderv1(PsfHeader):
 class PsfHeaderv2(PsfHeader):
 	def __init__(self, size):
 		PsfHeader.__init__(self, PSF2_VERSION, size)
-		self.magic_bytes = [0x72, 0xb5, 0x4a, 0x86]
+		self.magic_bytes = [Byte.from_int(0x72), Byte.from_int(0xb5),
+							Byte.from_int(0x4a), Byte.from_int(0x86)]
 		self.version = PSF2_MAXVERSION
 		self.header_size = 32	# Values are encoded as 4byte integers
 		self.flags = 0
-		self.charsize = size[1] * (size[0]+7) / 8
+		self.charsize = int(size[1] * (size[0]+7) / 8)
 
 	def set_flags(self, flags):
-		if flags != 1:
+		if flags != PSF2_HAS_UNICODE_TABLE:
 			raise Exception("Error, undefined bits set in PSF2 flags")
 		self.flags |= flags
 
@@ -573,7 +667,6 @@ class PcScreenFont(object):
 	
 	def __str__(self):
 		data = u""
-		print(self.glyphs.keys())
 		for i in self.glyphs.keys():
 			data += "\n%d : (%s)\n" % (i, get_unicode_str(i))
 			data += " -----------\n"
@@ -588,10 +681,18 @@ class Glyph(object):
 	"""This class represents a glyph of the pc screen font
 	
 	Args:
-		size (tuple(int, int)) : size of the bitmap representing the
+		size (tuple(int width, int height)) : size of the bitmap representing the
 			character
 	"""
 	def __init__(self, size):
+		"""self.data is a list containing y lists with x elements, where
+		x is the width of the glyph an y the height.
+		Therefore the correct way to iterate over self.data is:
+		
+		for row in self.data:
+			for bit in row:
+				...		
+		"""
 		self.data = [[0 for i in range(size[0])]
 						for j in range(size[1])]
 		self.touched = False
@@ -628,7 +729,7 @@ class Glyph(object):
 				should be updated
 		"""
 		if new_cp in self.unicode_representations:
-			self.unicode_representations.remove(old_cp)
+			#self.unicode_representations.remove(old_cp)
 			return
 		for i, cp in zip(range(len(self.unicode_representations)),
 						 self.unicode_representations):
