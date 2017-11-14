@@ -336,6 +336,7 @@ class NewFontDialog(Gtk.Dialog):
 		
 		self.entry_width = Gtk.Entry()
 		self.entry_width.set_text("8")
+		self.entry_width.set_editable(False)
 		grid.attach(self.entry_width, 0, 1, 1, 1)
 		
 		self.entry_height = Gtk.Entry()
@@ -350,10 +351,12 @@ class NewFontDialog(Gtk.Dialog):
 		
 		self.but_v1 = Gtk.RadioButton.new_with_label_from_widget(None,
 						"PSFv1")
+		self.but_v1.connect("toggled", self.__on_psf_version_changed, 1)
 		box_version.pack_start(self.but_v1, False, False, 0)
 		
 		self.but_v2 = Gtk.RadioButton.new_with_label_from_widget(
 						self.but_v1, "PSFv2")
+		self.but_v2.connect("toggled", self.__on_psf_version_changed, 2)
 		box_version.pack_start(self.but_v2, False, False, 0)
 		
 		l3 = Gtk.Label("Include unicode table:")
@@ -364,6 +367,14 @@ class NewFontDialog(Gtk.Dialog):
 		
 		self.show_all()
 	
+	def __on_psf_version_changed(self, radiobutton, version):
+		if radiobutton.get_active():
+			if version == 1:
+				self.entry_width.set_text("8")
+				self.entry_width.set_editable(False)
+			elif version == 2:
+				self.entry_width.set_editable(True)
+			
 	def get_header(self):
 		size = (int(self.entry_width.get_text()),
 				int(self.entry_height.get_text()))
