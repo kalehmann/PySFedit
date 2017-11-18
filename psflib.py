@@ -1,5 +1,10 @@
+import re
+
 PSF1_VERSION = 1
 PSF2_VERSION = 2
+
+PSF1_MAGIC_BYTES = [0x36, 0x04]
+PSF2_MAGIC_BYTES = [0x72, 0xb5, 0x4a, 0x86]
 
 PSF1_MODE512 = 0x01
 PSF1_MODEHASTAB = 0x02
@@ -11,28 +16,6 @@ PSF1_STARTSEQ = 0xFFFE
 
 PSF2_MAXVERSION = 0
 PSF2_HAS_UNICODE_TABLE = 0x1
-
-ASCII_PRINTABLE_OLDER = " !\"#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
-ASCII_PRINTABLE_OLD = (
-	(" " , "Space"),
-	("!" , "Exclamation mark"),
-	('"' , "Quotation mark"),
-	("#" , "Number sign"),
-	("$" , "Dollar sign"),
-	("%" , "Percent sign"),
-	("&" , "Ampersant"),
-	("'" , "Apostrophe"),
-	("(" , "Left parenthesis"),
-	(")" , "Right parenthesis"),
-	("*" , "Asterisk") ,
-	("+" , "Plus sign"),
-	("," , "Hyphen minus"),
-	("." , "Full stop"),
-	("/" , "Slash"),
-	("0" , "Zero"),
-	("1" , "One")
-)
-ASCII_PRINTABLE = {}
 
 TYPE_PLAIN_ASM = 42
 TYPE_BINARY_PSF = 43
@@ -70,6 +53,84 @@ def get_codepoint(char):
 	if len(char) != 1: return None
 	codepoint = ord(char)
 	return codepoint
+
+def import_font_from_asm(self, path):
+	"""Imports a font from an assembler file.
+	
+	Args:
+		path (string): The path to the assembler file
+		
+	Returns:
+		PcScreenFont: The font imported from the assembler file
+	"""
+	try:
+		with open(path, "r") as f:
+			raw_data = f.read()
+	except Exception as e:
+		raise e
+
+	label_expression = re.compile('([a-zA-Z0-9_]+:)')
+	data = label_expression.split(raw_data)
+	
+	i = 0
+	labels = {}
+	while i<len(data):
+		data[i] = data[i].strip()
+		if not data[i]:
+			del data[i]
+			continue
+		if label_expression.match(data[i]):
+			for j in range(i, len(data)):
+				values  = data[j] \
+							.replace('db', '') \
+							.replace('dd', '') \
+							.split(',')
+				if (not label_expression.match(data[j]) and
+					values):
+					labels[data[i][:-1]] = values
+					break
+		i += 1
+	for key in labels.keys():
+		for i in range(len(labels[key])):
+			labels[key][i] = int(labels[key][i].strip(), 16)
+
+	if labels['magic_bytes'] == PSF1_MAGIC_BYTES:
+		header = PsfHeaderv1((8, labels['charsize'][0]))
+		header.set_mode(labels['mode'][0])
+	elif labels['magic_bytes'] == PSF2_MAGIC_BYTES:
+		header = PsfHeaderv2(
+					(labels['width'][0], labels['height'][0]))
+		header.set_flags(labels['flags'][0])
+	else:
+		raise Exception('The magic bytes do not match PSF ' +
+				'version 1 or 2')
+				
+	labels = {
+		k : v 
+			for k, v in labels.items() if
+				k not in (
+					'font_header',
+					'magic_bytes',
+					'char_size',
+					'mode',
+					'version',
+					'headersize',
+					'flags',
+					'length',
+					'charsize',
+					'height',
+					'width'
+				) and sum(v)
+	}
+
+	font = PcSreenFont(header)
+	for k in labels.keys():
+		pc = int(k.replace('glyph_', ''))
+		glyph = font.get_glyph(pc)
+		_bytes = [Byte.from_int(i) for i in labels[k]]
+		glyph.set_data_from_bytes(_bytes) 
+		
+	return font
 
 class Byte(object):
 	"""This class represents a byte
@@ -117,6 +178,14 @@ class Byte(object):
 			bits.append(remainder)
 		bits = list(reversed(bits))
 		return Byte(bits)
+		
+	def get_bits(self):
+		"""Get an array with the 8 bits of the byte.
+		
+		Returns:
+			list: The bits of the byte		
+		"""
+		return self.__bits[:]
 		
 	def __getitem__(self, key):
 		"""Returns the bit with the given key as index
@@ -449,7 +518,7 @@ class AsmExporter(object):
 			self.string += "headersize: dd %s\n" % hex(
 								self.header.headersize)
 			self.string += "flags: dd %s\n" % hex(self.header.flags)
-			self.string += "length: dd %s\n" % hex(self.header.length)
+			self.string += "length: dd %s\n" % hex(len(self.font))
 			self.string += "charsize: dd %s\n" % hex(
 								self.header.charsize)
 			self.string += "height: dd %s\n" % hex(self.header.height)
@@ -490,7 +559,7 @@ class AsmExporter(object):
 				# 256 Glyphs
 				glyph_count = 256
 		else:
-			glyph_count = self.header.length
+			glyph_count = len(self.font)
 			
 		for i in range(glyph_count):
 			glyph = self.font.get_glyph(i)
@@ -501,9 +570,8 @@ class AsmExporter(object):
 		self.create_header()
 		self.create_bitmaps()
 		
-		f = open(path, "w")
-		f.write(self.string)
-		f.close()
+		with open(path, "w") as f:
+			f.write(self.string)
 
 class PsfExporter(object):
 	def __init__(self, font):
@@ -541,6 +609,14 @@ class PsfExporter(object):
 
 
 class PsfHeader(object):
+	"""This class is the base for a header for the PC Screen Font
+	
+	Args:
+		version (int): The version of the PC Screen Font. Should be
+			PSF1_VERSION or PSF2_VERSION
+		size (list of 2 integers): The size of every glyph of the font.
+			The first value is the width and the second the height
+	"""
 	def __init__(self, version, size):
 		self.version_psf = version
 		self.magic_bytes = []
@@ -555,19 +631,29 @@ class PsfHeader(object):
 		self.width = 0
 		
 		self.size = size
-	def readFromFile(self, psf_file):
-		pass
 		
 	def has_unicode_table(self):
+		"""Check wether the font has an unicode table or not
+		
+		Returns:
+			bool: True if the font has an unicode table else False
+		"""
 		if self.version_psf == PSF1_VERSION:
 			return self.mode & PSF1_MODEHASTAB
 		else:
 			return self.flags & PSF2_HAS_UNICODE_TABLE
 			
 class PsfHeaderv1(PsfHeader):
+	"""This class represents the header for the Pc Screen Font 1.
+	
+	Args:
+		size (list of 2 integers): The size of every glyph of the font.
+			The first value is the width and the second the height
+	"""
 	def __init__(self, size):
 		PsfHeader.__init__(self, PSF1_VERSION, size)
-		self.magic_bytes = [Byte.from_int(0x36), Byte.from_int(0x04)]
+		for byte in PSF1_MAGIC_BYTES:
+			self.magic_bytes.append(Byte.from_int(byte))
 		
 		if (size[0] != 8):
 			raise Exception("Error, for PSF1 the font width must be 8")
@@ -575,24 +661,85 @@ class PsfHeaderv1(PsfHeader):
 		self.mode = 0
 	
 	def set_mode(self, mode):
+		"""Set one or more modes of the PSF1.
+		
+		Args:
+			mode (int): A Number with the bits for the desired modes
+				set.		
+				
+		Notes:
+			Allowed modes are
+			PSF1_MODE512    = 0x01
+			PSF1_MODEHASTAB = 0x02
+			PSF1_MODEHASSEQ = 0x04
+			PSF1_MAXMODE    = 0x05
+		"""
 		if mode > 7:
 			raise Exception("Error, undefined bits set in PSF1 mode")
 		self.mode |= mode
+	def unset_mode(self, mode):
+		"""Unset one or more modi of the PSF1
+		
+		Args:
+			mode (int): A number with the bits for the desired modes
+				set.
+		
+		Notes:
+			For allowed modes see the PsfHeaderv1.set_mode method
+			Passing 0 to this method has no effect.
+		"""
+		if mode > 7:
+			raise Exception("Error, undefined bits unset in PSF1 mode")
+		if mode:
+			self.mode |= ~mode
+		
 
 class PsfHeaderv2(PsfHeader):
+	"""This class represents the header for the Pc Screen Font 1.
+	
+	Args:
+		size (list of 2 integers): The size of every glyph of the font.
+			The first value is the width and the second the height
+	"""
 	def __init__(self, size):
 		PsfHeader.__init__(self, PSF2_VERSION, size)
-		self.magic_bytes = [Byte.from_int(0x72), Byte.from_int(0xb5),
-							Byte.from_int(0x4a), Byte.from_int(0x86)]
+		for byte in PSF2_MAGIC_BYTES:
+			self.magic_bytes.append(Byte.from_int(byte))
 		self.version = PSF2_MAXVERSION
-		self.header_size = 32	# Values are encoded as 4byte integers
+		self.headersize = 32	# Values are encoded as 4byte integers
 		self.flags = 0
-		self.charsize = int(size[1] * (size[0]+7) / 8)
+		self.width = size[0]
+		self.height = size[1]
+		self.charsize = size[1] * int((size[0]+7) / 8)
 
 	def set_flags(self, flags):
-		if flags != PSF2_HAS_UNICODE_TABLE:
+		"""Set one or more flags of the PSF2.
+		
+		Args:
+			flags (int): Number with the bits for the desired flags set.
+			
+		Notes:
+			The only allowed flag is PSF2_HAS_UNICODE_TABLE = 0x1.
+			You could pass 0 to this method, but it has no effect
+		"""
+		if flags not in (0, PSF2_HAS_UNICODE_TABLE):
 			raise Exception("Error, undefined bits set in PSF2 flags")
 		self.flags |= flags
+
+	def unset_flags(self, flags):
+		"""Unset one or more flags of the PSF2.
+		
+		Args:
+			flags (int): Number with the bits for the desired flags set.
+			
+		Notes:
+			The only allowed flag is PSF2_HAS_UNICODE_TABLE = 0x1.
+			You could pass 0 to this method, but it has no effect
+		"""
+		if flags not in (0, PSF2_HAS_UNICODE_TABLE):
+			raise Exception("Error, undefined bits set in PSF2 flags")
+		if flags:
+			self.flags |= flags
 
 class PcScreenFont(object):
 	"""This class represents a pc screen font
@@ -679,6 +826,17 @@ class PcScreenFont(object):
 		"""
 		if codepoint in self.glyphs.keys():
 			del self.glyphs[codepoint]
+			
+	def __len__(self):
+		"""Get the lenght of the font, aka the largest primary codepoint
+		of a glyph plus one.
+		
+		Returns:
+			int: the len of the font
+		"""
+		if self.glyphs:
+			return max(self.glyphs.keys()) + 1
+		return 0
 	
 	def __str__(self):
 		data = u""
@@ -774,7 +932,6 @@ class Glyph(object):
 				The pixel is set, if its value equal 1.
 		
 		"""
-		self.touched = True
 		for i, row in zip(range(self.height), data):
 			for j, element in zip(range(self.width), row):
 				self.data[i][j] = element
@@ -790,6 +947,25 @@ class Glyph(object):
 		
 		"""
 		return self.data
+	
+	def set_data_from_bytes(_bytes):
+		"""Set the data of the bitmap from an array of byte objects
+		
+		Args:
+			_bytes (a list of Bytes): the bytes to update the Bitmap
+				with. Each 
+		"""
+		bits_per_line = int(self.width / 8) 
+		bits_per_line += 1 if self.width % 8 else 0
+		bits_per_line *= 8
+		self.data = []
+		bits = []
+		for b in _bytes: bits += b.get_bits()
+		for i in range(self.height):
+			line = []
+			for j in range(self.width):
+				line.append(bits[i * bits_per_line + j])
+			self.data.append(line)
 		
 	def __repr__(self):
 		out = "Unicode representations:\n"
