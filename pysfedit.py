@@ -213,6 +213,8 @@ class PySFeditWindow(Gtk.Window):
 			action,
 			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
 			 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+		if _type == "save":
+			dialog.set_do_overwrite_confirmation(True)
 		filter_psf = Gtk.FileFilter()
 		filter_psf.set_name("PSF files	.psf")
 		filter_psf.add_mime_type("application/x-font-linux-psf")
@@ -220,13 +222,13 @@ class PySFeditWindow(Gtk.Window):
 		
 		filter_asm = Gtk.FileFilter()
 		filter_asm.set_name("ASM files	.asm")
-		filter_asm.add_mime_type("text/x-asm")
+		filter_asm.add_pattern("*.asm")
 		dialog.add_filter(filter_asm)
 
-		filter_any = Gtk.FileFilter()
-		filter_any.set_name("Any files	.*")
-		filter_any.add_pattern("*")
-		dialog.add_filter(filter_any)
+		#filter_any = Gtk.FileFilter()
+		#filter_any.set_name("Any files	.*")
+		#filter_any.add_pattern("*")
+		#dialog.add_filter(filter_any)
 
 		response = dialog.run()
 		if response == Gtk.ResponseType.OK:
@@ -269,56 +271,15 @@ class PySFeditWindow(Gtk.Window):
 			dialog.run()
 			dialog.destroy()
 			return
-		d = ExportFontDialog(self)
-		r = d.run()
-		if r == Gtk.ResponseType.OK:
-			export_format = d.get_export_format()
-			if export_format == psflib.TYPE_PLAIN_ASM:
-				exporter = psflib.AsmExporter(
-					self.font_editor.get_font())
-				path = self.get_file_path("Export file", "save")
-				if path:
-					exporter.export(path)
-		d.destroy()
-		
-		
 
-class ExportFontDialog(Gtk.Dialog):
-	
-	__formats = (
-		("Plaintext - assembler file", psflib.TYPE_PLAIN_ASM),
-		("Binary - PSF file", psflib.TYPE_BINARY_PSF)
-	)
-	
-	def __init__(self, parent):
-		Gtk.Dialog.__init__(self, "New Font", parent, 0,
-			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-			 Gtk.STOCK_OK, Gtk.ResponseType.OK))
-		
-		self.export_format = 0
-		
-		self.grid = Gtk.Grid()
-		self.get_content_area().add(self.grid)
-		
-		self.format_combo = Gtk.ComboBoxText.new()
-		for i in self.__formats:
-			self.format_combo.append_text(i[0])
-		self.format_combo.connect("changed",
-				self.on_format_combo_changed)
-		self.format_combo.set_active(0)
-	
-		l1 = Gtk.Label()
-		l1.set_text("Format:")
-	
-		self.grid.attach(l1, 0, 0, 1, 1)
-		self.grid.attach(self.format_combo, 0, 1, 1, 1)
-		self.show_all()
-		
-	def on_format_combo_changed(self, combo):
-		self.export_format = self.__formats[combo.get_active()][1]
-		
-	def get_export_format(self):
-		return self.export_format
+		path = self.get_file_path("Export file", "save")
+		if path == None:
+			return
+		if path.lower().endswith(".asm"):
+			exporter = psflib.AsmExporter(self.font_editor.get_font())
+			exporter.export(path)
+		elif path.lower().endswith(".psf"):
+			pass
 
 class NewFontDialog(Gtk.Dialog):
 	def __init__(self, parent):
@@ -336,7 +297,7 @@ class NewFontDialog(Gtk.Dialog):
 		
 		self.entry_width = Gtk.Entry()
 		self.entry_width.set_text("8")
-		self.entry_width.set_editable(False)
+		self.entry_width.set_sensitive(False)
 		grid.attach(self.entry_width, 0, 1, 1, 1)
 		
 		self.entry_height = Gtk.Entry()
@@ -364,16 +325,19 @@ class NewFontDialog(Gtk.Dialog):
 		
 		self.check_table = Gtk.CheckButton()
 		grid.attach(self.check_table, 1, 3, 1, 1)
-		
+				
 		self.show_all()
+		
+		
 	
 	def __on_psf_version_changed(self, radiobutton, version):
 		if radiobutton.get_active():
 			if version == 1:
 				self.entry_width.set_text("8")
-				self.entry_width.set_editable(False)
+				self.entry_width.set_sensitive(False)
 			elif version == 2:
 				self.entry_width.set_editable(True)
+				self.entry_width.set_sensitive(True)
 			
 	def get_header(self):
 		size = (int(self.entry_width.get_text()),

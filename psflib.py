@@ -163,7 +163,7 @@ class Byte(object):
 		"""
 		return 8
 
-	def __rand__(self, other):
+	def __and__(self, other):
 		"""Performs a binary and between other and the byte
 		
 		Args:
@@ -175,7 +175,7 @@ class Byte(object):
 		"""
 		return Byte.from_int(int(other) & self.__int__())
 		
-	def __ror__(self, other):
+	def __or__(self, other):
 		"""Performs a binary or between other and the byte
 		
 		Args:
@@ -187,7 +187,7 @@ class Byte(object):
 		"""
 		return Byte.from_int(int(other) | self.__int__())
 		
-	def __rxor__(self, other):
+	def __xor__(self, other):
 		"""Performs a binary xor between other and the byte
 		
 		Args:
@@ -297,7 +297,7 @@ class Byte(object):
 			bool : True if the int value of the byte is greater or equal
 				to the int value of the other object else False
 		"""
-		if self.__int__() <= int(other):
+		if self.__int__() >= int(other):
 			return True
 		return False
 		
@@ -339,7 +339,7 @@ class Byte(object):
 		Returns:
 			str : A string with the hexadecimal value of the bytess		
 		"""
-		return self.__hex__()
+		return self.hex()
 		
 	def __bool__(self):
 		"""The __bool__ function is used for truth-testing
@@ -479,8 +479,23 @@ class AsmExporter(object):
 			for i, glyph in zip(range(len(self.font.glyphs)),
 								self.font.glyphs.values()):
 				self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
+			return
+			
+		# Has no Unicode table
+		if self.header.version_psf == PSF1_VERSION:
+			if self.header.mode & PSF1_MAXMODE:
+				# 512 Glyphs
+				glyph_count = 512
+			else:
+				# 256 Glyphs
+				glyph_count = 256
 		else:
-			pass
+			glyph_count = self.header.length
+			
+		for i in range(glyph_count):
+			glyph = self.font.get_glyph(i)
+			self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
+			
 
 	def export(self, path):
 		self.create_header()
