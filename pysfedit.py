@@ -496,7 +496,9 @@ class GlyphSelector(Gtk.Grid):
 							codepoint_renderer, text=2)
 		self.tree_view.append_column(codepoint_column)
 		
-		self.scrolled_window.add(self.tree_view)		
+		grid = Gtk.Grid()
+		grid.attach(self.tree_view, 0,0,1,1)
+		self.scrolled_window.add(grid)		
 		self.scrolled_window.set_property("min-content-width", 250)
 		self.scrolled_window.set_property("min-content-height", 300)
 		
