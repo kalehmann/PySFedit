@@ -12,7 +12,7 @@ from PIL import Image, ImageDraw
 import psflib
 
 class FontEditor(Gtk.Grid):
-	def __init__(self, header):
+	def __init__(self, header, font = None):
 		Gtk.Grid.__init__(self)
 		
 		self.size = header.size
@@ -20,15 +20,23 @@ class FontEditor(Gtk.Grid):
 		self.top_grid = Gtk.Grid()
 		self.attach(self.top_grid, 0, 0, 1, 1)
 		
-		self.font = psflib.PcScreenFont(header)
-		self.active_char = None
 		self.clean_pixbuf = self.get_pixbuf()
+		self.active_char = None
+
+		if font:
+			self.font = font
+			min_cp = min(font.get_glyphs().keys())
+			first_glyph = font.get_glyph(min_cp)
+			self.font_grid.set_data(first_glyph.get_data())
+			self.active_char = min_cp
+		else:
+			psflib.PcScreenFont(header)
 				
 		self.button_add = Gtk.Button(None,
 				image=Gtk.Image(stock=Gtk.STOCK_ADD))
 		self.button_remove = Gtk.Button(None,
 				image=Gtk.Image(stock=Gtk.STOCK_REMOVE))
-		self.glyph_selector = GlyphSelector()	
+		self.glyph_selector = GlyphSelector(font)	
 		
 		self.button_debug = Gtk.Button("Debug")
 		self.button_debug.connect("clicked", self.on_debug)
@@ -36,8 +44,8 @@ class FontEditor(Gtk.Grid):
 		
 		self.top_grid.attach(self.button_add, 0, 0, 1, 1)
 		self.top_grid.attach(self.button_remove, 1, 0, 1, 1)
-		self.attach(self.glyph_selector, 1, 1, 2, 2)
-		self.attach(self.font_grid, 0,1,1,1)
+		self.attach(self.glyph_selector, 3, 0, 2, 2)
+		self.attach(self.font_grid, 0,1,3,1)
 		
 		
 		self.glyph_selector.set_changed_callback(
@@ -52,9 +60,13 @@ class FontEditor(Gtk.Grid):
 		self.button_add.connect("clicked", self.on_button_add_clicked)
 		self.button_remove.connect("clicked",
 				self.on_button_remove_clicked)
+				
+	@staticmethod
+	def initialize_with_font(font):
+		return FontEditor(font.get_header(), font)
+				
 	def get_font(self):
 		return self.font
-
 
 	def get_pixbuf(self):
 		img = Image.new('RGBA', self.size, (0,0,0,0))
@@ -117,6 +129,9 @@ class FontEditor(Gtk.Grid):
 		
 	def on_debug(self, button):
 		print(self.font)
+		
+	def __set_font(self):
+		print("test")
 		
 class FontGrid(Gtk.Grid):
 	"""Grid with checkbuttons to edit the pixel representation of a char
@@ -200,8 +215,15 @@ class PySFeditWindow(Gtk.Window):
 		self.top_grid.attach(self.menu_bar,0,0,1,1)		
 		
 		self.button_new = Gtk.Button("New Font")
-		self.button_new.connect("clicked", self.on_but_new_clicked)
+		self.button_new.connect("clicked",
+			self.__on_but_new_clicked)
 		self.top_grid.attach(self.button_new,0,1,1,1)
+		
+		self.button_import = Gtk.Button("Import")
+		self.button_import.connect("clicked",
+			self.__on_but_import_clicked)
+		self.top_grid.attach(self.button_import, 0,2,1,1)
+		
 		self.font_editor = None
 
 	def get_file_path(self, title, _type="open"):
@@ -237,15 +259,17 @@ class PySFeditWindow(Gtk.Window):
 			return path
 		dialog.destroy()
 
-	def on_but_new_clicked(self, button):
+	def __on_but_new_clicked(self, button):
 		self.new_font_dialog()
+
+	def __on_but_import_clicked(self, button):
+		self.import_font_dialog()
 
 	def on_menu_new_clicked(self, submenu):
 		self.new_font_dialog()
 
 	def on_menu_import_clicked(self, submenu):
-		path = self.get_file_path("Import file")
-		print("File : %s" % path)
+		self.import_font_dialog()
 
 	def on_menu_export_clicked(self, submenu):
 		self.export_font_dialog()
@@ -257,11 +281,28 @@ class PySFeditWindow(Gtk.Window):
 		if r == Gtk.ResponseType.OK:
 			header = d.get_header()
 			self.button_new.destroy()
+			self.button_import.destroy()
 			self.font_editor = FontEditor(header)
 			self.top_grid.attach(self.font_editor, 0, 1, 1, 1)
 			self.top_grid.show_all()
 		d.destroy()
 	
+	def import_font_dialog(self):
+		if self.font_editor: self.font_editor.destroy()
+		path = self.get_file_path("Import file")
+		if path.lower().endswith(".asm"):
+			font = psflib.import_font_from_asm(path)
+		elif path.lower.endswith('.psf'):
+			pass
+		else:
+			return
+		self.button_new.destroy()
+		self.button_import.destroy()
+		self.font_editor = FontEditor(font.get_header(), font)
+		self.top_grid.attach(self.font_editor, 0, 1, 1, 1)
+		self.top_grid.show_all()
+		
+		
 	def export_font_dialog(self):
 		if not self.font_editor:
 			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
@@ -405,11 +446,16 @@ class NewUnicodeRepresentationDialog(Gtk.Dialog):
 		return self.codepoint
 
 class GlyphSelector(Gtk.Grid):
+	"""
 	
+	Args:
+		font (PcScreenFont): A font to initialize the glyphselector
+			with.	
+	"""
 	TITLE_CODEPOINT = "Codepoint"
 	TITLE_UNICODE = "Unicode"
 	
-	def __init__(self):
+	def __init__(self, font = None):
 		Gtk.ScrolledWindow.__init__(self)
 		
 		self.changed_callback = None
@@ -462,6 +508,9 @@ class GlyphSelector(Gtk.Grid):
 		self.tree_view.set_enable_tree_lines(True)
 		
 		self.attach(self.scrolled_window, 0, 1, 1, 1)
+		
+		if font:
+			self.__load_font_data(font)
 		
 	def set_glyph_display_size(self, size):
 		"""Set the display size of the pixbuf showing a glyph
@@ -803,6 +852,39 @@ class GlyphSelector(Gtk.Grid):
 		if self.edited_callback:
 			self.edited_callback(primary_codepoint, old_codepoint,
 					new_codepoint)
+
+	def __load_font_data(self, font):
+		"""Load glyphs and their unicode representations from a
+		PcScreenFont.
+		
+		Args:
+			font (PcScreenFont): The font to laod glyphs and unicode
+				representations from.
+		"""
+		for pc, glyph in font.get_glyphs().items():
+			pixbuf = self.__pixbuf_from_glyph(glyph)
+			self.add_glyph(pc, pixbuf)
+			for cp in glyph.get_unicode_representations():
+				self.add_repr(pc, cp)
+		to_select = self.model.get_iter_first()
+		if to_select:
+			self.selection.select_iter(to_select)
+			
+	def __pixbuf_from_glyph(self, glyph):
+		size = glyph.get_size()
+		img = Image.new('RGBA', size, (0,0,0,0))
+		draw = ImageDraw.Draw(img)
+		for y, row in zip(range(size[1]),
+								glyph.get_data()):
+			for x, pixel in zip(range(size[0]), row):
+				if pixel == 1:
+					draw.point((x, y), (0,0,0,255))
+		data = img.tobytes()
+		w, h = img.size
+		data = GLib.Bytes.new(data)		
+		pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(data,
+					GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4)
+		return pixbuf
 			
 	def __on_treeview_clicked_event(self, treeview, event):
 		"""This method is called, when the user does a right click

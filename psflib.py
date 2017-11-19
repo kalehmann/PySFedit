@@ -54,7 +54,7 @@ def get_codepoint(char):
 	codepoint = ord(char)
 	return codepoint
 
-def import_font_from_asm(self, path):
+def import_font_from_asm(path):
 	"""Imports a font from an assembler file.
 	
 	Args:
@@ -81,19 +81,21 @@ def import_font_from_asm(self, path):
 			continue
 		if label_expression.match(data[i]):
 			for j in range(i, len(data)):
-				values  = data[j] \
-							.replace('db', '') \
-							.replace('dd', '') \
-							.split(',')
-				if (not label_expression.match(data[j]) and
-					values):
-					labels[data[i][:-1]] = values
-					break
+				if not label_expression.match(data[j]):
+					raw_values  = data[j] \
+								.replace('\n', ' ') \
+								.replace('db', '') \
+								.replace('dd', '') \
+								.split(',')
+					values = []
+					for v in raw_values:
+						if v.strip():
+							values.append(int(v, 16))
+					if values:
+						labels[data[i][:-1]] = values
+						break
 		i += 1
-	for key in labels.keys():
-		for i in range(len(labels[key])):
-			labels[key][i] = int(labels[key][i].strip(), 16)
-
+	
 	if labels['magic_bytes'] == PSF1_MAGIC_BYTES:
 		header = PsfHeaderv1((8, labels['charsize'][0]))
 		header.set_mode(labels['mode'][0])
@@ -123,7 +125,7 @@ def import_font_from_asm(self, path):
 				) and sum(v)
 	}
 
-	font = PcSreenFont(header)
+	font = PcScreenFont(header)
 	for k in labels.keys():
 		pc = int(k.replace('glyph_', ''))
 		glyph = font.get_glyph(pc)
@@ -770,6 +772,14 @@ class PcScreenFont(object):
 			return (True if self.flags & PSF2_HAS_UNICODE_TABLE
 						 else False)
 			
+	def get_header(self):
+		"""Get the header of the font.
+		
+		Returns:
+			PsfHeader: The header of the font		
+		"""
+		return self.header
+			
 	def get_glyph(self, codepoint):
 		"""Get a glyph of the font by its primary codepoint
 		If the font does not have a glyph with the given codepoint as
@@ -791,6 +801,15 @@ class PcScreenFont(object):
 		glyph.add_unicode_representation(codepoint)
 		self.glyphs[codepoint] = glyph
 		return glyph
+		
+	def get_glyphs(self):
+		"""Get a dictionary with all glyphs of the font.
+		
+		Returns:
+			dict: A dictionary with the scheme
+				{ primary unicode representation : glyph }
+		"""
+		return self.glyphs.copy()
 		
 	def update_unicode_representation(self, primary_cp, old_cp, new_cp):
 		"""Updates the unicode representation of a glyph
@@ -921,6 +940,14 @@ class Glyph(object):
 		"""
 		return codepoint in self.unicode_representations
 	
+	def get_unicode_representations(self):
+		"""Get a list with all unicode representations of the glyph
+		
+		Returns:
+			list: A list with all unicode representations of the glyph		
+		"""
+		return self.unicode_representations
+	
 	def copy_data(self, data):
 		"""Update the bitmap with given data
 		
@@ -946,9 +973,9 @@ class Glyph(object):
 				If the value of this integer is 1, then the pixel is set
 		
 		"""
-		return self.data
+		return self.data[:]
 	
-	def set_data_from_bytes(_bytes):
+	def set_data_from_bytes(self, _bytes):
 		"""Set the data of the bitmap from an array of byte objects
 		
 		Args:
@@ -966,6 +993,15 @@ class Glyph(object):
 			for j in range(self.width):
 				line.append(bits[i * bits_per_line + j])
 			self.data.append(line)
+		
+	def get_size(self):
+		"""Get the size of the glyph
+		
+		Returns:
+			tuple: A tuple with the width of the glyph as first value
+				and the height as second		
+		"""
+		return self.width, self.height
 		
 	def __repr__(self):
 		out = "Unicode representations:\n"
