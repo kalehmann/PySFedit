@@ -30,7 +30,7 @@ class FontEditor(Gtk.Grid):
 			self.font_grid.set_data(first_glyph.get_data())
 			self.active_char = min_cp
 		else:
-			psflib.PcScreenFont(header)
+			self.font = psflib.PcScreenFont(header)
 				
 		self.button_add = Gtk.Button(None,
 				image=Gtk.Image(stock=Gtk.STOCK_ADD))
@@ -44,7 +44,7 @@ class FontEditor(Gtk.Grid):
 		
 		self.top_grid.attach(self.button_add, 0, 0, 1, 1)
 		self.top_grid.attach(self.button_remove, 1, 0, 1, 1)
-		self.attach(self.glyph_selector, 3, 0, 2, 2)
+		self.attach(self.glyph_selector, 3, 1, 1, 1)
 		self.attach(self.font_grid, 0,1,3,1)
 		
 		
@@ -345,48 +345,70 @@ class NewFontDialog(Gtk.Dialog):
 		self.entry_height.set_text("8")
 		grid.attach(self.entry_height, 1, 1, 1, 1)
 		
-		l2 = Gtk.Label("PSF version:")
-		grid.attach(l2, 0, 2, 1, 1)
+		stack = Gtk.Stack()
+		stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
+		stack.set_transition_duration(50)
 		
-		box_version = Gtk.Box()
-		grid.attach(box_version, 1, 2, 1, 1)
+		grid_v1 = Gtk.Grid()
 		
-		self.but_v1 = Gtk.RadioButton.new_with_label_from_widget(None,
-						"PSFv1")
-		self.but_v1.connect("toggled", self.__on_psf_version_changed, 1)
-		box_version.pack_start(self.but_v1, False, False, 0)
+		grid_v2 = Gtk.Grid()
+				
+		stack.add_titled(grid_v1, "grid_v1", "PSFv1")
+		stack.add_titled(grid_v2, "grid_v2", "PSFv2")
 		
-		self.but_v2 = Gtk.RadioButton.new_with_label_from_widget(
-						self.but_v1, "PSFv2")
-		self.but_v2.connect("toggled", self.__on_psf_version_changed, 2)
-		box_version.pack_start(self.but_v2, False, False, 0)
+		stack.connect("notify::visible-child", self.__on_stack_changed)
 		
+		stack_switcher = Gtk.StackSwitcher()
+		stack_switcher.set_stack(stack)
+		
+		grid.attach(stack_switcher, 0, 2, 2, 1)
+		grid.attach(stack, 0, 3, 2, 1)
+		self.stack = stack
+
+		lglyph_num = Gtk.Label("Number of Glyphs:")
+		box = Gtk.Box()
+		self.button256 = Gtk.RadioButton.new_with_label_from_widget(
+			None, "256")
+		self.button256.connect("toggled", self.__on_glyph_num_changed,
+			256)
+		box.pack_start(self.button256, False, False, 0)
+		self.button512 = Gtk.RadioButton.new_with_label_from_widget(
+			self.button256, "512")
+		self.button512.connect("toggled", self.__on_glyph_num_changed,
+			512)
+		box.pack_start(self.button512, False, False, 0)
+		grid_v1.attach(lglyph_num, 0,0,1,1)
+		grid_v1.attach(box, 1,0,1,1)
+
+
 		l3 = Gtk.Label("Include unicode table:")
-		grid.attach(l3, 0, 3, 1, 1)
+		grid.attach(l3, 0, 4, 1, 1)
 		
 		self.check_table = Gtk.CheckButton()
-		grid.attach(self.check_table, 1, 3, 1, 1)
+		grid.attach(self.check_table, 1, 4, 1, 1)
 				
 		self.show_all()
 		
-		
+	def __on_glyph_num_changed(self, button, number):
+		pass	
 	
-	def __on_psf_version_changed(self, radiobutton, version):
-		if radiobutton.get_active():
-			if version == 1:
-				self.entry_width.set_text("8")
-				self.entry_width.set_sensitive(False)
-			elif version == 2:
-				self.entry_width.set_editable(True)
-				self.entry_width.set_sensitive(True)
-			
+	def __on_stack_changed(self, stack, name):
+		if stack.get_visible_child_name() == "grid_v1":
+			self.entry_width.set_text("8")
+			self.entry_width.set_sensitive(False)
+		else:
+			self.entry_width.set_editable(True)
+			self.entry_width.set_sensitive(True)
+				
 	def get_header(self):
 		size = (int(self.entry_width.get_text()),
 				int(self.entry_height.get_text()))
 		unicode_tab = self.check_table.get_active()
-		if self.but_v1.get_active():
+		if self.stack.get_visible_child_name() == "grid_v1":
 			header = psflib.PsfHeaderv1(size)
 			if unicode_tab: header.set_mode(psflib.PSF1_MODEHASTAB)
+			if self.button512.get_active():
+				header.set_mode(psflib.PSF1_MODE512)
 		else:
 			header = psflib.PsfHeaderv2(size)
 			if unicode_tab:
@@ -496,11 +518,11 @@ class GlyphSelector(Gtk.Grid):
 							codepoint_renderer, text=2)
 		self.tree_view.append_column(codepoint_column)
 		
-		grid = Gtk.Grid()
-		grid.attach(self.tree_view, 0,0,1,1)
-		self.scrolled_window.add(grid)		
+		box = Gtk.Box()
+		box.add(self.tree_view)
+		self.scrolled_window.add(box)		
 		self.scrolled_window.set_property("min-content-width", 250)
-		self.scrolled_window.set_property("min-content-height", 300)
+		self.scrolled_window.set_property("min-content-height", 200)
 		
 		self.selection = self.tree_view.get_selection()
 		self.selection.set_mode(Gtk.SelectionMode.SINGLE)

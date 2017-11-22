@@ -547,8 +547,8 @@ class AsmExporter(object):
 	def create_bitmaps(self):
 		self.string += "font_bitmaps:\n"
 		if self.header.has_unicode_table():
-			for i, glyph in zip(range(len(self.font.glyphs)),
-								self.font.glyphs.values()):
+			for i, glyph in zip(range(len(self.font.get_glyphs())),
+								self.font.glyphs.get_glyphs().values()):
 				self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
 			return
 			
@@ -566,11 +566,15 @@ class AsmExporter(object):
 		for i in range(glyph_count):
 			glyph = self.font.get_glyph(i)
 			self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
-			
+
+	def create_unicode_table(self):
+		pass
 
 	def export(self, path):
 		self.create_header()
 		self.create_bitmaps()
+		if self.font.has_unicode():
+			self.create_unicode_table()
 		
 		with open(path, "w") as f:
 			f.write(self.string)
