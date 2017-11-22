@@ -426,6 +426,15 @@ class ByteArray(object):
 		self.__bytes = _bytes
 		
 	@staticmethod
+	def from_int(i):
+		bytevalues = []
+		while i:
+			remainder = i % 256
+			i = int(i/256)
+			bytevalues.append(Byte.from_int(remainder))
+		return ByteArray(list(reversed(bytevalues)))
+		
+	@staticmethod
 	def from_bit_array(bits):
 		_bytes = []
 		if len(bits) % 8:
@@ -461,7 +470,8 @@ class ByteArray(object):
 			ba.append(int(byte))
 		return ba
 		
-	def to_asm(self, label, linelength=80, intent=0, tab_size=4):
+	def to_asm(self, label='' , linelength=80, intent=0, tab_size=4,
+			end_with_linebreak = True):
 		# Check if intent, linelength and the length of the label are
 		# matching.
 		if len(label) + 5 + intent * tab_size > linelength:
@@ -472,7 +482,7 @@ class ByteArray(object):
 				 (linelength, intent, tab_size, len(label)))
 					
 		line = " " * intent * tab_size
-		line += "%s: db " % label 
+		line += "%s: db " % label if label else ''
 		lines = []
 		for i, byte in zip(range(len(self.__bytes)), self.__bytes):
 			to_add = "%s" % byte.hex()
@@ -488,6 +498,8 @@ class ByteArray(object):
 		out = ""
 		for line in lines:
 			out += "%s\n" % line
+		if not end_with_linebreak:
+			out = out[:-1]
 		return out
 		
 	def __check_bytes(self, _bytes):
@@ -550,11 +562,19 @@ class AsmExporter(object):
 			for i, glyph in zip(range(len(self.font.get_glyphs())),
 								self.font.glyphs.get_glyphs().values()):
 				self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
+			if self.header.version_psf == PSF1_VERSION:
+				if self.header.mode & PSF1_MODE512:
+					glyph_count = 512 
+				else:
+					glyph_count = 256
+				glyph = Glyph(self.header.size)
+				for i in range(len(self.font.get_glyphs()), glyph_count):
+					self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
 			return
 			
 		# Has no Unicode table
 		if self.header.version_psf == PSF1_VERSION:
-			if self.header.mode & PSF1_MAXMODE:
+			if self.header.mode & PSF1_MODE512:
 				# 512 Glyphs
 				glyph_count = 512
 			else:
@@ -568,7 +588,10 @@ class AsmExporter(object):
 			self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
 
 	def create_unicode_table(self):
-		pass
+		for i, glyph in zip(range(len(self.font.get_glyphs())),
+								self.font.glyphs.get_glyphs().values()):
+			_bytes = ByteArray()
+			pass
 
 	def export(self, path):
 		self.create_header()

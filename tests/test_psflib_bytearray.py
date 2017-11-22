@@ -20,5 +20,8 @@ class TestByteArray(unittest.TestCase):
 		with self.assertRaises(TypeError):
 			psflib.ByteArray([b1, object()])
 			
-	def test_to_asm(self):
-		pass
+	def test_from_int(self):
+		ba = psflib.ByteArray.from_int(255)
+		self.assertEqual(ba.to_asm(), "0xff\n")
+		ba = psflib.ByteArray.from_int(65535)
+		self.assertEqual(ba.to_asm(), "0xff, 0xff\n")
