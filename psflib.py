@@ -453,6 +453,17 @@ class ByteArray(object):
 	def __len__(self):
 		return len(self.__bytes)
 		
+	def __add__(self, other):
+		if type(self) != type(other):
+			raise NotImplementedError
+		return ByteArray(self.__bytes + other.get_bytes())
+	
+	def __iadd__(self, other):
+		if type(self) != type(other):
+			raise NotImplementedError
+		self.__bytes += other.get_bytes()
+		return self
+		
 	def add_byte(self, byte):
 		self.add_bytes([byte])
 		
@@ -793,10 +804,10 @@ class PcScreenFont(object):
 		Returns:
 			bool : True if it has an unicode table else False
 		"""
-		if self.header.psf_version == PSF1_VERSION:
-			return True if self.mode & PSF1_MODEHASTAB else False
+		if self.header.version_psf == PSF1_VERSION:
+			return True if self.header.mode & PSF1_MODEHASTAB else False
 		else:
-			return (True if self.flags & PSF2_HAS_UNICODE_TABLE
+			return (True if self.header.flags & PSF2_HAS_UNICODE_TABLE
 						 else False)
 			
 	def get_header(self):
