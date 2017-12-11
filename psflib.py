@@ -613,11 +613,11 @@ class AsmExporter(object):
 				glyph_count = 256
 			for puc, glyph in self.font.get_glyphs().items():
 				_bytes = ByteArray.from_int(puc, 2)
-				if len(glyph.get_unicode_representations()) > 1:
-					_bytes += ByteArray.from_int(0xFFFE, 2)
-					for uc in glyph.get_unicode_representations():
-						if uc != puc:
-							_bytes += ByteArray.from_int(uc, 2)
+				#if len(glyph.get_unicode_representations()) > 1:
+				#	_bytes += ByteArray.from_int(0xFFFE, 2)
+				for uc in glyph.get_unicode_representations():
+					if uc != puc:
+						_bytes += ByteArray.from_int(uc, 2)
 				_bytes += ByteArray.from_int(0xFFFF, 2)		
 				self.string += _bytes.to_asm('Unicodedescription%d' % puc)
 			for i in range(glyph_count - len(self.font.get_glyphs())):
