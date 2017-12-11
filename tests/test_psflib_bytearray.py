@@ -1,7 +1,7 @@
 import unittest
 import psflib
 
-BITS = [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0]
+BITS = [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0]   
 
 class TestByteArray(unittest.TestCase):
 	
@@ -27,8 +27,11 @@ class TestByteArray(unittest.TestCase):
 		ba = psflib.ByteArray.from_int(65535)
 		self.assertEqual(ba.to_asm(), "0xff, 0xff\n")
 		ba = psflib.ByteArray.from_int(7 ** 30)
-		self.assertEqual(ba.to_asm(), "0x12, 0xa4, 0xe4, 0x15, 0xe1, 0xe1, 0xb3, 0x00, 0x00, 0x00, 0xd1\n")
-
+		self.assertEqual(ba.to_asm(), "0xd1, 0x00, 0x00, 0x00, 0xb3, 0xe1, 0xe1, 0x15, 0xe4, 0xa4, 0x12\n")
+		ba = psflib.ByteArray.from_int(0xFFFFF, 2)
+		self.assertEqual(ba.to_asm(), "0xff, 0xff\n")
+		ba = psflib.ByteArray.from_int(16, 4)
+		self.assertEqual(ba.to_asm(), "0x10, 0x00, 0x00, 0x00\n")
 
 	def test_addition(self):
 		b = psflib.Byte.from_int

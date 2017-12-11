@@ -426,13 +426,18 @@ class ByteArray(object):
 		self.__bytes = _bytes
 		
 	@staticmethod
-	def from_int(i):
+	def from_int(i, fixed_len=0):
 		bytevalues = []
 		while i:
 			remainder = i % 256
 			i = int(i/256)
 			bytevalues.append(Byte.from_int(remainder))
-		return ByteArray(list(reversed(bytevalues)))
+		if fixed_len and len(bytevalues) > fixed_len:
+			bytevalues = bytevalues[:fixed_len]
+		elif fixed_len and len(bytevalues) < fixed_len:
+			for _ in range(fixed_len - len(bytevalues)):
+				bytevalues.append(Byte.from_int(0))
+		return ByteArray(bytevalues)
 		
 	@staticmethod
 	def from_bit_array(bits):
@@ -571,7 +576,7 @@ class AsmExporter(object):
 		self.string += "font_bitmaps:\n"
 		if self.header.has_unicode_table():
 			for i, glyph in zip(range(len(self.font.get_glyphs())),
-								self.font.glyphs.get_glyphs().values()):
+								self.font.get_glyphs().values()):
 				self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
 			if self.header.version_psf == PSF1_VERSION:
 				if self.header.mode & PSF1_MODE512:
@@ -599,10 +604,27 @@ class AsmExporter(object):
 			self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
 
 	def create_unicode_table(self):
-		for i, glyph in zip(range(len(self.font.get_glyphs())),
-								self.font.glyphs.get_glyphs().values()):
-			_bytes = ByteArray()
+		if self.header.version_psf == PSF1_VERSION:
+			if self.header.mode & PSF1_MODE512:
+				# 512 Glyphs
+				glyph_count = 512
+			else:
+				# 256 Glyphs
+				glyph_count = 256
+			for puc, glyph in self.font.get_glyphs().items():
+				_bytes = ByteArray.from_int(puc, 2)
+				if len(glyph.get_unicode_representations()) > 1:
+					_bytes += ByteArray.from_int(0xFFFE, 2)
+					for uc in glyph.get_unicode_representations():
+						if uc != puc:
+							_bytes += ByteArray.from_int(uc, 2)
+				_bytes += ByteArray.from_int(0xFFFF, 2)		
+				self.string += _bytes.to_asm('Unicodedescription%d' % puc)
+			for i in range(glyph_count - len(self.font.get_glyphs())):
+				self.string += ByteArray.from_int(0xFFFF, 2).to_asm('Placeholder%d' % i)
+		else:
 			pass
+			
 
 	def export(self, path):
 		self.create_header()
