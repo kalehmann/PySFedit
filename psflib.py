@@ -736,7 +736,7 @@ class PsfHeaderv1(PsfHeader):
 			PSF1_MODEHASSEQ = 0x04
 			PSF1_MAXMODE    = 0x05
 		"""
-		if mode > 7:
+		if mode > 5:
 			raise Exception("Error, undefined bits set in PSF1 mode")
 		self.mode |= mode
 	def unset_mode(self, mode):
