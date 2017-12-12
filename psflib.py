@@ -134,6 +134,85 @@ def import_font_from_asm(path):
 		
 	return font
 
+class AsmParser(object):
+	
+	__LABEL_EXPR = re.compile('([a-zA-Z0-9_]+:)')
+	# There are more operants for declaring initialized data, but we
+	# just need these two
+	__DECLARATORS_EXPR = re.compile('(db|DB|dw|DW)')
+	__HEXADECIMAL_EXPR = re.compile(
+		'(0[x|h][0-9a-fA-F]+|[0-9a-fA-F]+h)')
+	__OCTAL_EXPR = re.compile('(0[o|q][0-7]+|[0-7]+[o|q])')
+	__BINARY_EXPR = re.compile(
+		'(0[y|b][0|1][0|1|_]+[0|1]|[0|1][0|1|_]+[0|1][y|b])')
+	__DECIMAL_EXPR = re.compile('(0d[0-9]+|[0-9]+d|[0-9]+)')
+	__DECLARATOR_BYTES_LOWER = 'db'
+	__DECLARATOR_WORDS_LOWER = 'dw'
+	
+	
+	def __init__(self, asm_string):
+		self.__labels = {}
+		self.__parse_asm(asm_string)
+		
+	def __split_n_cleanup(self, asm_string):
+		data = self.__LABEL_EXPR.split(asm_string)
+		i = 0
+		while i < len(data):
+			data[i] = data[i].strip()\
+				.replace('\t', ' ')\
+				.replace('\n', ' ')
+			if not data[i]: del data[i]
+			i += 1
+			
+		return data
+	
+	def __make_bytearrays(self, data_string):
+		data = self.__DECLARATORS_EXPR.split(data_string)
+		
+		i = 0
+		while i < len(data):
+			if not self.__DECLARATORS_EXPR.match(data[i]):
+				if (i == 0 or
+				    not self.__DECLARATORS_EXPR_EXPR.match(data[i-1])):
+					raise ParseError(
+						("Error while parsing %s, could not extract " +
+						 "values") % data_string)
+			if data[i-1].lower() == self.__DECLARATOR_BYTES_LOWER:
+				print(self.__get_integers(data[i]))
+			elif data[i-1].lower() == self.__DECLARATOR_WORDS_LOWER:
+				pass 
+		
+		return data 	
+	
+	def __get_integers(self, data_string):
+		ints = []
+		for i in data_string.replace(' ', '').split(','):
+			if self.__BINARY_EXPR.match(i):
+				i = i.replace('y', 'b').replace('_', '')
+				ints.append(int(i, 2))
+			elif self.__OCTAL_EXPR.match(i):
+				i = i.replace('q', 'o')
+				ints.append(int(i, 8))
+			elif self.__HEXADECIMAL_EXPR.match(i):
+				i = i.replace('h', '')
+				ints.append(int(i, 16))
+			elif self.__DECIMAL_EXPR.match(i):
+				i = i.replace('d', '')
+				ints.append(int(i, 10))
+			else:
+				raise ValueError('Could not parse %s in %s as integer' %
+					i, data_string)
+				
+		
+	def __parse_asm(self, asm_string):
+		data = self.__split_n_cleanup(asm_string)
+		# ToDo a function which populates self.__labels
+		
+		print(data)
+		
+	def __getattr__(self, name):
+		raise AttributeError
+
 class Byte(object):
 	"""This class represents a byte
 	
