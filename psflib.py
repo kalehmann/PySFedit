@@ -166,21 +166,26 @@ class AsmParser(object):
 			
 		return data
 	
-	def __make_bytearrays(self, data_string):
+	def __make_bytearray(self, data_string):
 		data = self.__DECLARATORS_EXPR.split(data_string)
 		
 		i = 0
+		
+		ba = ByteArray()
+		
 		while i < len(data):
 			if not self.__DECLARATORS_EXPR.match(data[i]):
 				if (i == 0 or
 				    not self.__DECLARATORS_EXPR_EXPR.match(data[i-1])):
-					raise ParseError(
+					raise Exception(
 						("Error while parsing %s, could not extract " +
 						 "values") % data_string)
 			if data[i-1].lower() == self.__DECLARATOR_BYTES_LOWER:
-				print(self.__get_integers(data[i]))
+				for j in self.__get_integers(data[i]):
+					ba += ByteArray([Byte.from_int(j)])
 			elif data[i-1].lower() == self.__DECLARATOR_WORDS_LOWER:
-				pass 
+				for j in self.__get_integers(data[i]):
+					ba += ByteArray().from_int(j, 2)
 		
 		return data 	
 	
@@ -206,9 +211,20 @@ class AsmParser(object):
 		
 	def __parse_asm(self, asm_string):
 		data = self.__split_n_cleanup(asm_string)
-		# ToDo a function which populates self.__labels
+	
+		labels = []
+
+		i = 0
+		while i < len(data):
+			if self.__LABEL_EXPR.match(data[i]):
+				labels.append(data[i])
+			else:
+				ba = self.__make_bytearray(data[i])
+				for l in lables():
+					self.__labels[l] = ba
+			i += 1
 		
-		print(data)
+		print(self.__labels)
 		
 	def __getattr__(self, name):
 		raise AttributeError
