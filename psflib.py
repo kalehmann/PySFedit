@@ -171,42 +171,48 @@ class AsmParser(object):
 		
 		i = 0
 		
-		ba = ByteArray()
-		
+		ba = ByteArray()				
+						
 		while i < len(data):
-			if not self.__DECLARATORS_EXPR.match(data[i]):
+			if not data[i]:
+				i +=1
+				continue
+				
+			if None == self.__DECLARATORS_EXPR.search(data[i]):
 				if (i == 0 or
-				    not self.__DECLARATORS_EXPR_EXPR.match(data[i-1])):
+				    None == self.__DECLARATORS_EXPR.search(data[i-1])):
 					raise Exception(
 						("Error while parsing %s, could not extract " +
 						 "values") % data_string)
 			if data[i-1].lower() == self.__DECLARATOR_BYTES_LOWER:
 				for j in self.__get_integers(data[i]):
-					ba += ByteArray([Byte.from_int(j)])
+					print(j, ba.to_asm(), data[i])
+					ba.add_byte(Byte.from_int(j))
 			elif data[i-1].lower() == self.__DECLARATOR_WORDS_LOWER:
 				for j in self.__get_integers(data[i]):
 					ba += ByteArray().from_int(j, 2)
-		
-		return data 	
+			i += 1
+		return ba 	
 	
 	def __get_integers(self, data_string):
 		ints = []
 		for i in data_string.replace(' ', '').split(','):
-			if self.__BINARY_EXPR.match(i):
+			if None != self.__BINARY_EXPR.search(i):
 				i = i.replace('y', 'b').replace('_', '')
 				ints.append(int(i, 2))
-			elif self.__OCTAL_EXPR.match(i):
+			elif None != self.__OCTAL_EXPR.search(i):
 				i = i.replace('q', 'o')
 				ints.append(int(i, 8))
-			elif self.__HEXADECIMAL_EXPR.match(i):
+			elif None != self.__HEXADECIMAL_EXPR.search(i):
 				i = i.replace('h', '')
 				ints.append(int(i, 16))
-			elif self.__DECIMAL_EXPR.match(i):
+			elif None != self.__DECIMAL_EXPR.search(i):
 				i = i.replace('d', '')
 				ints.append(int(i, 10))
 			else:
 				raise ValueError('Could not parse %s in %s as integer' %
 					i, data_string)
+		return ints			
 				
 		
 	def __parse_asm(self, asm_string):
@@ -220,11 +226,13 @@ class AsmParser(object):
 				labels.append(data[i])
 			else:
 				ba = self.__make_bytearray(data[i])
-				for l in lables():
-					self.__labels[l] = ba
+				for l in labels:
+					self.__labels[l.replace(':', '')] = ba
+				labels = []
 			i += 1
 		
-		print(self.__labels)
+		for k, v in self.__labels.items():
+			print(k,v.to_asm())
 		
 	def __getattr__(self, name):
 		raise AttributeError
