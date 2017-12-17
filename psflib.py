@@ -646,6 +646,14 @@ class ByteArray(object):
 		self.__bytes += other.get_bytes()
 		return self
 		
+	def __eq__(self, other):
+		if type(self) != type(other):
+			return False
+		for i in range(self.__len__()):
+			if int(self.__bytes[i]) != int(other.get_bytes()[i]):
+				return False
+		return self.__len__() == len(other)
+		
 	def add_byte(self, byte):
 		self.add_bytes([byte])
 		

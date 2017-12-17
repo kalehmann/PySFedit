@@ -42,3 +42,14 @@ class TestByteArray(unittest.TestCase):
 		
 		ba1 += ba2		
 		self.assertEqual(ba1.to_asm(), "0x01, 0x02, 0x03, 0x04\n")
+		
+	def test_comparisation(self):
+		b = psflib.Byte.from_int
+		ba1 = psflib.ByteArray([b(1), b(2), b(3), b(4)])
+		ba2 = psflib.ByteArray([b(1), b(2), b(3), b(4)])
+		ba3 = psflib.ByteArray([b(1), b(2), b(3), b(4), b(5)])
+		ba4 = object()
+		
+		self.assertEqual(ba1, ba2)
+		self.assertNotEqual(ba1, ba3)
+		self.assertNotEqual(ba1, ba4)
