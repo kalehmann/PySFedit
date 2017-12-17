@@ -195,31 +195,32 @@ class AsmParser(object):
 		self.__labels = {}
 		self.__parse_asm(asm_string)
 		
-	"""This method returns all labels, which were found in the assembler
-	code and their data as bytearrays.
 	
-	Returns:
-		dict: A dictionary with the labels as keys and their data as
-			values
-	"""	
 	def get_labels(self):
+		"""This method returns all labels, which were found in the
+		assembler code and their data as bytearrays.
+	
+		Returns:
+			dict: A dictionary with the labels as keys and their data as
+				values
+		"""	
 		return self.__labels
 		
-	"""This method allows you to access labels found in the code as
-	class attributes
-	"""
 	def __getattr__(self, name):
+		"""This method allows you to access labels found in the code as
+		class attributes
+		"""
 		if name in self.__labels:
 			return self.__labels[name]
 		raise AttributeError
 		
-	"""This method splits the nasm asm code before and after every label
-	and removes linebreaks and tabs.
-	
-	Returns:
-		list: A list with the splitted code
-	"""
 	def __split_n_cleanup(self, asm_string):
+		"""This method splits the nasm asm code before and after every label
+		and removes linebreaks and tabs.
+	
+		Returns:
+			list: A list with the splitted code
+		"""
 		data = self.__LABEL_EXPR.split(asm_string)
 		i = 0
 		while i < len(data):
@@ -231,14 +232,14 @@ class AsmParser(object):
 			
 		return data
 	
-	"""This method parses a string with declared initialized data
-	(see http://www.nasm.us/doc/nasmdoc3.html#section-3.2.1) and makes
-	a bytearray out of it.
-	
-	Returns:
-		ByteArray	
-	"""
 	def __make_bytearray(self, data_string):
+		"""This method parses a string with declared initialized data
+		(see http://www.nasm.us/doc/nasmdoc3.html#section-3.2.1) and
+		makes a bytearray out of it.
+	
+		Returns:
+			ByteArray	
+		"""
 		data = self.__DECLARATORS_EXPR.split(data_string)
 		
 		i = 0
@@ -265,18 +266,20 @@ class AsmParser(object):
 			i += 1
 		return ba 	
 	
-	"""This method parses integers from a string in many different
-	formats (decimal, binary, octal, hexadecimal).
-	For allowed notations see
-	(http://www.nasm.us/doc/nasmdoc3.html#section-3.4.1)
 	
-	Args:
-		data_string (str): A string with numbers seperated by commatas.
-	
-	Returns:
-		list: A list with the integers extraced from the data_string	
-	"""
 	def __get_integers(self, data_string):
+		"""This method parses integers from a string in many different
+		formats (decimal, binary, octal, hexadecimal).
+		For allowed notations see
+		(http://www.nasm.us/doc/nasmdoc3.html#section-3.4.1)
+	
+		Args:
+			data_string (str): A string with numbers seperated by
+				commatas.
+	
+		Returns:
+			list: A list with the integers extraced from the data_string	
+		"""
 		ints = []
 		for i in data_string.replace(' ', '').split(','):
 			if None != self.__BINARY_EXPR.match(i):
@@ -296,14 +299,13 @@ class AsmParser(object):
 					i, data_string)
 		return ints			
 				
-	"""This method parses an raw nasm assembler string and fills
-	self.__labels
-	
-	Args:
-		asm_string (str): The raw nasm assembler code
-	
-	"""
 	def __parse_asm(self, asm_string):
+		"""This method parses an raw nasm assembler string and fills
+		self.__labels
+	
+		Args:
+			asm_string (str): The raw nasm assembler code
+		"""
 		data = self.__split_n_cleanup(asm_string)
 	
 		labels = []
