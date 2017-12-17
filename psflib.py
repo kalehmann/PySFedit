@@ -135,7 +135,16 @@ def import_font_from_asm(path):
 	return font
 
 class AsmParser(object):
+	"""This class exists to import and parse data from the nasm
+	assembler format.
 	
+	Args:
+		asm_string (string): The raw nasm assembler code	
+		
+	Notes:
+		All labels found in the code are accesible as attributes at an
+		instance of this class
+	"""
 	__LABEL_EXPR = re.compile('([a-zA-Z0-9_]+:)')
 	# There are more operants for declaring initialized data, but we
 	# just need these two
@@ -144,7 +153,7 @@ class AsmParser(object):
 		'(0[x|h][0-9a-fA-F]+|[0-9a-fA-F]+h)')
 	__OCTAL_EXPR = re.compile('(0[o|q][0-7]+|[0-7]+[o|q])')
 	__BINARY_EXPR = re.compile(
-		'(0[y|b][0|1][0|1|_]+[0|1]|[0|1][0|1|_]+[0|1][y|b])')
+		'(0[yb](?!_)[0-1_]+(?<!_)|(?!_)[0-1_]+(?<!_)[by])')
 	__DECIMAL_EXPR = re.compile('(0d[0-9]+|[0-9]+d|[0-9]+)')
 	__DECLARATOR_BYTES_LOWER = 'db'
 	__DECLARATOR_WORDS_LOWER = 'dw'
@@ -154,6 +163,30 @@ class AsmParser(object):
 		self.__labels = {}
 		self.__parse_asm(asm_string)
 		
+	"""This method returns all labels, which were found in the assembler
+	code and their data as bytearrays.
+	
+	Returns:
+		dict: A dictionary with the labels as keys and their data as
+			values
+	"""	
+	def get_labels(self):
+		return self.__labels
+		
+	"""This method allows you to access labels found in the code as
+	class attributes
+	"""
+	def __getattr__(self, name):
+		if name in self.__labels:
+			return self.__labels[name]
+		raise AttributeError
+		
+	"""This method splits the nasm asm code before and after every label
+	and removes linebreaks and tabs.
+	
+	Returns:
+		list: A list with the splitted code
+	"""
 	def __split_n_cleanup(self, asm_string):
 		data = self.__LABEL_EXPR.split(asm_string)
 		i = 0
@@ -166,6 +199,13 @@ class AsmParser(object):
 			
 		return data
 	
+	"""This method parses a string with declared initialized data
+	(see http://www.nasm.us/doc/nasmdoc3.html#section-3.2.1) and makes
+	a bytearray out of it.
+	
+	Returns:
+		ByteArray	
+	"""
 	def __make_bytearray(self, data_string):
 		data = self.__DECLARATORS_EXPR.split(data_string)
 		
@@ -186,7 +226,6 @@ class AsmParser(object):
 						 "values") % data_string)
 			if data[i-1].lower() == self.__DECLARATOR_BYTES_LOWER:
 				for j in self.__get_integers(data[i]):
-					print(j, ba.to_asm(), data[i])
 					ba.add_byte(Byte.from_int(j))
 			elif data[i-1].lower() == self.__DECLARATOR_WORDS_LOWER:
 				for j in self.__get_integers(data[i]):
@@ -194,19 +233,30 @@ class AsmParser(object):
 			i += 1
 		return ba 	
 	
+	"""This method parses integers from a string in many different
+	formats (decimal, binary, octal, hexadecimal).
+	For allowed notations see
+	(http://www.nasm.us/doc/nasmdoc3.html#section-3.4.1)
+	
+	Args:
+		data_string (str): A string with numbers seperated by commatas.
+	
+	Returns:
+		list: A list with the integers extraced from the data_string	
+	"""
 	def __get_integers(self, data_string):
 		ints = []
 		for i in data_string.replace(' ', '').split(','):
-			if None != self.__BINARY_EXPR.search(i):
+			if None != self.__BINARY_EXPR.match(i):
 				i = i.replace('y', 'b').replace('_', '')
 				ints.append(int(i, 2))
-			elif None != self.__OCTAL_EXPR.search(i):
-				i = i.replace('q', 'o')
+			elif None != self.__OCTAL_EXPR.match(i):
+				i = i.replace('q', '').replace('o', '')
 				ints.append(int(i, 8))
-			elif None != self.__HEXADECIMAL_EXPR.search(i):
+			elif None != self.__HEXADECIMAL_EXPR.match(i):
 				i = i.replace('h', '')
 				ints.append(int(i, 16))
-			elif None != self.__DECIMAL_EXPR.search(i):
+			elif None != self.__DECIMAL_EXPR.match(i):
 				i = i.replace('d', '')
 				ints.append(int(i, 10))
 			else:
@@ -214,7 +264,13 @@ class AsmParser(object):
 					i, data_string)
 		return ints			
 				
-		
+	"""This method parses an raw nasm assembler string and fills
+	self.__labels
+	
+	Args:
+		asm_string (str): The raw nasm assembler code
+	
+	"""
 	def __parse_asm(self, asm_string):
 		data = self.__split_n_cleanup(asm_string)
 	
@@ -230,12 +286,6 @@ class AsmParser(object):
 					self.__labels[l.replace(':', '')] = ba
 				labels = []
 			i += 1
-		
-		for k, v in self.__labels.items():
-			print(k,v.to_asm())
-		
-	def __getattr__(self, name):
-		raise AttributeError
 
 class Byte(object):
 	"""This class represents a byte
@@ -251,13 +301,16 @@ class Byte(object):
 		ValueError if the length of bits is not 8 or if there is a bit
 			with an other value than 0 or 1
 	"""	
-	def __init__(self, bits = [0,0,0,0,0,0,0,0]):
-		if len(bits) != 8:
-			raise ValueError("A byte should have 8 bits")
-		for bit in bits:
-			if bit not in (0, 1):
-				raise ValueError("A bit should be either 0 or 1")
-		self.__bits = list(bits)
+	def __init__(self, bits = None):
+		if not bits:
+			self.__bits = [0,0,0,0,0,0,0,0]
+		else:
+			if len(bits) != 8:
+				raise ValueError("A byte should have 8 bits")
+			for bit in bits:
+				if bit not in (0, 1):
+					raise ValueError("A bit should be either 0 or 1")
+			self.__bits = list(bits)
 		
 	@staticmethod	
 	def from_int(integer):
@@ -524,9 +577,12 @@ class Byte(object):
 		return self.__int__() != 0
 
 class ByteArray(object):
-	def __init__(self, _bytes=[]):
-		self.__check_bytes(_bytes)
-		self.__bytes = _bytes
+	def __init__(self, _bytes=None):
+		if _bytes:
+			self.__check_bytes(_bytes)
+			self.__bytes = _bytes
+		else:
+			self.__bytes = []
 		
 	@staticmethod
 	def from_int(i, fixed_len=0):
