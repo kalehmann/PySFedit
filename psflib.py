@@ -133,6 +133,38 @@ def import_font_from_asm(path):
 		glyph.set_data_from_bytes(_bytes) 
 		
 	return font
+	
+class AsmImporter(object):
+	
+	def __init__(self, asm_data):
+		self.asm = AsmParser(asm_data)
+		self.header = None
+		
+	def __build_header(self):
+		psf1_magic = ByteArray()
+		psf2_magic = ByteArray()
+		for i in PSF1_MAGIC_BYTES:
+			psf1_magic.add_byte(Byte.from_int(i))
+		for i in PSF2_MAGIC_BYTES:
+			psf2_magic.add_byte(Byte.from_int(i))		
+		
+	"""This method reads an assemblerfile, which contains psf data.
+	
+	Returns:
+		PcScreenFont	
+	"""	
+	@staticmethod
+	def import_file(file_path):
+		with open(file_path, "r") as _file:
+			data = _file.read()
+				
+		return AsmImporter.import_string(data)
+		
+	@staticmethod
+	def import_string(_str):
+		imp = AsmImporter(_str)
+		
+		
 
 class AsmParser(object):
 	"""This class exists to import and parse data from the nasm
@@ -458,22 +490,6 @@ class Byte(object):
 	
 		Returns:
 			bool : True if the nt value of the byte is equal to the int
-				value of the other object else False
-		"""
-		if int(other) == self.__int__():
-			return True
-		return False
-	
-	def __eq__(self, other):
-		"""Checks if the int value of the byte is equal to the int value
-		of another object
-	
-		Args:
-			other (int or at least convertable to an integer) : The
-				object to compare the byte with
-	
-		Returns:
-			bool : True if the int value of the byte is equal to the int
 				value of the other object else False
 		"""
 		if int(other) == self.__int__():
