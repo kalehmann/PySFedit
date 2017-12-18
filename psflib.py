@@ -181,8 +181,8 @@ class AsmImporter(object):
 		return self.__header	
 			
 	def __get_header_psf_v1(self):
-		charsize = int(self.__asm.charsize[0])
-		mode = int(self.__asm.mode[0])
+		charsize = int(self.__asm.charsize)
+		mode = int(self.__asm.mode)
 		header = PsfHeaderv1([8, charsize])
 		header.set_mode(mode)
 		
@@ -741,6 +741,13 @@ class ByteArray(object):
 		if not end_with_linebreak:
 			out = out[:-1]
 		return out
+	
+	def __int__(self):
+		ival = 0
+		for i, b in zip(range(self.__len__()), self.__bytes):
+			ival += int(b) * (256 ** i)
+
+		return ival
 		
 	def __check_bytes(self, _bytes):
 		for byte in _bytes:

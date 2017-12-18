@@ -33,6 +33,12 @@ class TestByteArray(unittest.TestCase):
 		ba = psflib.ByteArray.from_int(16, 4)
 		self.assertEqual(ba.to_asm(), "0x10, 0x00, 0x00, 0x00\n")
 
+	def test_to_int(self):
+		ba = psflib.ByteArray.from_int(256)
+		self.assertEqual(int(ba), 256)
+		ba = psflib.ByteArray.from_int(256289)
+		self.assertEqual(int(ba), 256289)
+
 	def test_addition(self):
 		b = psflib.Byte.from_int
 		ba1 = psflib.ByteArray([b(1), b(2)])
