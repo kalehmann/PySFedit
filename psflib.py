@@ -137,16 +137,8 @@ def import_font_from_asm(path):
 class AsmImporter(object):
 	
 	def __init__(self, asm_data):
-		self.asm = AsmParser(asm_data)
-		self.header = None
-		
-	def __build_header(self):
-		psf1_magic = ByteArray()
-		psf2_magic = ByteArray()
-		for i in PSF1_MAGIC_BYTES:
-			psf1_magic.add_byte(Byte.from_int(i))
-		for i in PSF2_MAGIC_BYTES:
-			psf2_magic.add_byte(Byte.from_int(i))		
+		self.__asm = AsmParser(asm_data)
+		self.__header = None
 		
 	"""This method reads an assemblerfile, which contains psf data.
 	
@@ -163,7 +155,41 @@ class AsmImporter(object):
 	@staticmethod
 	def import_string(_str):
 		imp = AsmImporter(_str)
+
+	def __get_header(self):
+		psf1_magic = ByteArray()
+		psf2_magic = ByteArray()
+		for i in PSF1_MAGIC_BYTES:
+			psf1_magic.add_byte(Byte.from_int(i))
+		for i in PSF2_MAGIC_BYTES:
+			psf2_magic.add_byte(Byte.from_int(i))
 		
+		if not self.__asm.has_label('magic_bytes'):
+			raise Exception(
+				'Could not read font from asm file, since it has no ' +
+				'label named "magic_bytes"')
+		
+		if self.__asm.magic_bytes == psf1_magic:
+			self.__header = self.__get_header_psf_v1()
+		elif self.__asm.magic_bytes == psf2_magic:
+			self.__header = self.__get_header_psf_v2()
+		else:
+			raise Exception(
+				'The magic bytes of the font do not match any known ' +
+				'magic bytes'
+			)
+		return self.__header	
+			
+	def __get_header_psf_v1(self):
+		charsize = int(self.__asm.charsize[0])
+		mode = int(self.__asm.mode[0])
+		header = PsfHeaderv1([8, charsize])
+		header.set_mode(mode)
+		
+		return header
+		
+	def __get_header_psf_v2(self):
+		pass
 		
 
 class AsmParser(object):
