@@ -139,6 +139,7 @@ class AsmImporter(object):
 	def __init__(self, asm_data):
 		self.__asm = AsmParser(asm_data)
 		self.__header = None
+		self.__font = None
 		
 	"""This method reads an assemblerfile, which contains psf data.
 	
@@ -155,8 +156,16 @@ class AsmImporter(object):
 	@staticmethod
 	def import_string(_str):
 		imp = AsmImporter(_str)
+		return imp.build_font()
 
-	def __get_header(self):
+	def build_font(self):
+		header = self.__build_header()
+		self.__font = PcScreenFont(header)
+		self.__build_glyphs()
+		
+		return self.__font
+
+	def __build_header(self):
 		psf1_magic = ByteArray()
 		psf2_magic = ByteArray()
 		for i in PSF1_MAGIC_BYTES:
@@ -179,6 +188,13 @@ class AsmImporter(object):
 				'magic bytes'
 			)
 		return self.__header	
+			
+	def __build_glyphs(self):
+		for label, data in self.__asm.get_labels().items():
+			if label.startswith('glyph_'):
+				primary_codepoint = int(label.replace('glyph_', ''))
+				glyph = self.__font.get_glyph(primary_codepoint)
+				glyph.set_data_from_bytes(data)
 			
 	def __get_header_psf_v1(self):
 		charsize = int(self.__asm.charsize)
