@@ -189,7 +189,18 @@ class AsmImporter(object):
 		return header
 		
 	def __get_header_psf_v2(self):
-		pass
+		a = self.__asm
+		version = int(a.version)
+		flags = int(a.flags)
+		length = int(a.length)
+		height = int(a.height)
+		width = int(a.width)
+		
+		header = PsfHeaderv2([width, height])
+		header.set_flags(flags)
+		header.set_length(length)
+		
+		return header
 		
 
 class AsmParser(object):
@@ -206,7 +217,7 @@ class AsmParser(object):
 	__LABEL_EXPR = re.compile('([a-zA-Z0-9_]+:)')
 	# There are more operants for declaring initialized data, but we
 	# just need these two
-	__DECLARATORS_EXPR = re.compile('(db|DB|dw|DW)')
+	__DECLARATORS_EXPR = re.compile('(db|DB|dw|DW|dd|DD)')
 	__HEXADECIMAL_EXPR = re.compile(
 		'(0[x|h][0-9a-fA-F]+|[0-9a-fA-F]+h)')
 	__OCTAL_EXPR = re.compile('(0[o|q][0-7]+|[0-7]+[o|q])')
@@ -215,6 +226,7 @@ class AsmParser(object):
 	__DECIMAL_EXPR = re.compile('(0d[0-9]+|[0-9]+d|[0-9]+)')
 	__DECLARATOR_BYTES_LOWER = 'db'
 	__DECLARATOR_WORDS_LOWER = 'dw'
+	__DECLARATOR_DWORDS_LOWER = 'dd'
 	
 	
 	def __init__(self, asm_string):
@@ -296,12 +308,17 @@ class AsmParser(object):
 					raise Exception(
 						("Error while parsing %s, could not extract " +
 						 "values") % data_string)
+			
 			if data[i-1].lower() == self.__DECLARATOR_BYTES_LOWER:
 				for j in self.__get_integers(data[i]):
 					ba.add_byte(Byte.from_int(j))
 			elif data[i-1].lower() == self.__DECLARATOR_WORDS_LOWER:
 				for j in self.__get_integers(data[i]):
 					ba += ByteArray().from_int(j, 2)
+			elif data[i-1].lower() == self.__DECLARATOR_DWORDS_LOWER:
+				for j in self.__get_integers(data[i]):
+					ba += ByteArray().from_int(j, 4)
+			
 			i += 1
 		return ba 	
 	
@@ -758,7 +775,7 @@ class ByteArray(object):
 class AsmExporter(object):
 	def __init__(self, font):
 		self.font = font
-		self.header = font.header
+		self.header = font.get_header()
 		if self.header.version_psf == PSF1_VERSION:
 			self.version = 1
 		elif self.header.version_psf == PSF2_VERSION:
@@ -779,7 +796,7 @@ class AsmExporter(object):
 			self.string += "headersize: dd %s\n" % hex(
 								self.header.headersize)
 			self.string += "flags: dd %s\n" % hex(self.header.flags)
-			self.string += "length: dd %s\n" % hex(len(self.font))
+			self.string += "length: dd %s\n" % hex(self.header.length)
 			self.string += "charsize: dd %s\n" % hex(
 								self.header.charsize)
 			self.string += "height: dd %s\n" % hex(self.header.height)
@@ -869,7 +886,7 @@ class AsmExporter(object):
 class PsfExporter(object):
 	def __init__(self, font):
 		self.font = font
-		self.header = font.header
+		self.header = font.get_header()
 		if self.header.version_psf == PSF1_VERSION:
 			self.version = 1
 		elif self.header.version_psf == PSF2_VERSION:
@@ -1001,9 +1018,18 @@ class PsfHeaderv2(PsfHeader):
 		self.version = PSF2_MAXVERSION
 		self.headersize = 32	# Values are encoded as 4byte integers
 		self.flags = 0
+		self.length = 0
 		self.width = size[0]
 		self.height = size[1]
 		self.charsize = size[1] * int((size[0]+7) / 8)
+
+	def set_length(self, length):
+		"""Set the number of glyphs of the font
+		
+		Args:
+			length (int): Number of glyphs to set
+		"""
+		self.length = length
 
 	def set_flags(self, flags):
 		"""Set one or more flags of the PSF2.
@@ -1069,6 +1095,8 @@ class PcScreenFont(object):
 		Returns:
 			PsfHeader: The header of the font		
 		"""
+		self.header.set_length(self.__len__())
+		
 		return self.header
 			
 	def get_glyph(self, codepoint):
