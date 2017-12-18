@@ -20,5 +20,7 @@ class TestAsmParser(unittest.TestCase):
 			'0xff, 0x00, 0xff, 0xff\n')
 		self.assertEqual(ap.test_words2.to_asm(),
 			'0xff, 0x00, 0xff, 0xff\n')
+		self.assertTrue(ap.has_label('test2'))
+		self.assertFalse(ap.has_label('test3'))
 		
 		

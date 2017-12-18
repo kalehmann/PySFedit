@@ -206,6 +206,19 @@ class AsmParser(object):
 		"""	
 		return self.__labels
 		
+	def has_label(self, name):
+		"""This method can be used to determine wether the parsed asm
+		code contains a label or name.
+		
+		Args:
+			name (str): The name of the label to check
+			
+		Returns:
+			bool: Wether the parsed code contains the label or not
+		
+		"""
+		return name in self.__labels
+		
 	def __getattr__(self, name):
 		"""This method allows you to access labels found in the code as
 		class attributes
