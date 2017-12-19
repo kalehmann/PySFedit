@@ -275,7 +275,13 @@ class AsmExporter(object):
 				self.string += ByteArray.from_int(0xFFFF, 2).to_asm('Placeholder%d' % i)
 		else:	# psf2
 			for puc, glyph in self.font.get_glyphs().items():
-				pass
+				_bytes = ByteArray.from_bytes(chr(puc).encode('utf8'))
+				for uc in glyph.get_unicode_representations():
+					if uc != puc:
+						_bytes += ByteArray.from_bytes(
+							chr(uc).encode('utf8'))
+				_bytes += ByteArray.from_int(0xFF, 1)	
+				self.string += _bytes.to_asm('Unicodedescription%d' % puc)	
 	
 	def export_string(self):
 		self.string = ''
@@ -505,8 +511,11 @@ class PcScreenFont(object):
 			PsfHeader: The header of the font		
 		"""
 		if self.header.version_psf == PSF2_VERSION:
-			self.header.set_length(self.__len__())
-		
+			if self.header.has_unicode_table():
+				self.header.set_length(len(self.glyphs))
+			else:
+				self.header.set_length(self.__len__())
+			
 		return self.header
 			
 	def get_glyph(self, codepoint):
