@@ -273,8 +273,9 @@ class AsmExporter(object):
 				self.string += _bytes.to_asm('Unicodedescription%d' % puc)
 			for i in range(glyph_count - len(self.font.get_glyphs())):
 				self.string += ByteArray.from_int(0xFFFF, 2).to_asm('Placeholder%d' % i)
-		else:
-			pass
+		else:	# psf2
+			for puc, glyph in self.font.get_glyphs().items():
+				pass
 	
 	def export_string(self):
 		self.string = ''

@@ -303,6 +303,13 @@ class ByteArray(object):
 			_bytes.append(Byte(bits[i*8:(i+1)*8]))
 		return ByteArray(_bytes)
 		
+	@staticmethod
+	def from_bytes(_bytes):
+		byte_list = []
+		for byte in _bytes:
+			byte_list.append(Byte.from_int(byte))
+		return ByteArray(byte_list)
+		
 	def __getitem__(self, key):
 		return self.__bytes[key]
 		

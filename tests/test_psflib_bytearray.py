@@ -70,3 +70,10 @@ class TestByteArray(unittest.TestCase):
 		
 		with self.assertRaises(ValueError):
 			ba2.to_ints(3)
+			
+	def test_from_bytes(self):
+		_bytes = b"\x12\x34\x56\x78"
+		
+		ba = psflib.ByteArray.from_bytes(_bytes)
+		
+		self.assertEqual(ba.to_ints(), [0x12, 0x34, 0x56, 0x78])
