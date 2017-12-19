@@ -207,8 +207,25 @@ class AsmImporter(object):
 			return
 			
 	def __parse_unicode_table_psf1(self):
-		pass
-		
+		descriptions = []
+		for label, data in self.__asm.get_labels().items():
+			if label.startswith('Unicodedescription'):
+				descriptions.append(data.to_ints(2))
+		for i in range(len(descriptions), len(self.__font)):
+			self.__font.remove_glyph(i)
+		for d, i in zip(descriptions, range(len(descriptions))):
+			self.__font.update_unicode_representation(i, i, d[0])
+			glyph = self.__font.get_glyph(d[0])
+			j = 0
+			while j < len(d) and d[j] != 0xffff:
+				if d[j] == 0xfffe:
+					while j < len(d) and d[j] != 0xffff:
+						pass # @ToDo: Parse sequences
+						j += 1
+				else:
+					glyph.add_unicode_representation(d[j])
+					j += 1
+
 	def __parse_unicode_table_psf2(self):
 		pass
 	
@@ -1145,7 +1162,8 @@ class PcScreenFont(object):
 		Returns:
 			PsfHeader: The header of the font		
 		"""
-		self.header.set_length(self.__len__())
+		if self.header.version_psf == PSF2_VERSION:
+			self.header.set_length(self.__len__())
 		
 		return self.header
 			
