@@ -195,6 +195,9 @@ class AsmImporter(object):
 				primary_codepoint = int(label.replace('glyph_', ''))
 				glyph = self.__font.get_glyph(primary_codepoint)
 				glyph.set_data_from_bytes(data)
+	
+	def __has_unicode_table(self):
+		return self.__header.has_unicode_table()
 			
 	def __get_header_psf_v1(self):
 		charsize = int(self.__asm.charsize)

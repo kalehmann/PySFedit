@@ -28,12 +28,13 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=2
-FILE_NAME_0=5001;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpsflib.py;0;4
+current_page=0
+FILE_NAME_0=17271;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpsflib.py;0;4
 FILE_NAME_1=0;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpysfedit.py;0;4
-FILE_NAME_2=661;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ftests%2Ftest_psflib_asmparser.py;0;4
+FILE_NAME_2=220;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ftests%2Ftest_psflib_asmparser.py;0;4
 FILE_NAME_3=0;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ftests%2Ftest_psflib_byte.py;0;4
 FILE_NAME_4=0;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ftests%2Ftest_psflib_bytearray.py;0;4
+FILE_NAME_5=58;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ftests%2Ftest_psflib_asmimporter.py;0;4
 
 [build-menu]
 EX_00_LB=_Execute
