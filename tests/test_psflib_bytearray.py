@@ -59,3 +59,14 @@ class TestByteArray(unittest.TestCase):
 		self.assertEqual(ba1, ba2)
 		self.assertNotEqual(ba1, ba3)
 		self.assertNotEqual(ba1, ba4)
+
+	def test_to_ints(self):
+		b = psflib.Byte.from_int
+		ba1 = psflib.ByteArray([b(1), b(2), b(3)])
+		self.assertEqual(ba1.to_ints(), [1,2,3])
+		
+		ba2 = psflib.ByteArray([b(0xff), b(0x01), b(0x34), b(0x12)])
+		self.assertEqual(ba2.to_ints(2), [0x1ff, 0x1234])
+		
+		with self.assertRaises(ValueError):
+			ba2.to_ints(3)

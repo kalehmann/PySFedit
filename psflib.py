@@ -762,6 +762,21 @@ class ByteArray(object):
 			ba.append(int(byte))
 		return ba
 		
+	def to_ints(self, bytes_per_int=1):
+		if self.__len__() % bytes_per_int:
+			raise ValueError(
+				("The length of the bytearray %d is not divisible " +
+				 "by %d") % (self.__len__(), bytes_per_int)
+			)
+		ints = []
+		for i in range(int(self.__len__() / bytes_per_int)):
+			_int = 0
+			for j in range(bytes_per_int):
+				_int += (int(self.__bytes[i * bytes_per_int + j]) *
+					(256 ** j))
+			ints.append(_int)
+		return ints
+		
 	def to_asm(self, label='' , linelength=80, intent=0, tab_size=4,
 			end_with_linebreak = True):
 		# Check if intent, linelength and the length of the label are
