@@ -318,7 +318,7 @@ class PySFeditWindow(Gtk.Window):
 			return
 		if path.lower().endswith(".asm"):
 			exporter = psflib.AsmExporter(self.font_editor.get_font())
-			exporter.export(path)
+			exporter.export_file(path)
 		elif path.lower().endswith(".psf"):
 			pass
 

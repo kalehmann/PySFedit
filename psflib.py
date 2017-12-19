@@ -849,7 +849,7 @@ class AsmExporter(object):
 			self.version = 2
 		self.string = ""
 		
-	def create_header(self):
+	def __create_header(self):
 		self.string += "font_header:\n"
 		if self.version == 1:
 			magic_bytes = ByteArray(self.header.magic_bytes)
@@ -869,7 +869,7 @@ class AsmExporter(object):
 			self.string += "height: dd %s\n" % hex(self.header.height)
 			self.string += "width: dd %s\n\n" % hex(self.header.width)
 
-	def glyph_to_asm(self, glyph, label):
+	def __glyph_to_asm(self, glyph, label):
 		bits = []
 		for row in glyph.data:
 			for bit in row:
@@ -887,12 +887,12 @@ class AsmExporter(object):
 		return _bytes.to_asm(label)
 
 
-	def create_bitmaps(self):
+	def __create_bitmaps(self):
 		self.string += "font_bitmaps:\n"
 		if self.header.has_unicode_table():
 			for i, glyph in zip(range(len(self.font.get_glyphs())),
 								self.font.get_glyphs().values()):
-				self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
+				self.string += self.__glyph_to_asm(glyph, "glyph_%d" % i)
 			if self.header.version_psf == PSF1_VERSION:
 				if self.header.mode & PSF1_MODE512:
 					glyph_count = 512 
@@ -900,7 +900,7 @@ class AsmExporter(object):
 					glyph_count = 256
 				glyph = Glyph(self.header.size)
 				for i in range(len(self.font.get_glyphs()), glyph_count):
-					self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
+					self.string += self.__glyph_to_asm(glyph, "glyph_%d" % i)
 			return
 			
 		# Has no Unicode table
@@ -916,9 +916,9 @@ class AsmExporter(object):
 			
 		for i in range(glyph_count):
 			glyph = self.font.get_glyph(i)
-			self.string += self.glyph_to_asm(glyph, "glyph_%d" % i)
+			self.string += self.__glyph_to_asm(glyph, "glyph_%d" % i)
 
-	def create_unicode_table(self):
+	def __create_unicode_table(self):
 		if self.header.version_psf == PSF1_VERSION:
 			if self.header.mode & PSF1_MODE512:
 				# 512 Glyphs
@@ -939,16 +939,21 @@ class AsmExporter(object):
 				self.string += ByteArray.from_int(0xFFFF, 2).to_asm('Placeholder%d' % i)
 		else:
 			pass
-			
-
-	def export(self, path):
-		self.create_header()
-		self.create_bitmaps()
+	
+	def export_string(self):
+		self.string = ''
+		self.__create_header()
+		self.__create_bitmaps()
 		if self.font.has_unicode():
-			self.create_unicode_table()
+			self.__create_unicode_table()
+		
+		return self.string	
+
+	def export_file(self, path):
+		data = self.export_string()
 		
 		with open(path, "w") as f:
-			f.write(self.string)
+			f.write(data)
 
 class PsfExporter(object):
 	def __init__(self, font):

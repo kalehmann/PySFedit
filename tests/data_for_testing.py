@@ -1,5 +1,4 @@
-TEST_FONT_PSF1_256_UNICODE = """
-font_header:
+TEST_FONT_PSF1_256_UNICODE = """font_header:
 magic_bytes: db 0x36, 0x04
 mode: db 0x2
 charsize: db 0x8
