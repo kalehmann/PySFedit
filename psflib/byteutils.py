@@ -355,6 +355,12 @@ class ByteArray(object):
 			ba.append(int(byte))
 		return ba
 		
+	def to_bytearray(self):
+		ba = bytearray()
+		for byte in self.__bytes:
+			ba.append(int(byte))
+		return ba
+		
 	def to_ints(self, bytes_per_int=1):
 		if self.__len__() % bytes_per_int:
 			raise ValueError(

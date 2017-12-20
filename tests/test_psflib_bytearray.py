@@ -77,3 +77,17 @@ class TestByteArray(unittest.TestCase):
 		ba = psflib.ByteArray.from_bytes(_bytes)
 		
 		self.assertEqual(ba.to_ints(), [0x12, 0x34, 0x56, 0x78])
+
+	def test_to_bytearray(self):
+		b = psflib.Byte.from_int
+		
+		ba = psflib.ByteArray([b(1), b(2), b(3), b(4)])
+		
+		ba = ba.to_bytearray()
+		
+		self.assertEqual(type(ba), bytearray)
+		self.assertEqual(len(ba), 4)
+		self.assertEqual(ba[0], 1)
+		self.assertEqual(ba[1], 2)
+		self.assertEqual(ba[2], 3)
+		self.assertEqual(ba[3], 4)
