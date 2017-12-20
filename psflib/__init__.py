@@ -124,7 +124,7 @@ class AsmImporter(object):
 			self.__parse_unicode_table_psf1()
 			return
 		if self.__header.version_psf == PSF2_VERSION:
-			self.__parse_unicode_table_psf2
+			self.__parse_unicode_table_psf2()
 			return
 			
 	def __parse_unicode_table_psf1(self):
@@ -148,7 +148,20 @@ class AsmImporter(object):
 					j += 1
 
 	def __parse_unicode_table_psf2(self):
-		pass
+		descriptions = []
+		for label, data in self.__asm.get_labels().items():
+			if label.startswith('Unicodedescription'):
+				descriptions.append(data)
+		for d, i in zip(descriptions, range(len(descriptions))):
+			ba = d.to_bytearray()
+			ba = ba.replace(bytes([0xff]), bytes())
+			uc = ba.split(bytes([0xfe]))[0].decode('utf8')
+			sequences = ba.split(bytes([0xfe]))[1:]
+			self.__font.update_unicode_representation(i, i, ord(uc[0]))
+			glyph = self.__font.get_glyph(ord(uc[0]))
+			for u in uc:
+				print(u)
+				glyph.add_unicode_representation(ord(u))
 	
 	def __has_unicode_table(self):
 		return self.__header.has_unicode_table()
