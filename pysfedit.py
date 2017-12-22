@@ -288,8 +288,9 @@ class PySFeditWindow(Gtk.Window):
 		d.destroy()
 	
 	def import_font_dialog(self):
-		if self.font_editor: self.font_editor.destroy()
 		path = self.get_file_path("Import file")
+		if not path: return
+		if self.font_editor: self.font_editor.destroy()
 		if path.lower().endswith(".asm"):
 			font = psflib.AsmImporter.import_file(path)
 		elif path.lower.endswith('.psf'):
