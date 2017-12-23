@@ -1,6 +1,14 @@
 #! /usr/bin/python3
 # -*- coding: utf-8 -*-
 
+"""
+This module contains a custom gtk widget, which provides a canvas for
+drawing glyphs.
+
+Furthermore there is one class for modifiyng the appearance of the
+widget and one for managing its data.
+"""
+
 import gi
 gi.require_version("Gtk", "3.0")
 gi.require_foreign("cairo")
@@ -136,12 +144,13 @@ class GlyphEditorContext(object):
 	__GLYPH_SIZE = [8, 8]
 	__BLANK_PIXEL = 0
 	__SET_PIXEL = 1
-	BUTTON_LEFT = 1
-	BUTTON_RIGHT = 3
+	SET_PIXEL = 1
+	CLEAR_PIXEL = 2
 	
-	def __init__(self):
+	def __init__(self, glyph_editor):
 		self.__glyph_size = self.__GLYPH_SIZE[:]
 		self.__pixels = self.__get_pixel_list()
+		self.__parent_glyph_editor = glyph_editor
 		
 	def __get_pixel_list(self):
 		"""Returns a list representing the pixels of the glyph.
@@ -159,6 +168,12 @@ class GlyphEditorContext(object):
 		]
 		
 	def get_pixels(self):
+		"""Get a reference to the list representing the pixels of a
+		glyph.
+		
+		Returns:
+			list: A list of lists of integers.		
+		"""
 		return self.__pixels
 
 	def set_glyph_size(self, glyph_size):
@@ -174,6 +189,7 @@ class GlyphEditorContext(object):
 		# over the get_pixels() method, he can still use it.
 		self.__pixels.clear()
 		self.__pixels += self.__get_pixel_list()
+		self.__parent_glyph_editor.make_size_request()
 		
 	def get_glyph_size(self):
 		"""Get the number of pixels representing a glyph.
@@ -183,13 +199,26 @@ class GlyphEditorContext(object):
 		"""
 		return self.__glyph_size[:]
 		
-	def handle_pixel_event(self, x, y, button):
-		if button == self.BUTTON_LEFT:
+	def handle_pixel_event(self, x, y, action):
+		"""Call this method when a pixel of a glyph get modified.
+		
+		Action represents the action on this pixel (self.SET_PIXEL or
+		self.CLEAR_PIXEL)
+		
+		Args:
+			x (int): The x coordinate of the pixel
+			y (int): The y coordinate of the pixel
+			action (int): The action to perform on this pixel (set or
+				clear)
+		"""
+		if button == self.SET_PIXEL:
 			self.__pixels[y][x] = 1
-		elif button == self.BUTTON_RIGHT:
+		elif button == self.CLEAR_PIXEL:
 			self.__pixels[y][x] = 0
 			
 	def reset_pixels(self):
+		"""Clear all pixels		
+		"""
 		# We do not overwrite self.__pixels here, but modify it. So
 		# if someone have a reference to self.__pixels, for example
 		# over the get_pixels() method, he can still use it.
@@ -197,8 +226,22 @@ class GlyphEditorContext(object):
 		self.__pixels += self.__get_pixel_list()
 
 class GlyphEditor(Gtk.Widget):
-	__gtype_name__ = 'GlyphEditor'
+	"""Custom widget for drawing glyphs.
 	
+	This is a custom gtk widget, which provides a canvas for drawing
+	glyphs.
+	
+	The appeareance of the GlyphEditor can be controlled with an
+	instance of GlyphEditorAttributes. You can get on with the
+	get_attributes method or create your own and the apply it with
+	set_attributes.
+	
+	The size of a glyph in pixels can be set with the set_glyph_size
+	method of the GlyphEditorContext class. Simply get an instance with
+	the get_context method.	
+	"""
+	
+	__gtype_name__ = 'GlyphEditor'
 	
 	def __init__(self, *args, **kwds):
 		super().__init__(*args, **kwds)
@@ -207,31 +250,59 @@ class GlyphEditor(Gtk.Widget):
 		self.__attrs = None
 		self.__requested_size = None
 		
-		self.set_context(GlyphEditorContext())
+		self.set_context(GlyphEditorContext(self))
 		self.set_attributes(GlyphEditorAttributes())
 		
 	def get_data(self):
+		"""Get a reference to the data representing the pixels of a
+		glyph
+		
+		Returns:
+			list: A list of lists of integers representing the pixels of
+				a glyph
+		"""
 		return self.__context.get_pixels()[:]
 		
 	def set_data(self, data):
+		"""Sets the pixels of the glyph editor widget
+		
+		Args:
+			data (list): A list containg lists (the rows) of integers
+				(the pixels)
+		"""
 		for row, i in zip(data, range(len(self.__pixels))):
 			for d, j in zip(row, range(len(row))):
 				self.__pixels[i][j] = d
 		self.queue_draw()
 		
 	def reset(self):
+		"""Clear the canvas - reset all pixels		
+		"""
 		self.__context.reset_pixels()
 		
 	def set_context(self, context):
+		"""Set the GlyphEditorContext of the widget.
+		
+		Args:
+			context (GlyphEditorContext): The context of the widget		
+		"""
 		self.__context = context
 		self.__pixels = context.get_pixels()
 		
-		self.__make_size_request()
+		self.make_size_request()
 		
 	def get_context(self):
+		"""Get a reference to the GlyphEditorContext of the widget.
+		
+		Returns:
+			GlyphEditorContext: The context of the widget		
+		"""
 		return self.__context
 	
-	def __make_size_request(self):
+	def make_size_request(self):
+		"""Let the widget request the size it needs for itself.
+		Should be called before realization.		
+		"""
 		if self.__context and self.__attrs:
 			pixel_size = self.__attrs.get_pixel_size()
 			glyph_size = self.__context.get_glyph_size()
@@ -254,15 +325,27 @@ class GlyphEditor(Gtk.Widget):
 			)
 		self.__attrs = attrs
 		
-		self.__make_size_request()
+		self.make_size_request()
 			
 		
 	def get_attributes(self):
+		"""Get a reference to the attributes of this widget.
+		
+		Returns:
+			GlyphEditorAttributes: The attributes of the widget		
+		"""
 		return self.__attrs
 		
 	def do_draw(self, cr):
+		"""Gets called, wenn the widget should draw itself.
+		
+		Args:
+			cr (Cairo.Context): The cairo context, the widget should
+				draw itself on.		
+		"""
 		# paint background
-		bg_color = self.get_style_context().get_background_color(Gtk.StateFlags.NORMAL)
+		bg_color = self.get_style_context().get_background_color(
+			Gtk.StateFlags.NORMAL)
 		cr.set_source_rgba(*list(bg_color))
 		cr.paint()
 		# draw a diagonal line
@@ -315,6 +398,12 @@ class GlyphEditor(Gtk.Widget):
 			cr.stroke()				
 			
 	def do_motion_notify_event(self, e):
+		"""This method gets called, when there is a mouse motion over
+		the widget.
+		
+		Args:
+			e (Gdk.EventMotion): The event of the motion		
+		"""
 		if e.is_hint:
 			_,x,y,state = e.window.get_pointer()
 		else:
@@ -328,16 +417,22 @@ class GlyphEditor(Gtk.Widget):
 			y = int(y / self.__attrs.get_pixel_size())
 			
 			if state & Gdk.ModifierType.BUTTON1_MASK:
-				button = GlyphEditorContext.BUTTON_LEFT
+				action = GlyphEditorContext.SET_PIXEL
 			elif state & Gdk.ModifierType.BUTTON3_MASK:
-				button = GlyphEditorContext.BUTTON_RIGHT
+				action = GlyphEditorContext.CLEAR_PIXEL
 			else:
 				return
 			
-			self.__context.handle_pixel_event(x,y, button)
+			self.__context.handle_pixel_event(x,y, action)
 			self.queue_draw()
 			
 	def do_button_press_event(self, event):
+		"""This method gets called, when a mousebutton gets pressed in
+		the area of the widget.
+		
+		Args:
+			event (Gdk.EventButton): The event of the button press		
+		"""
 		x = event.x
 		y = event.y
 		button = event.button
@@ -349,13 +444,16 @@ class GlyphEditor(Gtk.Widget):
 			
 			if button == 1: # Left mouse button
 				self.__context.handle_pixel_event(x,y,
-					GlyphEditorContext.BUTTON_LEFT)
+					GlyphEditorContext.SET_PIXEL)
 			elif button == 3: # Right mouse button
 				self.__context.handle_pixel_event(x,y,
-					GlyphEditorContext.BUTTON_RIGHT)
+					GlyphEditorContext.CLEAR_PIXEL)
 			self.queue_draw()
 
 	def do_realize(self):
+		"""This method creates the Gdk ressources associated with the
+		widget.
+		"""
 		a = self.get_allocation()
 		attr = Gdk.WindowAttr()
 		attr.window_type = Gdk.WindowType.CHILD
