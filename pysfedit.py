@@ -225,7 +225,11 @@ class PySFeditWindow(Gtk.Window):
 			self.__on_but_import_clicked)
 		self.top_grid.attach(self.button_import, 0,2,1,1)
 		
-		self.top_grid.attach(GlyphEditor(), 0 , 3 ,1 ,1)
+		gl = GlyphEditor()
+		gl.get_attributes().set_seperation_lines(True)
+		gl.get_attributes().set_draw_unset_pixels(True)
+		
+		self.top_grid.attach(gl, 0 , 3 ,1 ,1)
 		
 		self.font_editor = None
 

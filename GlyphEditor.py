@@ -14,6 +14,9 @@ class GlyphEditorAttributes(object):
 	"""
 	__PIXEL_DRAW_SIZE = 12
 	__PIXEL_MARGIN = 2
+	__SEPERATION_LINES = True
+	__UNSET_PIXEL_COLOR = [0.8, 0.8, 0.8, 1]
+	__DRAW_UNSET_PIXELS = False
 	
 	def __init__(self):
 		self.__pixel_draw_size = self.__PIXEL_DRAW_SIZE
@@ -21,6 +24,9 @@ class GlyphEditorAttributes(object):
 		self.__pixel_size = (
 			self.__pixel_draw_size + 2 * self.__pixel_margin
 		)
+		self.__seperation_lines = self.__SEPERATION_LINES
+		self.__unset_pixel_color = self.__UNSET_PIXEL_COLOR[:]
+		self.__draw_unset_pixels = False
 
 	def get_pixel_size(self):
 		"""Get the total size of a pixel of a glyph on the screen.
@@ -68,6 +74,60 @@ class GlyphEditorAttributes(object):
 			int: Width and height of a pixel drawed on the screen		
 		"""
 		return self.__pixel_draw_size
+	
+	def set_seperation_lines(self, seperation_lines):
+		"""This method sets wether the pixels of the GlyphEditor widget
+		are seperated by lines or not.
+		
+		Args:
+			seperation_lines (bool): Defines wether the pixels of the
+				GlyphEditor widget are seperated by lines or no		
+		"""
+		self.__seperation_lines = seperation_lines
+		
+	def get_seperation_lines(self):
+		"""Use this method to find out, if the pixels of the GlyphEditor
+		widget are currently seperated by lines or not.
+		
+		Returns:
+			bool: Wether the pixels of the GlyphEditor widget are
+				seperated by lines or not.		
+		"""
+		return self.__seperation_lines
+		
+	def set_unset_pixel_color(self, unset_pixel_color):
+		"""Use this method to set the color of unset pixels.
+		
+		Args:
+			unset_pixel_color (list): A list of four floating point
+				values [red, green, blue, alpha]
+		"""
+		self.__unset_pixel_color = unset_pixel_color[:]
+		
+	def get_unset_pixel_color(self):
+		"""Use this method to get the color of unset pixels.
+		
+		Returns:
+			list: A list of four floating point values
+				[red, green, blue, alpha]
+		"""
+		return self.__unset_pixel_color
+		
+	def set_draw_unset_pixels(self, draw_unset_pixels):
+		"""Set wether to draw unset pixels or not.
+		
+		Args:
+			draw_unset_pixels (bool): Wether to draw unset pixels or not
+		"""
+		self.__draw_unset_pixels = draw_unset_pixels
+		
+	def get_draw_unset_pixels(self):
+		"""Get wether to draw unset pixels or not.
+		
+		Returns:
+			bool: Wether to draw unset pixels or not.		
+		"""
+		return self.__draw_unset_pixels
 	
 class GlyphEditorContext(object):
 	"""This class represent the context of a glyph editor widget,
@@ -206,6 +266,32 @@ class GlyphEditor(Gtk.Widget):
 					)
 					cr.fill()
 		cr.stroke()		
+		
+		if self.__attrs.get_seperation_lines():
+			for i in range(1, glyph_size[0]):
+				cr.move_to(i * pixel_size, 0)
+				cr.line_to(i * pixel_size,
+					pixel_size * glyph_size[1])
+			for i in range(1, glyph_size[1]):
+				cr.move_to(0, i * pixel_size)
+				cr.line_to(pixel_size * glyph_size[0],
+					i * pixel_size)
+			cr.stroke()
+		
+		if self.__attrs.get_draw_unset_pixels():
+			cr.set_source_rgba(*self.__attrs.get_unset_pixel_color())
+			
+			for y, row in zip(range(glyph_size[1]), pixels):
+				for x, i in zip(range(glyph_size[0]), row):
+					if not i:
+						cr.rectangle(
+							x * pixel_size + pixel_margin,
+							y * pixel_size + pixel_margin,
+							pixel_draw_size,
+							pixel_draw_size
+						)
+						cr.fill()
+			cr.stroke()				
 			
 	def do_motion_notify_event(self, e):
 		if e.is_hint:
