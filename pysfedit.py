@@ -17,7 +17,14 @@ class FontEditor(Gtk.Grid):
 		Gtk.Grid.__init__(self)
 		
 		self.size = header.size
-		self.font_grid = FontGrid(header.size)
+		
+		self.font_grid = GlyphEditor()
+		ctx = self.font_grid.get_context()
+		ctx.set_glyph_size(header.size)
+		self.font_grid.set_context(ctx)
+		self.font_grid.get_attributes().set_seperation_lines(True)
+		self.font_grid.get_attributes().set_draw_unset_pixels(True)
+		
 		self.top_grid = Gtk.Grid()
 		self.attach(self.top_grid, 0, 0, 1, 1)
 		
@@ -162,13 +169,6 @@ class FontGrid(Gtk.Grid):
 				r.append(1 if checkbutton.get_active() else 0)
 			data.append(r)
 		return data
-		
-	def is_touched(self):
-		for row in self.get_data():
-			for i in row:
-				if i == 1:
-					return True
-		return False
 	
 	def set_data(self, data):
 		for i, row in zip(range(self.size[1]), data):
@@ -224,12 +224,6 @@ class PySFeditWindow(Gtk.Window):
 		self.button_import.connect("clicked",
 			self.__on_but_import_clicked)
 		self.top_grid.attach(self.button_import, 0,2,1,1)
-		
-		gl = GlyphEditor()
-		gl.get_attributes().set_seperation_lines(True)
-		gl.get_attributes().set_draw_unset_pixels(True)
-		
-		self.top_grid.attach(gl, 0 , 3 ,1 ,1)
 		
 		self.font_editor = None
 

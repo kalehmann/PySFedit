@@ -173,7 +173,7 @@ class GlyphEditorContext(object):
 		# if someone have a reference to self.__pixels, for example
 		# over the get_pixels() method, he can still use it.
 		self.__pixels.clear()
-		self.__pixels += self.__get_pixel_list(self)
+		self.__pixels += self.__get_pixel_list()
 		
 	def get_glyph_size(self):
 		"""Get the number of pixels representing a glyph.
@@ -188,6 +188,13 @@ class GlyphEditorContext(object):
 			self.__pixels[y][x] = 1
 		elif button == self.BUTTON_RIGHT:
 			self.__pixels[y][x] = 0
+			
+	def reset_pixels(self):
+		# We do not overwrite self.__pixels here, but modify it. So
+		# if someone have a reference to self.__pixels, for example
+		# over the get_pixels() method, he can still use it.
+		self.__pixels.clear()
+		self.__pixels += self.__get_pixel_list()
 
 class GlyphEditor(Gtk.Widget):
 	__gtype_name__ = 'GlyphEditor'
@@ -203,9 +210,23 @@ class GlyphEditor(Gtk.Widget):
 		self.set_context(GlyphEditorContext())
 		self.set_attributes(GlyphEditorAttributes())
 		
+	def get_data(self):
+		return self.__context.get_pixels()[:]
+		
+	def set_data(self, data):
+		for row, i in zip(data, range(len(self.__pixels))):
+			for d, j in zip(row, range(len(row))):
+				self.__pixels[i][j] = d
+		self.queue_draw()
+		
+	def reset(self):
+		self.__context.reset_pixels()
+		
 	def set_context(self, context):
 		self.__context = context
 		self.__pixels = context.get_pixels()
+		
+		self.__make_size_request()
 		
 	def get_context(self):
 		return self.__context
