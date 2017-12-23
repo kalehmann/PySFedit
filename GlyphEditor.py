@@ -300,8 +300,8 @@ class GlyphEditor(Gtk.Widget):
 			x = e.x
 			y = e.y
 			state = e.state
-		if (x < self.requested_size[0] and
-			y < self.requested_size[1]):
+		if (0 < x < self.requested_size[0] and
+			0 < y < self.requested_size[1]):
 				
 			x = int(x / self.__attrs.get_pixel_size())
 			y = int(y / self.__attrs.get_pixel_size())
@@ -321,8 +321,8 @@ class GlyphEditor(Gtk.Widget):
 		y = event.y
 		button = event.button
 				
-		if (x < self.requested_size[0] and
-			y < self.requested_size[1]):
+		if (0 < x < self.requested_size[0] and
+			0 < y < self.requested_size[1]):
 			x = int(x / self.__attrs.get_pixel_size())
 			y = int(y / self.__attrs.get_pixel_size())
 			
