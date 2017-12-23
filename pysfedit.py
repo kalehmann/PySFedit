@@ -8,6 +8,7 @@ from gi.repository import GdkPixbuf
 from gi.repository import GLib
 from gi.repository import Gdk
 from PIL import Image, ImageDraw
+from GlyphEditor import GlyphEditor
 
 import psflib
 
@@ -224,6 +225,8 @@ class PySFeditWindow(Gtk.Window):
 			self.__on_but_import_clicked)
 		self.top_grid.attach(self.button_import, 0,2,1,1)
 		
+		self.top_grid.attach(GlyphEditor(), 0 , 3 ,1 ,1)
+		
 		self.font_editor = None
 
 	def get_file_path(self, title, _type="open"):
@@ -258,7 +261,7 @@ class PySFeditWindow(Gtk.Window):
 			dialog.destroy()
 			return path
 		dialog.destroy()
-
+		
 	def __on_but_new_clicked(self, button):
 		self.new_font_dialog()
 
