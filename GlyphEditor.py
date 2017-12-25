@@ -211,9 +211,9 @@ class GlyphEditorContext(object):
 			action (int): The action to perform on this pixel (set or
 				clear)
 		"""
-		if button == self.SET_PIXEL:
+		if action == self.SET_PIXEL:
 			self.__pixels[y][x] = 1
-		elif button == self.CLEAR_PIXEL:
+		elif action == self.CLEAR_PIXEL:
 			self.__pixels[y][x] = 0
 			
 	def reset_pixels(self):
