@@ -415,14 +415,18 @@ class PsfExporter(object):
 			self.bytes.append(int(i))
 			
 	def export_file(self, path):
+		with open(path, "wb") as f:
+			f.write(self.export_bytearray())
+
+	def export_bytearray(self):
 		self.bytes = bytearray()
 		self.create_header()
-		self.create_bitmaps() 
+		self.create_bitmaps()
 		self.create_unicode_table()
+		return self.bytes
 
-		with open(path, "wb") as f:
-			f.write(self.bytes)
-
+class PsfImporter(object):
+	pass
 
 class PsfHeader(object):
 	"""This class is the base for a header for the PC Screen Font
