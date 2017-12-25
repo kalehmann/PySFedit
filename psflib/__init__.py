@@ -319,15 +319,22 @@ class PsfExporter(object):
 			self.version = 1
 		elif self.header.version_psf == PSF2_VERSION:
 			self.version = 2
-		self.bytes = bytearray()
-	
+				
 	def int_to_bytes(self, n):
 		bts = []
-		if 0 <= n <= 4294967295:
+		if 0 <= n <= 0x100 ** 4 - 1:
 			for i in range(4):
 				bts.append(n % 0x100)
 				n = n / 0x100
 		return bts
+	
+	def glyph_to_bytearray(self, glyph):
+		ba = bytearray()
+		for row in glyph.data:
+			b = ByteArray.from_bit_array(row)
+			for i in b:
+				ba.append(int(i))
+		return ba	
 	
 	def create_header(self):
 		for i in self.header.magic_bytes:
@@ -344,6 +351,77 @@ class PsfExporter(object):
 			self.bytes.append(self.int_to_bytes(self.header.height))
 			self.bytes.append(self.int_to_bytes(self.header.width))
 
+	def create_bitmaps(self):
+		if self.header.has_unicode_table():
+			for i, glyph in zip(range(len(self.font.get_glyphs())),
+								self.font.get_glyphs().values()):
+				self.bytes += self.glyph_to_bytearray(glyph)
+				
+			if self.header.version_psf == PSF1_VERSION:
+				if self.header.mode & PSF1_MODE512:
+					glyph_count = 512 
+				else:
+					glyph_count = 256
+				glyph = Glyph(self.header.size)
+				for i in range(len(self.font.get_glyphs()), glyph_count):
+					self.bytes += self.glyph_to_bytearray(glyph)
+			return
+			
+		# Has no Unicode table
+		if self.header.version_psf == PSF1_VERSION:
+			if self.header.mode & PSF1_MODE512:
+				# 512 Glyphs
+				glyph_count = 512
+			else:
+				# 256 Glyphs
+				glyph_count = 256
+		else:
+			glyph_count = len(self.font)
+			
+		for i in range(glyph_count):
+			glyph = self.font.get_glyph(i)
+			self.bytes += self.glyph_to_bytearray(glyph)
+			
+	def create_unicode_table(self):
+		ba = ByteArray()
+		if self.header.version_psf == PSF1_VERSION:
+			if self.header.mode & PSF1_MODE512:
+				# 512 Glyphs
+				glyph_count = 512
+			else:
+				# 256 Glyphs
+				glyph_count = 256
+			for puc, glyph in self.font.get_glyphs().items():
+				_bytes = ByteArray.from_int(puc, 2)
+				#if len(glyph.get_unicode_representations()) > 1:
+				#	_bytes += ByteArray.from_int(0xFFFE, 2)
+				for uc in glyph.get_unicode_representations():
+					if uc != puc:
+						_bytes += ByteArray.from_int(uc, 2)
+				_bytes += ByteArray.from_int(0xFFFF, 2)		
+				ba += _bytes
+			for i in range(glyph_count - len(self.font.get_glyphs())):
+				ba += ByteArray.from_int(0xFFFF, 2)
+		else:	# psf2
+			for puc, glyph in self.font.get_glyphs().items():
+				_bytes = ByteArray.from_bytes(chr(puc).encode('utf8'))
+				for uc in glyph.get_unicode_representations():
+					if uc != puc:
+						_bytes += ByteArray.from_bytes(
+							chr(uc).encode('utf8'))
+				_bytes += ByteArray.from_int(0xFF, 1)	
+				ba += _bytes
+		for i in ba:
+			self.bytes.append(int(i))
+			
+	def export_file(self, path):
+		self.bytes = bytearray()
+		self.create_header()
+		self.create_bitmaps() 
+		self.create_unicode_table()
+
+		with open(path, "wb") as f:
+			f.write(self.bytes)
 
 
 class PsfHeader(object):

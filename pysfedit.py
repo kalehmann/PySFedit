@@ -282,7 +282,8 @@ class PySFeditWindow(Gtk.Window):
 			exporter = psflib.AsmExporter(self.font_editor.get_font())
 			exporter.export_file(path)
 		elif path.lower().endswith(".psf"):
-			pass
+			exporter = psflib.PsfExporter(self.font_editor.get_font())
+			exporter.export_file(path)
 
 class NewFontDialog(Gtk.Dialog):
 	def __init__(self, parent):
