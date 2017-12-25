@@ -327,7 +327,7 @@ class PsfExporter(object):
 			for i in range(4):
 				bts.append(n % 0x100)
 				n = n / 0x100
-		return bts.reverse()
+		return bts
 	
 	def create_header(self):
 		for i in self.header.magic_bytes:
