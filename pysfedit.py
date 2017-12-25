@@ -8,6 +8,7 @@ from gi.repository import GdkPixbuf
 from gi.repository import GLib
 from gi.repository import Gdk
 from PIL import Image, ImageDraw
+from GlyphEditor import GlyphEditor
 
 import psflib
 
@@ -16,7 +17,12 @@ class FontEditor(Gtk.Grid):
 		Gtk.Grid.__init__(self)
 		
 		self.size = header.size
-		self.font_grid = FontGrid(header.size)
+		
+		self.font_grid = GlyphEditor()
+		ctx = self.font_grid.get_context().set_glyph_size(header.size)
+		self.font_grid.get_attributes().set_seperation_lines(True)
+		self.font_grid.get_attributes().set_draw_unset_pixels(True)
+		
 		self.top_grid = Gtk.Grid()
 		self.attach(self.top_grid, 0, 0, 1, 1)
 		
@@ -133,51 +139,6 @@ class FontEditor(Gtk.Grid):
 	def __set_font(self):
 		print("test")
 		
-class FontGrid(Gtk.Grid):
-	"""Grid with checkbuttons to edit the pixel representation of a char
-	
-		Arguments:
-			size -> size of the character in pixels. 2-value tuple
-					first value is the width and second the height
-	"""
-	def __init__(self, size):
-		Gtk.Grid.__init__(self)
-		self.size = size
-		self.checkbuttons = []
-	
-		for y in range(size[1]):
-			self.checkbuttons.append([])
-			for x in range(size[0]):
-				cb = Gtk.CheckButton()
-				self.attach(cb, x, y, 1, 1)
-				self.checkbuttons[y].append(cb)
-		self.show_all()
-		
-	def get_data(self):
-		data = []
-		for row in self.checkbuttons:
-			r = []
-			for checkbutton in row:
-				r.append(1 if checkbutton.get_active() else 0)
-			data.append(r)
-		return data
-		
-	def is_touched(self):
-		for row in self.get_data():
-			for i in row:
-				if i == 1:
-					return True
-		return False
-	
-	def set_data(self, data):
-		for i, row in zip(range(self.size[1]), data):
-			for j, element in zip(range(self.size[0]), row):
-				self.checkbuttons[i][j].set_active(element == 1)
-						
-	def reset(self):
-		for child in self.get_children():
-			child.set_active(False)
-
 class PySFeditWindow(Gtk.Window):
 	def __init__(self):
 		Gtk.Window.__init__(self, title="PySFedit")
@@ -258,7 +219,7 @@ class PySFeditWindow(Gtk.Window):
 			dialog.destroy()
 			return path
 		dialog.destroy()
-
+		
 	def __on_but_new_clicked(self, button):
 		self.new_font_dialog()
 
