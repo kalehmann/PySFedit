@@ -494,7 +494,7 @@ class PsfImporter(object):
 		if self.__header.version_psf == PSF2_VERSION:
 			self.build_glyphs_psf_v2()
 		
-	def __parse_unicode_table():
+	def __parse_unicode_table(self):
 		if self.__header.version_psf == PSF1_VERSION:
 			self.__parse_unicode_table_psf1()
 			return
@@ -527,7 +527,7 @@ class PsfImporter(object):
 		
 	def __get_header_psf_v1(self):
 		charsize = self.__bytearray[3]
-		mode = self.__bytearray[4]
+		mode = self.__bytearray[2]
 		header = PsfHeaderv1([8, charsize])
 		header.set_mode(mode)
 		
@@ -560,7 +560,7 @@ class PsfImporter(object):
 		while i < len(data):
 			if data[i:i+2] != bytearray([0xff, 0xff]):
 				primary_codepoint = bytearray_to_int(data[i:i+2])
-				self.font.update_unicode_representation(n,n,
+				self.__font.update_unicode_representation(n,n,
 					primary_codepoint)
 				glyph = self.__font.get_glyph(primary_codepoint)
 			else:
