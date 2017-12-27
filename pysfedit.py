@@ -254,8 +254,8 @@ class PySFeditWindow(Gtk.Window):
 		if self.font_editor: self.font_editor.destroy()
 		if path.lower().endswith(".asm"):
 			font = psflib.AsmImporter.import_file(path)
-		elif path.lower.endswith('.psf'):
-			pass
+		elif path.lower().endswith('.psf'):
+			font = psflib.PsfImporter.import_file(path)
 		else:
 			return
 		self.button_new.destroy()
