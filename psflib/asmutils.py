@@ -1,4 +1,5 @@
 import re
+from collections import OrderedDict
 from psflib.byteutils import Byte, ByteArray
 
 class AsmParser(object):
@@ -28,7 +29,7 @@ class AsmParser(object):
 	
 	
 	def __init__(self, asm_string):
-		self.__labels = {}
+		self.__labels = OrderedDict()
 		self.__parse_asm(asm_string)
 		
 	

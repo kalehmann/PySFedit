@@ -25,7 +25,7 @@ glyph_0: db 0x00, 0x38, 0x44, 0x44, 0x44, 0x44, 0x38, 0x00
 class TestAsmImporter(unittest.TestCase):
 	
 	def test_parse_psf1(self):
-		font = psflib.AsmImporter.import_string(
+		font = psflib.AsmImporter.import_from_data(
 			TEST_FONT_PSF1_256_UNICODE)
 		
 		self.assertTrue(font.has_unicode())
@@ -35,4 +35,4 @@ class TestAsmImporter(unittest.TestCase):
 			[48, 79])
 
 	def test_parse_psf2(self):
-		psflib.AsmImporter.import_string(TEST_FONT_PSF2_SIMPLE)
+		psflib.AsmImporter.import_from_data(TEST_FONT_PSF2_SIMPLE)

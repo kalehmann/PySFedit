@@ -17,6 +17,9 @@ PSF1_MAXMODE = 0x05
 PSF1_SEPARATOR = 0xFFFF
 PSF1_STARTSEQ = 0xFFFE
 
+PSF2_SEPARATOR = 0xFF
+PSF2_STARTSEQ = 0xFE
+
 PSF2_MAXVERSION = 0
 PSF2_HAS_UNICODE_TABLE = 0x1
 
@@ -112,7 +115,7 @@ class Importer(ABC):
 		return cls.import_from_data(data)
 	
 	@abstractmethod
-	def __read_data(self, file_path):
+	def _read_data(self, file_path):
 		"""Extract data from a file
 		
 		Args:
@@ -128,7 +131,7 @@ class Importer(ABC):
 		pass
 	
 	@abstractmethod
-	def __build_header(self):
+	def _build_header(self):
 		"""Create a psf header from the data of the importer
 		
 		Returns:
@@ -141,7 +144,7 @@ class Importer(ABC):
 		pass
 	
 	@abstractmethod
-	def __parse_unicode_descriptions(self):
+	def _parse_unicode_descriptions(self):
 		"""Create a list of unicode descriptions from the data of the
 		importer.
 		
@@ -155,7 +158,7 @@ class Importer(ABC):
 		return unicode_descriptions
 	
 	@abstractmethod
-	def __build_glyph(self, glyph, n):
+	def _build_glyph(self, glyph, n):
 		"""Read the data of a glyph of the font
 		
 		Args:
@@ -171,11 +174,14 @@ class Importer(ABC):
 		Returns:
 			PcScreenFont
 		"""
-		header = self.__build_header()
-		length = header.get_length()
-		font = PcScreenFont(header)		
+		self.__header = self._build_header()
+		length = self.__header.get_length()
+		font = PcScreenFont(self.__header)		
 		
-		uc_descriptions = self.__parse_unicode_descriptions()
+		if self.__header.has_unicode_table():
+			uc_descriptions = self._parse_unicode_descriptions()
+		else:
+			uc_descriptions = [[i] for i in range(length)]
 		
 		if len(uc_descriptions) != length:
 			raise Exception(
@@ -186,53 +192,43 @@ class Importer(ABC):
 		for i, descriptions in zip(range(length), uc_descriptions):
 			if descriptions:
 				primary_codepoint = descriptions[0]
-				glyph = self.font.get_glyph(primary_codepoint)
+				glyph = font.get_glyph(primary_codepoint)
 				
 				for codepoint in descriptions[1:]:
 					glyph.add_unicode_representation(codepoint)
-				self.__build_glyph(glyph, n)
+				self._build_glyph(glyph, i)
 		
 		return font				
 	
-	def __get_data(self):
+	def _get_data(self):
 		"""Returns the data assigned with this importer
 		
 		Returns:
 			The data assigned with this importer		
 		"""
 		return self.__data
+		
+	def _get_header(self):
+		"""Returns the header extracted from the data of this importer
+		
+		Returns:
+			PsfHeader: The header	
+		"""
+		return self.__header
 	
-class AsmImporter(object):
-	def __init__(self, asm_data):
-		self.__asm = AsmParser(asm_data)
-		self.__header = None
-		self.__font = None
-		
-	"""This method reads an assemblerfile, which contains psf data.
+class AsmImporter(Importer):
 	
-	Returns:
-		PcScreenFont	
-	"""	
-	@staticmethod
-	def import_file(file_path):
-		with open(file_path, "r") as _file:
-			data = _file.read()
-				
-		return AsmImporter.import_string(data)
+	def __init__(self, data):
+		Importer.__init__(self, data)
+		self.__asm = AsmParser(data)
 		
-	@staticmethod
-	def import_string(_str):
-		imp = AsmImporter(_str)
-		return imp.build_font()
-
-	def build_font(self):
-		header = self.__build_header()
-		self.__font = PcScreenFont(header)
-		self.__build_glyphs()
+	def _read_data(self, file_path):
+		with open(file_path, 'r') as f:
+			data = f.read()
+			
+		return data
 		
-		return self.__font
-
-	def __build_header(self):
+	def _build_header(self):
 		psf1_magic = ByteArray()
 		psf2_magic = ByteArray()
 		for i in PSF1_MAGIC_BYTES:
@@ -246,72 +242,16 @@ class AsmImporter(object):
 				'label named "magic_bytes"')
 		
 		if self.__asm.magic_bytes == psf1_magic:
-			self.__header = self.__get_header_psf_v1()
+			header = self.__get_header_psf_v1()
 		elif self.__asm.magic_bytes == psf2_magic:
-			self.__header = self.__get_header_psf_v2()
+			header = self.__get_header_psf_v2()
 		else:
 			raise Exception(
 				'The magic bytes of the font do not match any known ' +
 				'magic bytes'
 			)
-		return self.__header	
-			
-	def __build_glyphs(self):
-		for label, data in self.__asm.get_labels().items():
-			if label.startswith('glyph_'):
-				primary_codepoint = int(label.replace('glyph_', ''))
-				glyph = self.__font.get_glyph(primary_codepoint)
-				glyph.set_data_from_bytes(data)
-		if self.__has_unicode_table():
-			self.__parse_unicode_table()
+		return header	
 	
-	def __parse_unicode_table(self):
-		if self.__header.version_psf == PSF1_VERSION:
-			self.__parse_unicode_table_psf1()
-			return
-		if self.__header.version_psf == PSF2_VERSION:
-			self.__parse_unicode_table_psf2()
-			return
-			
-	def __parse_unicode_table_psf1(self):
-		descriptions = []
-		for label, data in self.__asm.get_labels().items():
-			if label.startswith('Unicodedescription'):
-				descriptions.append(data.to_ints(2))
-		for i in range(len(descriptions), len(self.__font)):
-			self.__font.remove_glyph(i)
-		for d, i in zip(descriptions, range(len(descriptions))):
-			self.__font.update_unicode_representation(i, i, d[0])
-			glyph = self.__font.get_glyph(d[0])
-			j = 0
-			while j < len(d) and d[j] != 0xffff:
-				if d[j] == 0xfffe:
-					while j < len(d) and d[j] != 0xffff:
-						pass # @ToDo: Parse sequences
-						j += 1
-				else:
-					glyph.add_unicode_representation(d[j])
-					j += 1
-
-	def __parse_unicode_table_psf2(self):
-		descriptions = []
-		for label, data in self.__asm.get_labels().items():
-			if label.startswith('Unicodedescription'):
-				descriptions.append(data)
-		for d, i in zip(descriptions, range(len(descriptions))):
-			ba = d.to_bytearray()
-			ba = ba.replace(bytes([0xff]), bytes())
-			uc = ba.split(bytes([0xfe]))[0].decode('utf8')
-			sequences = ba.split(bytes([0xfe]))[1:]
-			self.__font.update_unicode_representation(i, i, ord(uc[0]))
-			glyph = self.__font.get_glyph(ord(uc[0]))
-			for u in uc:
-				print(u)
-				glyph.add_unicode_representation(ord(u))
-	
-	def __has_unicode_table(self):
-		return self.__header.has_unicode_table()
-			
 	def __get_header_psf_v1(self):
 		charsize = int(self.__asm.charsize)
 		mode = int(self.__asm.mode)
@@ -333,7 +273,64 @@ class AsmImporter(object):
 		header.set_length(length)
 		
 		return header
-
+	
+	def _parse_unicode_descriptions(self):
+		header = self._get_header()
+		if header.version_psf == PSF1_VERSION:
+			return self.__parse_unicode_descriptions_psf1()
+		elif header.version_psf == PSF2_VERSION:
+			return self.__parse_unicode_descriptions_psf2()
+				
+	def __parse_unicode_descriptions_psf1(self):
+		descriptions = []
+		for label, data in self.__asm.get_labels().items():
+			if label.startswith('Unicodedescription'):
+				data = data.to_ints(2)
+				descs = []
+				i = 0
+				while i < len(data) and data[i] != PSF1_SEPARATOR:
+					if data[i] == PSF1_STARTSEQ:
+						while ( i < len(data) and
+								data[i] != PSF1_SEPARATOR and
+								data[i] != PSF1_STARTSEQ):
+							pass # @ToDo: Add support for parsing
+								 # sequences
+							i+=1
+					descs.append(data[i])
+					i += 1 
+				descriptions.append(descs)
+			elif label.startswith('Placeholder'):
+				descriptions.append(None)
+				
+		return descriptions
+				
+	def __parse_unicode_descriptions_psf2(self):
+		descriptions = []
+		for label, data in self.__asm.get_labels().items():
+			if label.startswith('Unicodedescription'):
+				data = data.to_ints()
+				descs = []
+				i = 0
+				while i < len(data) and data[i] != PSF2_SEPARATOR:
+					if data[i] == PSF1_STARTSEQ:
+						while ( i < len(data) and
+								data[i] != PSF2_SEPARATOR and
+								data[i] != PSF2_STARTSEQ):
+							pass # @ToDo: Add support for parsing
+								 # sequences
+							i+=1
+					descs.append(data[i])
+					i += 1 
+				descriptions.append(descs)
+			elif label.startswith('Placeholder'):
+				descriptions.append(None)
+				
+		return descriptions
+				
+	def _build_glyph(self, glyph, n):
+		data = self.__asm.get_labels()["glyph_%d" % n]
+		glyph.set_data_from_bytes(data)
+			
 class AsmExporter(object):
 	def __init__(self, font):
 		self.font = font
