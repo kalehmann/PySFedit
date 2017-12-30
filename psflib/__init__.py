@@ -110,12 +110,13 @@ class Importer(ABC):
 		Returns:
 			PcScreenFont: The font build from the data in the file		
 		"""
-		data = cls.__read_data(file_path)
+		data = cls._read_data(file_path)
 		
 		return cls.import_from_data(data)
 	
+	@staticmethod
 	@abstractmethod
-	def _read_data(self, file_path):
+	def _read_data(file_path):
 		"""Extract data from a file
 		
 		Args:
@@ -222,7 +223,8 @@ class AsmImporter(Importer):
 		Importer.__init__(self, data)
 		self.__asm = AsmParser(data)
 		
-	def _read_data(self, file_path):
+	@staticmethod
+	def _read_data(file_path):
 		with open(file_path, 'r') as f:
 			data = f.read()
 			
@@ -568,35 +570,16 @@ class PsfExporter(object):
 		self.create_unicode_table()
 		return self.bytes
 
-class PsfImporter(object):
-	def __init__(self, _bytearray):
-		self.__bytearray = _bytearray
-		self.__header = None
-		self.__font = None
-		
-	@staticmethod
-	def import_file(file_path):
-		with open(file_path, "rb") as _file:
-			_bytearray = _file.read()
-		
-		return PsfImporter.import_bytearray(_bytearray)
-		
-	@staticmethod
-	def import_bytearray(_bytearray):
-		imp = PsfImporter(_bytearray)
-		return imp.build_font()
+class PsfImporter(Importer):
 	
-	def build_font(self):
-		header = self.__build_header()
-		self.__font = PcScreenFont(header)
-		self.__build_glyphs()
+	@staticmethod
+	def _read_data(file_path):
+		with open(file_path, 'rb') as f:
+			data = f.read()
+			
+		return data
 		
-		if self.__header.has_unicode_table():
-			self.__parse_unicode_table()
-		
-		return self.__font
-		
-	def __build_header(self):
+	def _build_header(self):
 		psf1_magic = bytearray()
 		psf2_magic = bytearray()
 		for i in PSF1_MAGIC_BYTES:
@@ -604,66 +587,27 @@ class PsfImporter(object):
 		for i in PSF2_MAGIC_BYTES:
 			psf2_magic.append(i)
 		
-		if self.__bytearray[:2] == psf1_magic:
-			self.__header = self.__get_header_psf_v1()
-		elif self.__bytearray[:4] == psf2_magic:
-			self.__header = self.__get_header_psf_v2()
+		data = self._get_data()
+		
+		if data[:2] == psf1_magic:
+			return self.__get_header_psf_v1(data)
+		elif data[:4] == psf2_magic:
+			return self.__get_header_psf_v2(data)
 		else:
 			raise Exception(
 				'The magic bytes of the font do not match any known ' +
 				'magic bytes'
-			)
-		return self.__header			
+			)		
 		
-	def __build_glyphs(self):
-		if self.__header.version_psf == PSF1_VERSION:
-			self.build_glyphs_psf_v1()
-			return
-		if self.__header.version_psf == PSF2_VERSION:
-			self.build_glyphs_psf_v2()
-		
-	def __parse_unicode_table(self):
-		if self.__header.version_psf == PSF1_VERSION:
-			self.__parse_unicode_table_psf1()
-			return
-		if self.__header.version_psf == PSF2_VERSION:
-			self.__parse_unicode_table_psf2()
-		
-	def build_glyphs_psf_v1(self):
-		glyph_count = 512 if self.__header.mode & PSF1_MODE512 else 256
-		
-		for i in range(glyph_count):
-			start = i * self.__header.charsize + 4
-			end = (i+1) * self.__header.charsize + 4
-			
-			glyph = self.__font.get_glyph(i)
-			_bytes = self.__bytearray[start:end]
-			glyph.set_data_from_bytes(ByteArray.from_bytes(_bytes))
-			
-		
-	def build_glyphs_psf_v2(self):
-		glyph_count = self.__header.length
-		
-		for i in range(glyph_count):
-			hs = self.__header.headersize
-			start = i * self.__header.charsize + hs
-			end = (i+1) * self.__header.charsize + hs
-						
-			glyph = self.__font.get_glyph(i)
-			_bytes = self.__bytearray[start:end]
-			glyph.set_data_from_bytes(ByteArray.from_bytes(_bytes))
-		
-	def __get_header_psf_v1(self):
-		charsize = self.__bytearray[3]
-		mode = self.__bytearray[2]
+	def __get_header_psf_v1(self, ba):
+		charsize = ba[3]
+		mode = ba[2]
 		header = PsfHeaderv1([8, charsize])
 		header.set_mode(mode)
 		
 		return header
 		
-	def __get_header_psf_v2(self):		
-		ba = self.__bytearray
-		
+	def __get_header_psf_v2(self, ba):		
 		version = bytearray_to_int(ba[4:8])
 		flags = bytearray_to_int(ba[12:16])
 		length = bytearray_to_int(ba[16:20])
@@ -675,27 +619,25 @@ class PsfImporter(object):
 		header.set_length(length)
 		
 		return header
-
+		
+	def _parse_unicode_descriptions(self):
+		header = self._get_header()
+		if header.version_psf == PSF1_VERSION:
+			return self.__parse_unicode_table_psf1()
+		if header.version_psf == PSF2_VERSION:
+			return self.__parse_unicode_table_psf2()	
+	
 	def __parse_unicode_table_psf1(self):
-		data = self.__bytearray[
-			(512 if self.__header.mode & PSF1_MODE512 else 256) *
-			self.__header.charsize +
-			4
-			:
+		header = self._get_header()
+		data = self._get_data()[
+			header.get_length() * header.charsize + 4:
 		]
+		
+		descriptions = []
+				
 		i = 0
-		n = 0
 		while i < len(data):
-			if data[i:i+2] != bytearray([0xff, 0xff]):
-				primary_codepoint = bytearray_to_int(data[i:i+2])
-				self.__font.update_unicode_representation(n,n,
-					primary_codepoint)
-				glyph = self.__font.get_glyph(primary_codepoint)
-			else:
-				n += 1
-				i += 2
-				continue
-			i += 2
+			descs = []
 			while (i < len(data) and
 				data[i:i+2] != bytearray([0xff, 0xff])):
 				if data[i:i+2] == bytearray([0xfe, 0xff]):
@@ -705,34 +647,29 @@ class PsfImporter(object):
 							pass # @ToDo: Parse sequences
 							i += 2
 				else:
-					glyph.add_unicode_representation(bytearray_to_int(
+					descs.append(bytearray_to_int(
 						data[i:i+2]
 					))
 					i += 2
 			i += 2
-			n += 1				
-					
+			descriptions.append(descs)
+		
+		return descriptions				
 		
 	def __parse_unicode_table_psf2(self):
-		data = self.__bytearray[
-			self.__header.length * 
-			self.__header.charsize +
-			self.__header.headersize
+		header = self._get_header()
+		data = self._get_data()[
+			header.length * 
+			header.charsize +
+			header.headersize
 			:
 		]
+		
+		descriptions = []
+		
 		i = 0
-		n = 0
 		while i < len(data):
-			if data[i] == 0xff:
-				i += 1
-				n += 1
-				continue
-			else:
-				primary_codepoint = data[i]
-				self.__font.update_unicode_representation(n, n,
-					primary_codepoint)
-				glyph = self.__font.get_glyph(primary_codepoint)
-			i += 1
+			descs = []
 			while i < len(data) and data[i] != 0xff:
 				if data[i] == 0xfe:
 					i += 1
@@ -740,11 +677,28 @@ class PsfImporter(object):
 						pass # @ToDo: Parse sequences
 						i += 1
 				else:
-					glyph.add_unicode_representation(data[i])
+					descs.append(data[i])
 				i += 1
 			i += 1
-			n += 1
-
+			
+			descriptions.append(descs)
+		
+		return descriptions
+		
+	def _build_glyph(self, glyph, n):
+		header = self._get_header()
+		
+		if header.version_psf == PSF1_VERSION:
+			start = n * header.charsize + 4
+			end = (n + 1) * header.charsize + 4
+			glyph.set_data_from_bytes(
+				ByteArray.from_bytes(self._get_data()[start:end])
+			)
+		elif header.version_psf == PSF2_VERSION:
+			start = n * header.charsize + header.length
+			end = (n + 1) * header.charsize + header.length
+			glyph.set_data_from_bytes(self._get_data()[start:end])
+	
 class PsfHeader(ABC):
 	"""This class is the base for a header for the PC Screen Font
 	
