@@ -1,3 +1,5 @@
+from abc import ABC, abstractmethod
+
 from psflib.byteutils import Byte, ByteArray
 from psflib.asmutils import AsmParser
 
@@ -70,6 +72,116 @@ def get_codepoint(char):
 	if len(char) != 1: return None
 	codepoint = ord(char)
 	return codepoint
+	
+class Importer(ABC):
+	"""Base class of an importer for a pc screen font.
+	
+	Args:
+		data: The data to import the font from	
+	"""
+	def __init__(self, data):
+		self.__data = data
+		
+	@classmethod
+	def import_from_data(cls, data):
+		"""Build a font from given data
+		
+		Args:
+			data: The data to import the font from
+			
+		Returns:
+			PcScreenFont: The font builded from the given data		
+		"""
+		importer = cls(data)
+	
+		return importer.__build_font()
+		
+	@classmethod
+	def import_from_file(cls, file_path)
+		"""Build a font from data in a file
+		
+		Args:
+			file_path (str): The path to the file to read the data
+				from
+		
+		Returns:
+			PcScreenFont: The font build from the data in the file		
+		"""
+		data = cls.__read_data(file_path)
+		
+		return cls.import_from_data(data)
+	
+	@abstractmethod
+	def __read_data(self, file_path):
+		"""Extract data from a file
+		
+		Args:
+			file_path (str): The path to the file to read data from
+			
+		Returns:
+			The data extracted from the file
+		
+		Notes:
+			In the implementation of this method you can decide wether
+			reading the file binary or not.
+		"""
+		pass
+	
+	@abstractmethod
+	def __build_header(self):
+		"""Create a psf header from the data of the importer
+		
+		Returns:
+			PsfHeader: The header builded
+			
+		Notes:
+			Use self.__get_data() to get the data to build the header
+			from.		
+		"""
+		pass
+	
+	@abstractmethod
+	def __parse_unicode_descriptions(self):
+		"""Create a list of unicode descriptions from the data of the
+		importer.
+		
+		Returns:
+			list: The list of unicode descriptions extracted from the
+				data. Note, that the order of the descriptions in the
+				list should be the same as in the given data.		
+		"""
+		unicode_descriptions = []
+		
+		return unicode_descriptions
+	
+	@abstractmethod
+	def __get_glyph_data(self, n):
+		"""Get a given glyph from the font.
+		
+		Args:
+			n (int): Occurence of the glyph in the data
+			
+		Returns:
+			Glyph: A glyph object extracted from the data		
+		"""
+		pass
+		
+	def __build_font(self):
+		"""Use this method to get a pc screen font from the data of the
+		importer.
+		
+		Returns:
+			PcScreenFont
+		"""
+		pass
+	
+	def __get_data(self):
+		"""Returns the data assigned with this importer
+		
+		Returns:
+			The data assigned with this importer		
+		"""
+		return self.__data
 	
 class AsmImporter(object):
 	def __init__(self, asm_data):
