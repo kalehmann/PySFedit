@@ -729,7 +729,7 @@ class PsfImporter(object):
 			i += 1
 			n += 1
 
-class PsfHeader(object):
+class PsfHeader(ABC):
 	"""This class is the base for a header for the PC Screen Font
 	
 	Args:
@@ -753,16 +753,24 @@ class PsfHeader(object):
 		
 		self.size = size
 		
+	@abstractmethod	
 	def has_unicode_table(self):
 		"""Check wether the font has an unicode table or not
 		
 		Returns:
 			bool: True if the font has an unicode table else False
 		"""
-		if self.version_psf == PSF1_VERSION:
-			return self.mode & PSF1_MODEHASTAB
-		else:
-			return self.flags & PSF2_HAS_UNICODE_TABLE
+		pass
+		
+	@abstractmethod
+	def get_length(sefl):
+		"""Get the number of glyphs the font has. For psf this value is
+		either 256 or 512 and for psf2 variable.
+		
+		Returns:
+			int: The number of glyphs the font has
+		"""
+		pass
 			
 class PsfHeaderv1(PsfHeader):
 	"""This class represents the header for the Pc Screen Font 1.
@@ -798,6 +806,7 @@ class PsfHeaderv1(PsfHeader):
 		if mode > 5:
 			raise Exception("Error, undefined bits set in PSF1 mode")
 		self.mode |= mode
+		
 	def unset_mode(self, mode):
 		"""Unset one or more modi of the PSF1
 		
@@ -814,6 +823,12 @@ class PsfHeaderv1(PsfHeader):
 		if mode:
 			self.mode |= ~mode
 		
+	def has_unicode_table(self):
+		return ( self.mode & PSF1_MODEHASTAB or
+			self.mode & PSF1_MODEHASSEQ )
+			
+	def get_length(self):
+		return 512 if self.mode & PSF1_MODE512 else 256
 
 class PsfHeaderv2(PsfHeader):
 	"""This class represents the header for the Pc Screen Font 1.
@@ -870,6 +885,12 @@ class PsfHeaderv2(PsfHeader):
 			raise Exception("Error, undefined bits set in PSF2 flags")
 		if flags:
 			self.flags |= flags
+			
+	def has_unicode_table(self):
+		return self.flags & PSF2_HAS_UNICODE_TABLE
+	
+	def get_length(self):
+		return self.length
 
 class PcScreenFont(object):
 	"""This class represents a pc screen font
