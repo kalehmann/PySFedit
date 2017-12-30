@@ -97,7 +97,7 @@ class Importer(ABC):
 		return importer.__build_font()
 		
 	@classmethod
-	def import_from_file(cls, file_path)
+	def import_from_file(cls, file_path):
 		"""Build a font from data in a file
 		
 		Args:
