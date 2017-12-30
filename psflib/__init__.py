@@ -155,14 +155,12 @@ class Importer(ABC):
 		return unicode_descriptions
 	
 	@abstractmethod
-	def __get_glyph_data(self, n):
-		"""Get a given glyph from the font.
+	def __build_glyph(self, glyph, n):
+		"""Read the data of a glyph of the font
 		
 		Args:
-			n (int): Occurence of the glyph in the data
-			
-		Returns:
-			Glyph: A glyph object extracted from the data		
+			glyph (Glyph): The glyph to populate with data
+			n (int): Occurence of the glyph in the data of the importer
 		"""
 		pass
 		
@@ -173,7 +171,28 @@ class Importer(ABC):
 		Returns:
 			PcScreenFont
 		"""
-		pass
+		header = self.__build_header()
+		length = header.get_length()
+		font = PcScreenFont(header)		
+		
+		uc_descriptions = self.__parse_unicode_descriptions()
+		
+		if len(uc_descriptions) != length:
+			raise Exception(
+				"The number of unicode descriptions of the font " +
+				"does not match its length."
+			)
+		
+		for i, descriptions in zip(range(length), uc_descriptions):
+			if descriptions:
+				primary_codepoint = descriptions[0]
+				glyph = self.font.get_glyph(primary_codepoint)
+				
+				for codepoint in descriptions[1:]:
+					glyph.add_unicode_representation(codepoint)
+				self.__build_glyph(glyph, n)
+		
+		return font				
 	
 	def __get_data(self):
 		"""Returns the data assigned with this importer
