@@ -476,6 +476,10 @@ class PsfExporter(object):
 	def glyph_to_bytearray(self, glyph):
 		ba = bytearray()
 		for row in glyph.data:
+			if len(row) % 8:
+				row = row[:]
+				while len(row) % 8:
+					row.append(0)
 			b = ByteArray.from_bit_array(row)
 			for i in b:
 				ba.append(int(i))

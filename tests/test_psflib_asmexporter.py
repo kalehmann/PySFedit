@@ -29,4 +29,4 @@ class TestAsmExporter(unittest.TestCase):
 		exporter = psflib.AsmExporter(font)
 
 		self.assertEqual(exporter.export_string(),
-			TEST_FONT_PSF1_256_UNICODE)
+			TEST_FONT_PSF1_256_UNICODE_ASM)
