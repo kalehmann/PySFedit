@@ -9,7 +9,7 @@ from data_for_testing import *
 
 class TestAsmExporter(unittest.TestCase):
 	
-	def test_exporting(self):
+	def test_psf_256_unicode(self):
 		header = psflib.PsfHeaderv1((8,8))
 		header.set_mode(psflib.PSF1_MODEHASTAB)
 		
