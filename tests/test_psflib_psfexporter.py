@@ -12,7 +12,7 @@ from data_for_testing import *
 class TestPsfExporter(unittest.TestCase):
 	
 	def test_export_psf_simple(self):
-		header = psflib.PsfHeaderv1((8,8))
+		header = psflib.PsfHeaderv1((8, 8))
 		header.set_mode(psflib.PSF1_MODE512)
 		font = psflib.PcScreenFont(header)
 		glyph_0 = font.get_glyph(0)
@@ -26,6 +26,22 @@ class TestPsfExporter(unittest.TestCase):
 		data = exp.export_bytearray()
 		
 		self.assertEqual(data, TEST_FONT_PSF1_512_SIMPLE)
+		
+	def test_export_psf_unicode(self):
+		header = psflib.PsfHeaderv1((8, 8))
+		header.set_mode(psflib.PSF1_MODEHASTAB)
+		font = psflib.PcScreenFont(header)
+		glyph_A = font.get_glyph(0x41)
+		
+		data_A = bytearray(
+			[0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00])
+			
+		glyph_A.set_data_from_bytes(psflib.ByteArray.from_bytes(data_A))
+		
+		exp = psflib.PsfExporter(font)
+		data = exp.export_bytearray()
+		
+		self.assertEqual(data, TEST_FONT_PSF1_256_UNICODE)
 	
 	def test_export_psf2_simple(self):
 		header = psflib.PsfHeaderv2((10, 8))
