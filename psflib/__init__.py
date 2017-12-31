@@ -571,7 +571,8 @@ class PsfExporter(object):
 		self.bytes = bytearray()
 		self.create_header()
 		self.create_bitmaps()
-		self.create_unicode_table()
+		if self.header.has_unicode_table():
+			self.create_unicode_table()
 		return self.bytes
 
 class PsfImporter(Importer):
