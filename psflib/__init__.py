@@ -183,7 +183,7 @@ class Importer(ABC):
 			uc_descriptions = self._parse_unicode_descriptions()
 		else:
 			uc_descriptions = [[i] for i in range(length)]
-		
+				
 		if len(uc_descriptions) != length:
 			raise Exception(
 				"The number of unicode descriptions of the font " +

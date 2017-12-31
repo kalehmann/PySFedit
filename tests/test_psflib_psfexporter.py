@@ -25,7 +25,7 @@ class TestPsfExporter(unittest.TestCase):
 		exp = psflib.PsfExporter(font)
 		data = exp.export_bytearray()
 		
-		self.assertEqual(data, TEST_FONT_PSF_SIMPLE)
+		self.assertEqual(data, TEST_FONT_PSF1_512_SIMPLE)
 	
 	def test_export_psf2_simple(self):
 		header = psflib.PsfHeaderv2((10, 8))

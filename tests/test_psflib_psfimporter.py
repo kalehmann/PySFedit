@@ -12,7 +12,8 @@ from data_for_testing import *
 class TestPsfImporter(unittest.TestCase):
 	
 	def test_import_psf_simple(self):
-		font = psflib.PsfImporter.import_from_data(TEST_FONT_PSF_SIMPLE)
+		font = psflib.PsfImporter.import_from_data(
+			TEST_FONT_PSF1_512_SIMPLE)
 		
 		self.assertFalse(font.has_unicode())
 		self.assertEqual(len(font.get_glyphs()), 512)
@@ -23,6 +24,20 @@ class TestPsfImporter(unittest.TestCase):
 		self.assertEqual(data,
 			[0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00])
 			
+	def test_import_psf_unicode(self):
+		font = psflib.PsfImporter.import_from_data(
+			TEST_FONT_PSF1_256_UNICODE)
+			
+		self.assertTrue(font.has_unicode())
+		self.assertEqual(len(font.get_glyphs()), 1)
+		self.assertTrue(0x41 in font.get_glyphs())
+		
+		data = [int(psflib.Byte(row))
+			for row in font.get_glyph(0x41).get_data()]
+				
+		self.assertEqual(data,
+			[0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00])
+	
 	def test_import_psf2_simple(self):
 		font = psflib.PsfImporter.import_from_data(TEST_FONT_PSF2_SIMPLE)
 		
