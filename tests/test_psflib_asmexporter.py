@@ -30,3 +30,27 @@ class TestAsmExporter(unittest.TestCase):
 
 		self.assertEqual(exporter.export_string(),
 			TEST_FONT_PSF1_256_UNICODE_ASM)
+			
+	def test_psf2_simple(self):
+		header = psflib.PsfHeaderv2((10, 8))
+		font = psflib.PcScreenFont(header)
+		
+		glyph = font.get_glyph(0)
+		
+		glyph.copy_data(
+			[
+				[0,0,0,0,0,0,0,0,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,0,0,0]
+			]
+		)
+		
+		exporter = psflib.AsmExporter(font)
+		
+		self.assertEqual(exporter.export_string(),
+			TEST_FONT_PSF2_SIMPLE_ASM)
