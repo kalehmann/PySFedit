@@ -611,8 +611,8 @@ class PsfImporter(Importer):
 		version = bytearray_to_int(ba[4:8])
 		flags = bytearray_to_int(ba[12:16])
 		length = bytearray_to_int(ba[16:20])
-		height = bytearray_to_int(ba[20:24])
-		width = bytearray_to_int(ba[24:28])
+		height = bytearray_to_int(ba[24:28])
+		width = bytearray_to_int(ba[28:32])
 				
 		header = PsfHeaderv2([width, height])
 		header.set_flags(flags)
@@ -627,6 +627,23 @@ class PsfImporter(Importer):
 		if header.version_psf == PSF2_VERSION:
 			return self.__parse_unicode_table_psf2()	
 	
+	def __split_psf1_by_separator(self, data):
+		sep = bytearray([0xff, 0xff])
+		if len(data) % 2:
+			raise Exception()
+		
+		res = []
+		current = bytearray()
+		
+		for i in range(0, len(data), 2):
+			if data[i:i+2] == sep:
+				res.append(current)
+				current = bytearray()
+			else:
+				current += data[i:i+2]
+		
+		return res
+		
 	def __parse_unicode_table_psf1(self):
 		header = self._get_header()
 		data = self._get_data()[
@@ -635,25 +652,17 @@ class PsfImporter(Importer):
 		
 		descriptions = []
 				
-		i = 0
-		while i < len(data):
+		data = self.__split_psf1_by_separator(data)
+		for d in data:
 			descs = []
-			while (i < len(data) and
-				data[i:i+2] != bytearray([0xff, 0xff])):
-				if data[i:i+2] == bytearray([0xfe, 0xff]):
-					i += 2
-					while (i < len(data) and
-						data[i:i+2] != bytearray([0xff, 0xff])):
-							pass # @ToDo: Parse sequences
-							i += 2
-				else:
-					descs.append(bytearray_to_int(
-						data[i:i+2]
-					))
-					i += 2
-			i += 2
+			d = d.split(bytearray([0xfe, 0xff]))
+			for i in ByteArray.from_bytes(d[0]).to_ints(2):
+				descs.append(i)
+				
+			if len(d) > 1:
+				pass # @ToDo: Parse sequences
 			descriptions.append(descs)
-		
+
 		return descriptions				
 		
 	def __parse_unicode_table_psf2(self):
@@ -666,20 +675,15 @@ class PsfImporter(Importer):
 		]
 		
 		descriptions = []
-		
-		i = 0
-		while i < len(data):
+		data = data.split(bytearray([PSF2_SEPARATOR]))[:-1]
+		for d in data:
 			descs = []
-			while i < len(data) and data[i] != 0xff:
-				if data[i] == 0xfe:
-					i += 1
-					while i < len(data) and data[i] != 0xff:
-						pass # @ToDo: Parse sequences
-						i += 1
-				else:
-					descs.append(data[i])
-				i += 1
-			i += 1
+			d = d.split(bytearray([PSF2_STARTSEQ]))
+			for i in d[0].decode('utf8'):
+				descs.append(ord(i))
+				
+			if len(d) > 1:
+				pass # @ToDo: Parse sequences
 			
 			descriptions.append(descs)
 		
@@ -695,9 +699,11 @@ class PsfImporter(Importer):
 				ByteArray.from_bytes(self._get_data()[start:end])
 			)
 		elif header.version_psf == PSF2_VERSION:
-			start = n * header.charsize + header.length
-			end = (n + 1) * header.charsize + header.length
-			glyph.set_data_from_bytes(self._get_data()[start:end])
+			start = n * header.charsize + header.headersize
+			end = (n + 1) * header.charsize + header.headersize
+			glyph.set_data_from_bytes(
+				ByteArray.from_bytes(self._get_data()[start:end])
+			)
 	
 class PsfHeader(ABC):
 	"""This class is the base for a header for the PC Screen Font
@@ -817,7 +823,7 @@ class PsfHeaderv2(PsfHeader):
 		self.length = 0
 		self.width = size[0]
 		self.height = size[1]
-		self.charsize = size[1] * int((size[0]+7) / 8)
+		self.charsize = size[1] * ((size[0]+7) // 8)
 
 	def set_length(self, length):
 		"""Set the number of glyphs of the font
