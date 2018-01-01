@@ -7,26 +7,31 @@ sys.path.append(dirname(__file__))
 
 from data_for_testing import *
 
-TEST_FONT_PSF2_SIMPLE = """
-font_header:
-magic_bytes: db 0x72, 0xb5, 0x4a, 0x86
-version: dd 0x0
-headersize: dd 0x20
-flags: dd 0x0
-length: dd 0x1
-charsize: dd 0x8
-height: dd 0x8
-width: dd 0x8
-
-font_bitmaps:
-glyph_0: db 0x00, 0x38, 0x44, 0x44, 0x44, 0x44, 0x38, 0x00
-"""
-
 class TestAsmImporter(unittest.TestCase):
 	
-	def test_parse_psf1(self):
-		font = psflib.AsmImporter.import_string(
-			TEST_FONT_PSF1_256_UNICODE)
+	def test_parse_psf1_simple(self):
+		font = psflib.AsmImporter.import_from_data(
+			TEST_FONT_PSF1_512_SIMPLE_ASM)
+		
+		self.assertFalse(font.has_unicode())
+		self.assertEqual(len(font.get_glyphs()), 512)
+		self.assertEqual(
+			font.get_glyphs()[0x41].get_data(),
+			[
+				[0,0,0,0,0,0,0,0],
+				[0,0,1,1,1,0,0,0],
+				[0,1,0,0,0,1,0,0],
+				[0,1,0,0,0,1,0,0],
+				[0,1,0,0,0,1,0,0],
+				[0,1,0,0,0,1,0,0],
+				[0,0,1,1,1,0,0,0],
+				[0,0,0,0,0,0,0,0]
+			]
+		)
+	
+	def test_parse_psf1_unicode(self):
+		font = psflib.AsmImporter.import_from_data(
+			TEST_FONT_PSF1_256_UNICODE_ASM)
 		
 		self.assertTrue(font.has_unicode())
 		self.assertEqual(len(font.get_glyphs()), 1)
@@ -34,5 +39,44 @@ class TestAsmImporter(unittest.TestCase):
 			font.get_glyphs()[48].get_unicode_representations(),
 			[48, 79])
 
-	def test_parse_psf2(self):
-		psflib.AsmImporter.import_string(TEST_FONT_PSF2_SIMPLE)
+	def test_parse_psf2_simple(self):
+		font = psflib.AsmImporter.import_from_data(
+			TEST_FONT_PSF2_SIMPLE_ASM)
+		
+		self.assertEqual(len(font.get_glyphs()), 1)
+		self.assertFalse(font.has_unicode())
+		self.assertEqual(
+			font.get_glyphs()[0].get_data(),
+			[
+				[0,0,0,0,0,0,0,0,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,0,0,0]
+			]
+		)
+	
+	def test_parse_psf2_unicode(self):
+		font = psflib.AsmImporter.import_from_data(
+			TEST_FONT_PSF2_UNICODE_ASM)
+			
+		self.assertEqual(len(font.get_glyphs()), 1)
+		self.assertTrue(font.has_unicode())
+		self.assertTrue(0x41 in font.get_glyphs())
+		
+		self.assertEqual(
+			font.get_glyphs()[0x41].get_data(),
+			[
+				[0,0,0,0,0,0,0,0,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,0,0,0]
+			]
+		)

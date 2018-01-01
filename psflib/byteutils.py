@@ -394,8 +394,10 @@ class ByteArray(object):
 			to_add = "%s" % byte.hex()
 			if len(line) + len(to_add) > linelength:
 				# create new line
-				lines.append(line)
+				lines.append(line[:-2])
 				line = " " * (intent + 1) * tab_size + "db " + to_add
+				if i + 1 < len(self.__bytes):
+					line += ", "
 			else:
 				if i + 1 < len(self.__bytes):
 					to_add += ", "
