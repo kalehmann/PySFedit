@@ -9,7 +9,27 @@ from data_for_testing import *
 
 class TestAsmImporter(unittest.TestCase):
 	
-	def test_parse_psf1(self):
+	def test_parse_psf1_simple(self):
+		font = psflib.AsmImporter.import_from_data(
+			TEST_FONT_PSF1_512_SIMPLE_ASM)
+		
+		self.assertFalse(font.has_unicode())
+		self.assertEqual(len(font.get_glyphs()), 512)
+		self.assertEqual(
+			font.get_glyphs()[0x41].get_data(),
+			[
+				[0,0,0,0,0,0,0,0],
+				[0,0,1,1,1,0,0,0],
+				[0,1,0,0,0,1,0,0],
+				[0,1,0,0,0,1,0,0],
+				[0,1,0,0,0,1,0,0],
+				[0,1,0,0,0,1,0,0],
+				[0,0,1,1,1,0,0,0],
+				[0,0,0,0,0,0,0,0]
+			]
+		)
+	
+	def test_parse_psf1_unicode(self):
 		font = psflib.AsmImporter.import_from_data(
 			TEST_FONT_PSF1_256_UNICODE_ASM)
 		
