@@ -23,7 +23,7 @@ class TestPsfExporter(unittest.TestCase):
 		glyph_0.set_data_from_bytes(psflib.ByteArray.from_bytes(data_0))
 		
 		exp = psflib.PsfExporter(font)
-		data = exp.export_bytearray()
+		data = exp.export_to_data()
 		
 		self.assertEqual(data, TEST_FONT_PSF1_512_SIMPLE)
 		
@@ -39,7 +39,7 @@ class TestPsfExporter(unittest.TestCase):
 		glyph_A.set_data_from_bytes(psflib.ByteArray.from_bytes(data_A))
 		
 		exp = psflib.PsfExporter(font)
-		data = exp.export_bytearray()
+		data = exp.export_to_data()
 		
 		self.assertEqual(data, TEST_FONT_PSF1_256_UNICODE)
 	
@@ -75,7 +75,7 @@ class TestPsfExporter(unittest.TestCase):
 		glyph_1.set_data_from_bytes(psflib.ByteArray.from_bytes(data_1))
 	
 		exp = psflib.PsfExporter(font)
-		data = exp.export_bytearray()
+		data = exp.export_to_data()
 		
 		self.assertEqual(data, TEST_FONT_PSF2_SIMPLE)
 	
@@ -113,6 +113,6 @@ class TestPsfExporter(unittest.TestCase):
 		glyph_B.set_data_from_bytes(psflib.ByteArray.from_bytes(data_B))
 		
 		exp = psflib.PsfExporter(font)
-		data = exp.export_bytearray()
+		data = exp.export_to_data()
 		
 		self.assertEqual(data, TEST_FONT_PSF2_UNICODE)

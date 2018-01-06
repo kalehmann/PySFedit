@@ -635,24 +635,47 @@ class AsmExporter(object):
 		with open(path, "w") as f:
 			f.write(data)
 
-class PsfExporter(object):
+class PsfExporter(Exporter):
+	"""Implementation for exporting a PCScreenFont to a psf file.
+	For usage see the Exporter base class.
+	
+	Args:
+		font (PcScreenFont): The font to export
+	"""
 	def __init__(self, font):
-		self.font = font
-		self.header = font.get_header()
-		if self.header.version_psf == PSF1_VERSION:
-			self.version = 1
-		elif self.header.version_psf == PSF2_VERSION:
-			self.version = 2
-				
+		Exporter.__init__(self, font)
+		self.__header = font.get_header()
+		self.version = self.__header.version_psf
+
 	def int_to_bytes(self, n):
+		"""Convert an integer to a bytearray with a lenght of 4.
+		
+		Args:
+			n (int): The integer to convert to a bytearray.	
+			
+		Returns:
+			bytearray: The bytearray created from the integer.
+		
+		Notes:
+			The resulting bytearray will be little endian.
+		"""
 		bts = []
 		if 0 <= n <= 0x100 ** 4 - 1:
 			for i in range(4):
 				bts.append(n % 0x100)
 				n = n // 0x100
 		return bytearray(bts)
-	
+
 	def glyph_to_bytearray(self, glyph):
+		"""Convert the bitmap from a glyph to a bytearray.
+		
+		Args:
+			glyph (Glyph): The glyph to get the bitmap which should be
+				converted to a bytearray from.
+				
+		Returns:
+			bytearray: The bytearray built from the bitmap of the glyph.
+		"""
 		ba = bytearray()
 		for row in glyph.data:
 			if len(row) % 8:
@@ -663,63 +686,88 @@ class PsfExporter(object):
 			for i in b:
 				ba.append(int(i))
 		return ba	
-	
-	def create_header(self):
-		for i in self.header.magic_bytes:
-			self.bytes.append(i)
-		if self.version == 1:
-			self.bytes.append(self.header.mode)
-			self.bytes.append(self.header.charsize)
-		elif self.version == 2:
-			self.bytes += self.int_to_bytes(self.header.version)
-			self.bytes += self.int_to_bytes(self.header.headersize)
-			self.bytes += self.int_to_bytes(self.header.flags)
-			self.bytes += self.int_to_bytes(self.header.length)
-			self.bytes += self.int_to_bytes(self.header.charsize)
-			self.bytes += self.int_to_bytes(self.header.height)
-			self.bytes += self.int_to_bytes(self.header.width)
 
-	def create_bitmaps(self):
-		if self.header.has_unicode_table():
-			for i, glyph in zip(range(len(self.font.get_glyphs())),
-								self.font.get_glyphs().values()):
-				self.bytes += self.glyph_to_bytearray(glyph)
+	def _write_data(self, file_path, data):
+		"""Write the data made from the font into a file.
+		
+		Args:
+			file_path (str): The path of the file to write the data
+				into.
+			data (bytearray): The data to write into the file.
+		"""
+		with open(file_path, "wb") as f:
+			f.write(data)
+
+	def _build_header(self):
+		"""Convert the header of the font of the exporter into a
+		bytearray.
+		
+		Returns:
+			bytearray: The bytearray containing the data from the header
+				of the font of the exporter.		
+		"""
+		_bytes = bytearray()
+		for i in self.__header.magic_bytes:
+			_bytes.append(i)
+		if self.version == PSF1_VERSION:
+			_bytes.append(self.__header.mode)
+			_bytes.append(self.__header.charsize)
+		elif self.version == PSF2_VERSION:
+			_bytes += self.int_to_bytes(self.__header.version)
+			_bytes += self.int_to_bytes(self.__header.headersize)
+			_bytes += self.int_to_bytes(self.__header.flags)
+			_bytes += self.int_to_bytes(self.__header.length)
+			_bytes += self.int_to_bytes(self.__header.charsize)
+			_bytes += self.int_to_bytes(self.__header.height)
+			_bytes += self.int_to_bytes(self.__header.width)
+		
+		return _bytes
+
+	def _build_bitmaps(self):
+		"""Convert the bitmaps of the font of the exporter into a
+		bytearray.
+		
+		Returns:
+			bytearray: The bytearray containing the bitmaps from the
+				font from the exporter.
+		"""
+		_bytes = bytearray()
+		font = self._get_font()
+		if self.__header.has_unicode_table():
+			for i, glyph in zip(range(len(font.get_glyphs())),
+				font.get_glyphs().values()):
+				_bytes += self.glyph_to_bytearray(glyph)
 				
-			if self.header.version_psf == PSF1_VERSION:
-				if self.header.mode & PSF1_MODE512:
-					glyph_count = 512 
-				else:
-					glyph_count = 256
-				glyph = Glyph(self.header.size)
-				for i in range(len(self.font.get_glyphs()), glyph_count):
-					self.bytes += self.glyph_to_bytearray(glyph)
-			return
+			if self.version == PSF1_VERSION:
+				glyph_count = self.__header.get_length()
+				glyph = Glyph(self.__header.size)
+				for i in range(len(font.get_glyphs()), glyph_count):
+					_bytes += self.glyph_to_bytearray(glyph)
+
+			return _bytes
 			
 		# Has no Unicode table
-		if self.header.version_psf == PSF1_VERSION:
-			if self.header.mode & PSF1_MODE512:
-				# 512 Glyphs
-				glyph_count = 512
-			else:
-				# 256 Glyphs
-				glyph_count = 256
-		else:
-			glyph_count = len(self.font)
+		glyph_count = self.__header.get_length()
 			
 		for i in range(glyph_count):
-			glyph = self.font.get_glyph(i)
-			self.bytes += self.glyph_to_bytearray(glyph)
-			
-	def create_unicode_table(self):
+			glyph = font.get_glyph(i)
+			_bytes += self.glyph_to_bytearray(glyph)
+
+		return _bytes
+
+	def _build_unicode_table(self):
+		"""Convert the unicode table from the font from the exporter
+		into a bytearray.
+		
+		Returns:
+			bytearray: The bytearray containing the unicode table from
+				the font from the exporter.
+		"""
 		ba = ByteArray()
-		if self.header.version_psf == PSF1_VERSION:
-			if self.header.mode & PSF1_MODE512:
-				# 512 Glyphs
-				glyph_count = 512
-			else:
-				# 256 Glyphs
-				glyph_count = 256
-			for puc, glyph in self.font.get_glyphs().items():
+		font = self._get_font()
+		if self.version == PSF1_VERSION:
+			glyph_count = self.__header.get_length()
+			for puc, glyph in font.get_glyphs().items():
 				_bytes = ByteArray.from_int(puc, 2)
 				#if len(glyph.get_unicode_representations()) > 1:
 				#	_bytes += ByteArray.from_int(0xFFFE, 2)
@@ -728,10 +776,10 @@ class PsfExporter(object):
 						_bytes += ByteArray.from_int(uc, 2)
 				_bytes += ByteArray.from_int(0xFFFF, 2)		
 				ba += _bytes
-			for i in range(glyph_count - len(self.font.get_glyphs())):
+			for i in range(glyph_count - len(font.get_glyphs())):
 				ba += ByteArray.from_int(0xFFFF, 2)
 		else:	# psf2
-			for puc, glyph in self.font.get_glyphs().items():
+			for puc, glyph in font.get_glyphs().items():
 				_bytes = ByteArray.from_bytes(chr(puc).encode('utf8'))
 				for uc in glyph.get_unicode_representations():
 					if uc != puc:
@@ -739,23 +787,11 @@ class PsfExporter(object):
 							chr(uc).encode('utf8'))
 				_bytes += ByteArray.from_int(0xFF, 1)	
 				ba += _bytes
-		for i in ba:
-			self.bytes.append(int(i))
-			
-	def export_file(self, path):
-		with open(path, "wb") as f:
-			f.write(self.export_bytearray())
-
-	def export_bytearray(self):
-		self.bytes = bytearray()
-		self.create_header()
-		self.create_bitmaps()
-		if self.header.has_unicode_table():
-			self.create_unicode_table()
-		return self.bytes
+		
+		return ba.to_bytearray()
 
 class PsfImporter(Importer):
-	"""Implementation for importing a PCScreenFont from an psf file.
+	"""Implementation for importing a PCScreenFont from a psf file.
 	For usage see the Importer base class.
 	
 	Args:
