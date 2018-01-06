@@ -143,7 +143,7 @@ class PySFeditWindow(Gtk.Window):
 	def __init__(self):
 		Gtk.Window.__init__(self, title="PySFedit")
 		self.set_default_size(400,400)
-		self.connect("delete-event", Gtk.main_quit)
+		self.connect("delete-event", self.on_window_delete)
 
 		self.top_grid = Gtk.Grid()
 		self.add(self.top_grid)
@@ -163,6 +163,9 @@ class PySFeditWindow(Gtk.Window):
 		submenu.append(menuitem)
 		menuitem = Gtk.MenuItem(label="Export")
 		menuitem.connect("activate", self.on_menu_export_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label="Quit")
+		menuitem.connect("activate", self.on_menu_quit_clicked)
 		submenu.append(menuitem)
 		self.menu_bar.append(menu_file)
 
@@ -219,6 +222,15 @@ class PySFeditWindow(Gtk.Window):
 			dialog.destroy()
 			return path
 		dialog.destroy()
+		
+	def on_window_delete(self, widget, event):
+		self.on_quit()
+	
+	def on_menu_quit_clicked(self, submenu):
+		self.on_quit()
+		
+	def on_quit(self):
+		Gtk.main_quit()
 		
 	def __on_but_new_clicked(self, button):
 		self.new_font_dialog()
