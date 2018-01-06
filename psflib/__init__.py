@@ -1,7 +1,36 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+
+# Copyright (c) 2018 by Karsten Lehmann <ka.lehmann@yahoo.com>
+
+#	This file is part of PySFedit.
+#
+#	PySFedit is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+# 	(at your option) any later version.
+#
+#	PySFedit is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+# 	You should have received a copy of the GNU General Public License
+#	long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
+
+
+"""
+This is a package for working with pc screen fonts.
+
+It contains classes representing pc screen fonts, their headers and
+glyphs. Furthermore there are tools for exporting fonts to .asm or .psf
+files and importing these.
+"""
+
 from abc import ABC, abstractmethod
 
-from psflib.byteutils import Byte, ByteArray
-from psflib.asmutils import AsmParser
+from .byteutils import Byte, ByteArray
+from .asmutils import AsmParser
 
 PSF1_VERSION = 1
 PSF2_VERSION = 2
@@ -25,6 +54,7 @@ PSF2_HAS_UNICODE_TABLE = 0x1
 
 TYPE_PLAIN_ASM = 42
 TYPE_BINARY_PSF = 43
+
 
 def bytearray_to_int(_bytearray):
 	"""Get the integer value from a bytearray
@@ -51,7 +81,6 @@ def get_unicode_str(codepoint):
 	Returns:
 		str : The Unicode string. Is empty, if the codepoint is a
 			controll sequence or undefined
-	
 	"""
 	if 0x20 <= codepoint <= 0x7e or 0xa0 <= codepoint: #<= 0xff:
 		return chr(codepoint)
@@ -69,7 +98,6 @@ def get_codepoint(char):
 	Returns:
 		None : If the length of char is not 1
 		int : The codepoint of the given character
-	
 	"""
 	#char = char.decode('utf-8')
 	if len(char) != 1: return None
@@ -218,19 +246,46 @@ class Importer(ABC):
 		return self.__header
 	
 class AsmImporter(Importer):
+	"""Implementation for importing a PCScreenFont from an assembler
+	file. For usage see the Importer base class.
 	
+	Args:
+		data (str): The data to build the font from
+	"""
 	def __init__(self, data):
 		Importer.__init__(self, data)
 		self.__asm = AsmParser(data)
 		
 	@staticmethod
 	def _read_data(file_path):
+		"""Read the data for the font from a file.
+		
+		Args:
+			file_path (str): The path to the file which should be
+				imported
+				
+		Returns:
+			str: The data read from the file
+		"""
 		with open(file_path, 'r') as f:
 			data = f.read()
 			
 		return data
 		
 	def _build_header(self):
+		"""Build the header of the PcScreenFont.
+		
+		Build the header of the PcScreenFont out of the data of the
+		importer.
+		
+		Returns:
+			PsfHeader: The header built out of the data of the importer.		
+
+		Raises:
+			Exception: This method raises an exception if the magic
+				bytes of the font do any match any known version of
+				a pc screen font.
+		"""
 		psf1_magic = ByteArray()
 		psf2_magic = ByteArray()
 		for i in PSF1_MAGIC_BYTES:
@@ -255,6 +310,13 @@ class AsmImporter(Importer):
 		return header	
 	
 	def __get_header_psf_v1(self):
+		"""Build the header of an old pc screen font out of the data of
+		the importer.
+		
+		Returns:
+			PsfHeaderv1: The header built out of the data of the
+				importer.		
+		"""
 		charsize = int(self.__asm.charsize)
 		mode = int(self.__asm.mode)
 		header = PsfHeaderv1([8, charsize])
@@ -263,6 +325,13 @@ class AsmImporter(Importer):
 		return header
 		
 	def __get_header_psf_v2(self):
+		"""Build the header of a new pc screen font out of the data of
+		the importer.
+		
+		Returns:
+			PsfHeaderv2: The header built out of the data of the
+				importer.		
+		"""
 		a = self.__asm
 		version = int(a.version)
 		flags = int(a.flags)
@@ -277,6 +346,14 @@ class AsmImporter(Importer):
 		return header
 	
 	def _parse_unicode_descriptions(self):
+		"""Read the unicode descriptions of the glyphs of the font out
+		of the data of the importer.
+		
+		Returns:
+			list: A list of lists containing integers which represent
+				the codepoints of the unicode representations of the
+				glyphs.
+		"""
 		header = self._get_header()
 		if header.version_psf == PSF1_VERSION:
 			return self.__parse_unicode_descriptions_psf1()
@@ -284,6 +361,12 @@ class AsmImporter(Importer):
 			return self.__parse_unicode_descriptions_psf2()
 				
 	def __parse_unicode_descriptions_psf1(self):
+		"""Read the unicode descriptions of an old pc screen font out
+		of the data of the importer.
+		
+		Returns:
+			list		
+		"""
 		descriptions = []
 		for label, data in self.__asm.get_labels().items():
 			if label.startswith('Unicodedescription'):
@@ -307,6 +390,12 @@ class AsmImporter(Importer):
 		return descriptions
 				
 	def __parse_unicode_descriptions_psf2(self):
+		"""Read the unicode descriptions of a new pc screen font out of
+		the data of the importer.
+		
+		Returns:
+			list		
+		"""
 		descriptions = []
 		for label, data in self.__asm.get_labels().items():
 			if label.startswith('Unicodedescription'):
@@ -330,6 +419,12 @@ class AsmImporter(Importer):
 		return descriptions
 				
 	def _build_glyph(self, glyph, n):
+		"""Read the bitmap of a glyph out of the data of the importer.
+		
+		Args:
+			glyph (Glyph): The glyph to asign the bitmap to
+			n (int): The index of the bitmap in the data		
+		"""
 		data = self.__asm.get_labels()["glyph_%d" % n]
 		glyph.set_data_from_bytes(data)
 			
@@ -576,15 +671,43 @@ class PsfExporter(object):
 		return self.bytes
 
 class PsfImporter(Importer):
+	"""Implementation for importing a PCScreenFont from an psf file.
+	For usage see the Importer base class.
 	
+	Args:
+		data (bytes): The data to build the font from
+	"""
+
 	@staticmethod
 	def _read_data(file_path):
+		"""Read the data for the font from a file.
+		
+		Args:
+			file_path (str): The path to the file which should be
+				imported
+				
+		Returns:
+			bytes: The data read from the file
+		"""
 		with open(file_path, 'rb') as f:
 			data = f.read()
 			
 		return data
 		
 	def _build_header(self):
+		"""Build the header of the PcScreenFont.
+		
+		Build the header of the PcScreenFont out of the data of the
+		importer.
+		
+		Returns:
+			PsfHeader: The header built out of the data of the importer.
+
+		Raises:
+			Exception: This method raises an exception if the magic
+				bytes of the font do any match any known version of
+				a pc screen font.		
+		"""
 		psf1_magic = bytearray()
 		psf2_magic = bytearray()
 		for i in PSF1_MAGIC_BYTES:
@@ -605,6 +728,17 @@ class PsfImporter(Importer):
 			)		
 		
 	def __get_header_psf_v1(self, ba):
+		"""Build the header of an old pc screen font out of the data of
+		the importer.
+
+		Args:
+			ba (bytearray): The bytearray to extract the data for the
+				header from
+		
+		Returns:
+			PsfHeaderv1: The header built out of the data of the
+				importer.		
+		"""
 		charsize = ba[3]
 		mode = ba[2]
 		header = PsfHeaderv1([8, charsize])
@@ -612,7 +746,18 @@ class PsfImporter(Importer):
 		
 		return header
 		
-	def __get_header_psf_v2(self, ba):		
+	def __get_header_psf_v2(self, ba):
+		"""Build the header of a new pc screen font out of the data of
+		the importer.
+		
+		Args:
+			ba (bytearray): The bytearray to extract the data for the
+				header from
+
+		Returns:
+			PsfHeaderv2: The header built out of the data of the
+				importer.		
+		"""
 		version = bytearray_to_int(ba[4:8])
 		flags = bytearray_to_int(ba[12:16])
 		length = bytearray_to_int(ba[16:20])
@@ -626,6 +771,14 @@ class PsfImporter(Importer):
 		return header
 		
 	def _parse_unicode_descriptions(self):
+		"""Read the unicode descriptions of the glyphs of the font out
+		of the data of the importer.
+		
+		Returns:
+			list: A list of lists containing integers which represent
+				the codepoints of the unicode representations of the
+				glyphs.
+		"""
 		header = self._get_header()
 		if header.version_psf == PSF1_VERSION:
 			return self.__parse_unicode_table_psf1()
@@ -633,6 +786,16 @@ class PsfImporter(Importer):
 			return self.__parse_unicode_table_psf2()	
 	
 	def __split_psf1_by_separator(self, data):
+		"""Split the unicode table of an old pc screen font by the
+		seperator for unicode descriptions of an old pc screen font.
+
+		Args:
+			data (bytearray): The bytearray containing the unicode table
+				of an old pc screen font.
+
+		Returns:
+			list: A list of bytearrays
+		"""
 		sep = bytearray([0xff, 0xff])
 		if len(data) % 2:
 			raise Exception()
@@ -650,6 +813,12 @@ class PsfImporter(Importer):
 		return res
 		
 	def __parse_unicode_table_psf1(self):
+		"""Read the unicode descriptions of an old pc screen font out
+		of the data of the importer.
+		
+		Returns:
+			list		
+		"""
 		header = self._get_header()
 		data = self._get_data()[
 			header.get_length() * header.charsize + 4:
@@ -671,6 +840,12 @@ class PsfImporter(Importer):
 		return descriptions				
 		
 	def __parse_unicode_table_psf2(self):
+		"""Read the unicode descriptions of a new pc screen font out of
+		the data of the importer.
+		
+		Returns:
+			list		
+		"""
 		header = self._get_header()
 		data = self._get_data()[
 			header.length * 
@@ -695,6 +870,12 @@ class PsfImporter(Importer):
 		return descriptions
 		
 	def _build_glyph(self, glyph, n):
+		"""Read the bitmap of a glyph out of the data of the importer.
+		
+		Args:
+			glyph (Glyph): The glyph to asign the bitmap to
+			n (int): The index of the bitmap in the data		
+		"""
 		header = self._get_header()
 		
 		if header.version_psf == PSF1_VERSION:
@@ -754,7 +935,7 @@ class PsfHeader(ABC):
 		pass
 			
 class PsfHeaderv1(PsfHeader):
-	"""This class represents the header for the Pc Screen Font 1.
+	"""This class represents the header for the pc screen font.
 	
 	Args:
 		size (list of 2 integers): The size of every glyph of the font.
@@ -805,14 +986,24 @@ class PsfHeaderv1(PsfHeader):
 			self.mode |= ~mode
 		
 	def has_unicode_table(self):
+		"""Determine wether the font has an unicode table or not.
+		
+		Returns:
+			bool: True if the font has an unicode table else False		
+		"""
 		return ( self.mode & PSF1_MODEHASTAB or
 			self.mode & PSF1_MODEHASSEQ )
 			
 	def get_length(self):
+		"""Get the number of glyphs the font has.
+		
+		Returns:
+			int: The number of glyphs the font has.		
+		"""
 		return 512 if self.mode & PSF1_MODE512 else 256
 
 class PsfHeaderv2(PsfHeader):
-	"""This class represents the header for the Pc Screen Font 1.
+	"""This class represents the header for the pc screen font 2.
 	
 	Args:
 		size (list of 2 integers): The size of every glyph of the font.
@@ -868,21 +1059,30 @@ class PsfHeaderv2(PsfHeader):
 			self.flags |= flags
 			
 	def has_unicode_table(self):
+		"""Determine wehter the font has an unicode table or not.
+		
+		Returns:
+			bool: True if the font has an unicode table else False
+		"""
 		return self.flags & PSF2_HAS_UNICODE_TABLE
 	
 	def get_length(self):
+		"""Get the number of glyphs the font has.
+		
+		Returns:
+			int: The number of glyphs the font has.		
+		"""
 		return self.length
 
 class PcScreenFont(object):
 	"""This class represents a pc screen font
 	
 	The font contains zero or more glyphs. A glyph is a bitmap of a
-	character. The font accesses its glyphs by the primary codepoint
-	assigned to the glyph. Furthermore every glyph has zero or more
-	codepoints for additional unicode representations
+	character with unicode values describing the bitmap. The font
+	accesses its glyphs by the primary codepoint assigned to the glyph.
 		
 	Arguments:
-		header (PsfHeader)	: the header of the font
+		header (PsfHeader): the header of the font
 	"""
 	def __init__(self, header):
 		self.header = header
@@ -894,13 +1094,9 @@ class PcScreenFont(object):
 		has an unicode table or not.
 			
 		Returns:
-			bool : True if it has an unicode table else False
+			bool: True if it has an unicode table else False
 		"""
-		if self.header.version_psf == PSF1_VERSION:
-			return True if self.header.mode & PSF1_MODEHASTAB else False
-		else:
-			return (True if self.header.flags & PSF2_HAS_UNICODE_TABLE
-						 else False)
+		return self.header.has_unicode_table()
 			
 	def get_header(self):
 		"""Get the header of the font.
@@ -1006,7 +1202,9 @@ class PcScreenFont(object):
 			
 
 class Glyph(object):
-	"""This class represents a glyph of the pc screen font
+	"""This class represents a glyph of the pc screen font.
+	A glyph consists of a bitmap (the data) and unicode representations
+	describing the bitmap.
 	
 	Args:
 		size (tuple(int width, int height)) : size of the bitmap representing the
@@ -1065,7 +1263,7 @@ class Glyph(object):
 				self.unicode_representations[i] = new_cp
 	
 	def has_unicode_representation(self, codepoint):
-		"""Check if the char is represented by a codepoint
+		"""Check if the glyph is represented by a codepoint
 		
 		Args:
 			codepoint (int) : Codepoint to check
@@ -1094,13 +1292,16 @@ class Glyph(object):
 				pixel.
 				The pixel is set, if its value equal 1.
 		
+		Notes:
+			The dimensions of the data should equal the size of the
+			glyph.
 		"""
 		for i, row in zip(range(self.height), data):
 			for j, element in zip(range(self.width), row):
 				self.data[i][j] = element
 		
 	def get_data(self):
-		"""Get the data of the bitmap
+		"""Get the bitmap of the glyph
 		
 		Returns:
 			list : A list containing lists, which represent the rows of
@@ -1140,6 +1341,11 @@ class Glyph(object):
 		return self.width, self.height
 		
 	def __repr__(self):
+		"""Convert the glyph to a human readable string
+		
+		Returns:
+			str: Human readable representation of the glyph		
+		"""
 		out = "Unicode representations:\n"
 		for uc in self.unicode_representations:
 			unistr = get_unicode_str(uc)
