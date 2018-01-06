@@ -26,7 +26,7 @@ class TestAsmExporter(unittest.TestCase):
 		glyph.set_data_from_bytes(ba)
 		
 		exporter = psflib.AsmExporter(font)
-		self.assertEqual(exporter.export_string(),
+		self.assertEqual(exporter.export_to_data(),
 			TEST_FONT_PSF1_512_SIMPLE_ASM)
 	
 	def test_psf_256_unicode(self):
@@ -48,7 +48,7 @@ class TestAsmExporter(unittest.TestCase):
 		
 		exporter = psflib.AsmExporter(font)
 
-		self.assertEqual(exporter.export_string(),
+		self.assertEqual(exporter.export_to_data(),
 			TEST_FONT_PSF1_256_UNICODE_ASM)
 			
 	def test_psf2_simple(self):
@@ -72,7 +72,7 @@ class TestAsmExporter(unittest.TestCase):
 		
 		exporter = psflib.AsmExporter(font)
 		
-		self.assertEqual(exporter.export_string(),
+		self.assertEqual(exporter.export_to_data(),
 			TEST_FONT_PSF2_SIMPLE_ASM)
 			
 	def test_psf2_unicode(self):
@@ -97,5 +97,5 @@ class TestAsmExporter(unittest.TestCase):
 		
 		exporter = psflib.AsmExporter(font)
 		
-		self.assertEqual(exporter.export_string(),
+		self.assertEqual(exporter.export_to_data(),
 			TEST_FONT_PSF2_UNICODE_ASM)

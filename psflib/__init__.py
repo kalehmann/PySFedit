@@ -512,37 +512,30 @@ class AsmImporter(Importer):
 		data = self.__asm.get_labels()["glyph_%d" % n]
 		glyph.set_data_from_bytes(data)
 			
-class AsmExporter(object):
+class AsmExporter(Exporter):
+	"""Implementation for exporting a PCScreenFont to an asm file.
+	For usage see the Exporter base class.
+	
+	Args:
+		font (PcScreenFont): The font to export
+	"""
 	def __init__(self, font):
-		self.font = font
-		self.header = font.get_header()
-		if self.header.version_psf == PSF1_VERSION:
-			self.version = 1
-		elif self.header.version_psf == PSF2_VERSION:
-			self.version = 2
-		self.string = ""
-		
-	def __create_header(self):
-		self.string += "font_header:\n"
-		if self.version == 1:
-			magic_bytes = ByteArray(self.header.magic_bytes)
-			self.string += magic_bytes.to_asm("magic_bytes")
-			self.string += "mode: db %s\n" % hex(self.header.mode)
-			self.string += "charsize: db %s\n\n" % hex(self.header.charsize)
-		elif self.version == 2:
-			magic_bytes = ByteArray(self.header.magic_bytes)
-			self.string += magic_bytes.to_asm("magic_bytes")
-			self.string += "version: dd %s\n" % hex(self.header.version)
-			self.string += "headersize: dd %s\n" % hex(
-								self.header.headersize)
-			self.string += "flags: dd %s\n" % hex(self.header.flags)
-			self.string += "length: dd %s\n" % hex(self.header.length)
-			self.string += "charsize: dd %s\n" % hex(
-								self.header.charsize)
-			self.string += "height: dd %s\n" % hex(self.header.height)
-			self.string += "width: dd %s\n\n" % hex(self.header.width)
-
+		Exporter.__init__(self, font)
+		self.__header = font.get_header()
+		self.version =self.__header.version_psf
+	
 	def __glyph_to_asm(self, glyph, label):
+		"""Convert the bitmap of a glyph into a string with data in the
+		nasm assembler syntax.
+		
+		Args:
+			glyph (Glyph): The glyph to get the bitmap from
+			label (str): The label to put before the data
+			
+		Returns:
+			str: A string containing data in the nasm assembler syntax
+				representing the bitmap of the given glyph.
+		"""
 		bits = []
 		for row in glyph.data:
 			for bit in row:
@@ -551,55 +544,97 @@ class AsmExporter(object):
 			if missing_bits < 8:
 				for _ in range(8 - len(row) % 8):
 					bits.append(0)		
-		# -- The following is bullshit --		
-		# The number of bits must be a multiple of 8
-		#if bits_count % 8:
-		#	for _ in range(8- (bits_cound%8)):
-		#		bits.append(0)
-		_bytes = ByteArray.from_bit_array(bits)		
+		_bytes = ByteArray.from_bit_array(bits)
+
 		return _bytes.to_asm(label)
-
-
-	def __create_bitmaps(self):
-		self.string += "font_bitmaps:\n"
-		if self.header.has_unicode_table():
-			for i, glyph in zip(range(len(self.font.get_glyphs())),
-								self.font.get_glyphs().values()):
-				self.string += self.__glyph_to_asm(glyph, "glyph_%d" % i)
-			if self.header.version_psf == PSF1_VERSION:
-				if self.header.mode & PSF1_MODE512:
-					glyph_count = 512 
-				else:
-					glyph_count = 256
-				glyph = Glyph(self.header.size)
-				for i in range(len(self.font.get_glyphs()), glyph_count):
-					self.string += self.__glyph_to_asm(glyph, "glyph_%d" % i)
-			return
+	
+	def _write_data(self, file_path, data):
+		"""Write the data made from the font into a file.
+		
+		Args:
+			file_path (str): The path of the file to write the data
+				into.
+			data (str): The data to write into the file.
+		"""
+		with open(file_path, "w") as f:
+			f.write(data)
 			
-		# Has no Unicode table
-		if self.header.version_psf == PSF1_VERSION:
-			if self.header.mode & PSF1_MODE512:
-				# 512 Glyphs
-				glyph_count = 512
-			else:
-				# 256 Glyphs
-				glyph_count = 256
-		else:
-			glyph_count = len(self.font)
+	def _build_header(self):
+		"""Convert the header of the font of the exporter into a string
+		with the data from the header in the nasm assembler syntax.
+		
+		Returns:
+			str: The string containing the data from the header of the
+				font of the exporter.		
+		"""
+		data = "font_header:\n"
+		if self.version == PSF1_VERSION:
+			magic_bytes = ByteArray(self.__header.magic_bytes)
+			data += magic_bytes.to_asm("magic_bytes")
+			data += "mode: db %s\n" % hex(self.__header.mode)
+			data += "charsize: db %s\n\n" % hex(
+				self.__header.charsize)
+			
+			return data
+	
+		magic_bytes = ByteArray(self.__header.magic_bytes)
+		data += magic_bytes.to_asm("magic_bytes")
+		data += "version: dd %s\n" % hex(self.__header.version)
+		data += "headersize: dd %s\n" % hex(
+							self.__header.headersize)
+		data += "flags: dd %s\n" % hex(self.__header.flags)
+		data += "length: dd %s\n" % hex(self.__header.length)
+		data += "charsize: dd %s\n" % hex(
+							self.__header.charsize)
+		data += "height: dd %s\n" % hex(self.__header.height)
+		data += "width: dd %s\n\n" % hex(self.__header.width)
+		
+		return data
+		
+	def _build_bitmaps(self):
+		"""Convert the bitmaps of the font of the exporter into a string
+		with the data from the bitmaps in the nasm assembler syntax.
+		
+		Returns:
+			str: The string containing the data from the bitmaps of the
+				font of the exporter.		
+		"""
+		data = "font_bitmaps:\n"
+		font = self._get_font()
+		if self.__header.has_unicode_table():
+			for i, glyph in zip(range(len(font.get_glyphs())),
+				font.get_glyphs().values()):
+				data += self.__glyph_to_asm(glyph, "glyph_%d" % i)
+			if self.version == PSF1_VERSION:
+				glyph_count = self.__header.get_length()
+				glyph = Glyph(self.__header.size)
+				for i in range(len(font.get_glyphs()), glyph_count):
+					data += self.__glyph_to_asm(glyph, "glyph_%d" % i)
+
+			return data
+			
+		glyph_count = self.__header.get_length()
 			
 		for i in range(glyph_count):
-			glyph = self.font.get_glyph(i)
-			self.string += self.__glyph_to_asm(glyph, "glyph_%d" % i)
+			glyph = font.get_glyph(i)
+			data += self.__glyph_to_asm(glyph, "glyph_%d" % i)
 
-	def __create_unicode_table(self):
-		if self.header.version_psf == PSF1_VERSION:
-			if self.header.mode & PSF1_MODE512:
-				# 512 Glyphs
-				glyph_count = 512
-			else:
-				# 256 Glyphs
-				glyph_count = 256
-			for puc, glyph in self.font.get_glyphs().items():
+		return data
+	
+	def _build_unicode_table(self):
+		"""Convert the unicode table of the font of the exporter into a
+		string with the data from the unicode table in the nasm
+		assembler syntax.
+		
+		Returns:
+			str: The string containing the data from the unicode table
+				of the font of the exporter.		
+		"""
+		data = "unicode_table:\n"
+		font = self._get_font()
+		if self.version == PSF1_VERSION:
+			glyph_count = self.__header.get_length()
+			for puc, glyph in font.get_glyphs().items():
 				_bytes = ByteArray.from_int(puc, 2)
 				#if len(glyph.get_unicode_representations()) > 1:
 				#	_bytes += ByteArray.from_int(0xFFFE, 2)
@@ -607,33 +642,23 @@ class AsmExporter(object):
 					if uc != puc:
 						_bytes += ByteArray.from_int(uc, 2)
 				_bytes += ByteArray.from_int(0xFFFF, 2)		
-				self.string += _bytes.to_asm('Unicodedescription%d' % puc)
-			for i in range(glyph_count - len(self.font.get_glyphs())):
-				self.string += ByteArray.from_int(0xFFFF, 2).to_asm('Placeholder%d' % i)
-		else:	# psf2
-			for puc, glyph in self.font.get_glyphs().items():
-				_bytes = ByteArray.from_bytes(chr(puc).encode('utf8'))
-				for uc in glyph.get_unicode_representations():
-					if uc != puc:
-						_bytes += ByteArray.from_bytes(
-							chr(uc).encode('utf8'))
-				_bytes += ByteArray.from_int(0xFF, 1)	
-				self.string += _bytes.to_asm('Unicodedescription%d' % puc)	
-	
-	def export_string(self):
-		self.string = ''
-		self.__create_header()
-		self.__create_bitmaps()
-		if self.font.has_unicode():
-			self.__create_unicode_table()
-		
-		return self.string	
-
-	def export_file(self, path):
-		data = self.export_string()
-		
-		with open(path, "w") as f:
-			f.write(data)
+				data += _bytes.to_asm('Unicodedescription%d' % puc)
+			for i in range(glyph_count - len(font.get_glyphs())):
+				data += ByteArray.from_int(0xFFFF, 2)\
+					.to_asm('Placeholder%d' % i)
+					
+			return data
+		# psf2
+		for puc, glyph in font.get_glyphs().items():
+			_bytes = ByteArray.from_bytes(chr(puc).encode('utf8'))
+			for uc in glyph.get_unicode_representations():
+				if uc != puc:
+					_bytes += ByteArray.from_bytes(
+						chr(uc).encode('utf8'))
+			_bytes += ByteArray.from_int(0xFF, 1)	
+			data += _bytes.to_asm('Unicodedescription%d' % puc)	
+			
+		return data
 
 class PsfExporter(Exporter):
 	"""Implementation for exporting a PCScreenFont to a psf file.
