@@ -53,9 +53,9 @@ class FontEditor(Gtk.Grid):
 		if font:
 			self.font = font
 			min_cp = min(font.get_glyphs().keys())
+			self.active_char = min_cp
 			first_glyph = font.get_glyph(min_cp)
 			self.font_grid.set_data(first_glyph.get_data())
-			self.active_char = min_cp
 		else:
 			self.font = psflib.PcScreenFont(header)
 				

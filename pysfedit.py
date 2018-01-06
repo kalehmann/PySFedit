@@ -25,6 +25,7 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+from os.path import dirname
 
 import psflib
 import font_editor
@@ -32,8 +33,9 @@ import font_editor
 class PySFeditWindow(Gtk.Window):
 	def __init__(self):
 		Gtk.Window.__init__(self, title="PySFedit")
-		self.set_default_size(400,400)
+		self.set_default_size(400, 400)
 		self.connect("delete-event", self.on_window_delete)
+		self.set_icon_from_file(dirname(__file__) + "res/img/icon.png")
 
 		self.top_grid = Gtk.Grid()
 		self.add(self.top_grid)
