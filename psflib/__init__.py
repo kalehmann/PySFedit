@@ -104,6 +104,90 @@ def get_codepoint(char):
 	codepoint = ord(char)
 	return codepoint
 	
+class Exporter(ABC):
+	"""Base class of an exporter for a pc screen font.
+	
+	Args:
+		font (PcScreenFont): The font to export	
+	"""
+	def __init__(self, font):
+		self.__font = font
+	
+	def export_to_data(self):
+		"""Export the font of this exporter as data.
+		
+		Returns:
+			object: Depends on the implementation
+		"""
+		header = self._build_header()
+		bitmaps = self._build_bitmaps()
+		if self.__font.has_unicode():
+			unicode_table = self._build_unicode_table()
+		
+			return header + bitmaps + unicode_table
+		
+		return header + bitmaps
+
+	def export_to_file(self, file_path):
+		"""Export the font of this exporter to a file
+		
+		Args:
+			file_path (str): The path of the file to export the font to.
+		"""
+		data = self.export_to_data()
+		self._write_data(file_path, data)
+		
+	@abstractmethod
+	def _write_data(self, file_path, data):
+		"""Implement this method to write the data from the exporter
+		into a file.
+		
+		Args:
+			file_path (str): The path to the file to write the data
+				into.
+			data (object): The data to write into the file. The type of
+				this argument depends on the implementation.		
+		"""
+		pass
+	
+	@abstractmethod
+	def _build_header(self):
+		"""Convert the header of the font of this exporter into data, 
+		like for example a string or bytearray.
+		
+		Returns:
+			object: Depends on the implementation		
+		"""
+		pass
+		
+	@abstractmethod
+	def _build_bitmaps(self):
+		"""Convert the bitmaps of the font of this exporter into data, 
+		like for example a string or bytearray.
+		
+		Returns:
+			object: Depends on the implementation		
+		"""
+		pass
+		
+	@abstractmethod
+	def _build_unicode_table(self):
+		"""Convert the unicode table of the font of this exporter into
+		data, like for example a string or bytearray.
+		
+		Returns:
+			object: Depends on the implementation		
+		"""
+		pass
+		
+	def _get_font(self):
+		"""Get the font from the exporter.
+		
+		Returns:
+			PcScreenFont: The font of the exporter.		
+		"""
+		return self.__font
+			
 class Importer(ABC):
 	"""Base class of an importer for a pc screen font.
 	
