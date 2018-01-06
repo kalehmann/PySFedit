@@ -173,6 +173,7 @@ class PySFeditWindow(Gtk.Window):
 		submenu = Gtk.Menu()
 		menu_help.set_submenu(submenu)
 		menuitem = Gtk.MenuItem(label="About")
+		menuitem.connect("activate", self.on_menu_about_clicked)
 		submenu.append(menuitem)
 		self.menu_bar.append(menu_help)		
 
@@ -211,16 +212,19 @@ class PySFeditWindow(Gtk.Window):
 		filter_asm.add_pattern("*.asm")
 		dialog.add_filter(filter_asm)
 
-		#filter_any = Gtk.FileFilter()
-		#filter_any.set_name("Any files	.*")
-		#filter_any.add_pattern("*")
-		#dialog.add_filter(filter_any)
-
 		response = dialog.run()
 		if response == Gtk.ResponseType.OK:
 			path = dialog.get_filename()
 			dialog.destroy()
 			return path
+		dialog.destroy()
+		
+	def on_menu_about_clicked(self, submenu):
+		dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
+			Gtk.ButtonsType.OK, "About")
+		dialog.format_secondary_text(
+				"@ToDo add info about this program here.")
+		dialog.run()
 		dialog.destroy()
 		
 	def on_window_delete(self, widget, event):
