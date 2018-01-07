@@ -36,169 +36,64 @@ translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 	fallback=True)
 translation.install()
 		
-class PySFeditWindow(Gtk.Window):
+class AboutWindow(Gtk.Window):
 	def __init__(self):
-		Gtk.Window.__init__(self, title=_("PySFedit"))
-		self.set_default_size(400, 400)
-		self.connect("delete-event", self.on_window_delete)
-		self.set_icon_from_file(c.IMG_DIR + "icon.png")
-
-		self.top_grid = Gtk.Grid()
-		self.add(self.top_grid)
-
-		self.menu_bar = Gtk.MenuBar()
-		self.menu_bar.set_hexpand(True)
-
-		menu_file = Gtk.MenuItem(_("File"))
-		submenu = Gtk.Menu()
-		menu_file.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("New"))
-		menuitem.connect("activate", self.on_menu_new_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Import"))
-		menuitem.connect("activate", self.on_menu_import_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Export"))
-		menuitem.connect("activate", self.on_menu_export_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Quit"))
-		menuitem.connect("activate", self.on_menu_quit_clicked)
-		submenu.append(menuitem)
-		self.menu_bar.append(menu_file)
-
-		menu_help = Gtk.MenuItem(_("Help"))
-		submenu = Gtk.Menu()
-		menu_help.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("About"))
-		menuitem.connect("activate", self.on_menu_about_clicked)
-		submenu.append(menuitem)
-		self.menu_bar.append(menu_help)		
-
-		self.top_grid.attach(self.menu_bar,0,0,1,1)		
+		Gtk.Window.__init__(self, title=_("About"))
+		self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		top_box = Gtk.Box()
+		top_box.pack_start(
+			Gtk.Image.new_from_file(c.IMG_DIR + 'icon.png'), False,
+			False, 5)
+		l = Gtk.Label()
+		l.set_markup(
+			'<span font-size="x-large" font-weight="heavy">%s</span>' %
+			_("PySFedit"))
+		top_box.pack_start(l, False, False, 30)
+		self.box.add(top_box)
+		self.add(self.box)
+		self.set_default_size(600, 450)
+		self.set_resizable(True)
+		self.set_has_resize_grip(True)
+		self.set_skip_taskbar_hint(True)
 		
-		self.button_new = Gtk.Button(_("New Font"))
-		self.button_new.connect("clicked",
-			self.__on_but_new_clicked)
-		self.top_grid.attach(self.button_new,0,1,1,1)
+		self.notebook = Gtk.Notebook()
+		self.box.add(self.notebook)
 		
-		self.button_import = Gtk.Button(_("Import"))
-		self.button_import.connect("clicked",
-			self.__on_but_import_clicked)
-		self.top_grid.attach(self.button_import, 0,2,1,1)
+		self.page1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		l = Gtk.Label()
+		l.set_markup(
+"""
+<span font-size="large" font-weight="bold">%s</span>
+
+%s Karsten Lehmann \
+<a href="mailto:ka.lehmann@yahoo.com">&lt;ka.lehmann@yahoo.com&gt;</a>
+
+%s
+"""		% (
+			"An editor for psf files written in python",
+			"Copyright (c) 2018 by",
+"""
+PSF is short for pc screen font...
+"""
+			)
+		)
+		self.page1.add(l)
+		self.notebook.append_page(self.page1, Gtk.Label("Info"))
 		
-		self.font_editor = None
-
-	def get_file_path(self, title, _type="open"):
-		if _type == "open":
-			action = Gtk.FileChooserAction.OPEN
-		elif _type == "save":
-			action = Gtk.FileChooserAction.SAVE
-		dialog = Gtk.FileChooserDialog(title, self,
-			action,
-			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-			 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
-		if _type == "save":
-			dialog.set_do_overwrite_confirmation(True)
-		filter_psf = Gtk.FileFilter()
-		filter_psf.set_name(_("PSF files	.psf"))
-		filter_psf.add_mime_type("application/x-font-linux-psf")
-		dialog.add_filter(filter_psf)
-		
-		filter_asm = Gtk.FileFilter()
-		filter_asm.set_name(_("ASM files	.asm"))
-		filter_asm.add_pattern("*.asm")
-		dialog.add_filter(filter_asm)
-
-		response = dialog.run()
-		if response == Gtk.ResponseType.OK:
-			path = dialog.get_filename()
-			dialog.destroy()
-			return path
-		dialog.destroy()
-		
-	def on_menu_about_clicked(self, submenu):
-		dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.INFO,
-			Gtk.ButtonsType.OK, "About")
-		dialog.format_secondary_text(
-				"@ToDo add info about this program here.")
-		dialog.run()
-		dialog.destroy()
-		
-	def on_window_delete(self, widget, event):
-		self.on_quit()
-	
-	def on_menu_quit_clicked(self, submenu):
-		self.on_quit()
-		
-	def on_quit(self):
-		Gtk.main_quit()
-		
-	def __on_but_new_clicked(self, button):
-		self.new_font_dialog()
-
-	def __on_but_import_clicked(self, button):
-		self.import_font_dialog()
-
-	def on_menu_new_clicked(self, submenu):
-		self.new_font_dialog()
-
-	def on_menu_import_clicked(self, submenu):
-		self.import_font_dialog()
-
-	def on_menu_export_clicked(self, submenu):
-		self.export_font_dialog()
-
-	def new_font_dialog(self):
-		if self.font_editor: self.font_editor.destroy()
-		d = NewFontDialog(self)
-		r = d.run()
-		if r == Gtk.ResponseType.OK:
-			header = d.get_header()
-			self.button_new.destroy()
-			self.button_import.destroy()
-			self.font_editor = font_editor.FontEditor(header)
-			self.top_grid.attach(self.font_editor, 0, 1, 1, 1)
-			self.top_grid.show_all()
-		d.destroy()
-	
-	def import_font_dialog(self):
-		path = self.get_file_path(_("Import file"))
-		if not path: return
-		if self.font_editor: self.font_editor.destroy()
-		if path.lower().endswith(".asm"):
-			font = psflib.AsmImporter.import_from_file(path)
-		elif path.lower().endswith('.psf'):
-			font = psflib.PsfImporter.import_from_file(path)
-		else:
-			return
-		self.button_new.destroy()
-		self.button_import.destroy()
-		self.font_editor = font_editor.FontEditor(
-			font.get_header(), font)
-		self.top_grid.attach(self.font_editor, 0, 1, 1, 1)
-		self.top_grid.show_all()
+		self.page2 = Gtk.Box()
+		scrolled_window = Gtk.ScrolledWindow()
+		scrolled_window.set_hexpand(True)
+		scrolled_window.set_vexpand(True)
+		self.page2.pack_start(scrolled_window,True, True, 10)
+		textview = Gtk.TextView()
+		textview.set_editable(False)
+		textbuffer = textview.get_buffer()
+		scrolled_window.add(textview)
+		with open(c.PROJECT_ROOT + 'gpl-3.0.txt', "r") as f:
+			textbuffer.set_text(f.read())
+		self.notebook.append_page(self.page2, Gtk.Label("Licence"))
 		
 		
-	def export_font_dialog(self):
-		if not self.font_editor:
-			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
-				Gtk.ButtonsType.OK, "Error!")
-			dialog.format_secondary_text(
-				_("You have not created a font yet."))
-			dialog.run()
-			dialog.destroy()
-			return
-
-		path = self.get_file_path(_("Export file"), "save")
-		if path == None:
-			return
-		if path.lower().endswith(".asm"):
-			exporter = psflib.AsmExporter(self.font_editor.get_font())
-			exporter.export_to_file(path)
-		elif path.lower().endswith(".psf"):
-			exporter = psflib.PsfExporter(self.font_editor.get_font())
-			exporter.export_to_file(path)
-
 class NewFontDialog(Gtk.Dialog):
 	def __init__(self, parent):
 		Gtk.Dialog.__init__(self, _("New Font"), parent, 0,
@@ -291,6 +186,168 @@ class NewFontDialog(Gtk.Dialog):
 			if unicode_tab:
 				header.set_flags(psflib.PSF2_HAS_UNICODE_TABLE)
 		return header
+		
+class PySFeditWindow(Gtk.Window):
+	def __init__(self):
+		Gtk.Window.__init__(self, title=_("PySFedit"))
+		self.set_default_size(500, 400)
+		self.connect("delete-event", self.on_window_delete)
+		self.set_default_icon_from_file(c.IMG_DIR + "icon.png")
+
+		self.top_grid = Gtk.Grid()
+		self.add(self.top_grid)
+
+		self.menu_bar = Gtk.MenuBar()
+		self.menu_bar.set_hexpand(True)
+
+		menu_file = Gtk.MenuItem(_("File"))
+		submenu = Gtk.Menu()
+		menu_file.set_submenu(submenu)
+		menuitem = Gtk.MenuItem(label=_("New"))
+		menuitem.connect("activate", self.on_menu_new_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Import"))
+		menuitem.connect("activate", self.on_menu_import_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Export"))
+		menuitem.connect("activate", self.on_menu_export_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Quit"))
+		menuitem.connect("activate", self.on_menu_quit_clicked)
+		submenu.append(menuitem)
+		self.menu_bar.append(menu_file)
+
+		menu_help = Gtk.MenuItem(_("Help"))
+		submenu = Gtk.Menu()
+		menu_help.set_submenu(submenu)
+		menuitem = Gtk.MenuItem(label=_("About"))
+		menuitem.connect("activate", self.on_menu_about_clicked)
+		submenu.append(menuitem)
+		self.menu_bar.append(menu_help)		
+
+		self.top_grid.attach(self.menu_bar,0,0,1,1)		
+		
+		self.button_new = Gtk.Button(_("New Font"))
+		self.button_new.connect("clicked",
+			self.__on_but_new_clicked)
+		self.top_grid.attach(self.button_new,0,1,1,1)
+		
+		self.button_import = Gtk.Button(_("Import"))
+		self.button_import.connect("clicked",
+			self.__on_but_import_clicked)
+		self.top_grid.attach(self.button_import, 0,2,1,1)
+		
+		self.font_editor = None
+		self.about_window = None
+
+	def get_file_path(self, title, _type="open"):
+		if _type == "open":
+			action = Gtk.FileChooserAction.OPEN
+		elif _type == "save":
+			action = Gtk.FileChooserAction.SAVE
+		dialog = Gtk.FileChooserDialog(title, self,
+			action,
+			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
+			 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+		if _type == "save":
+			dialog.set_do_overwrite_confirmation(True)
+		filter_psf = Gtk.FileFilter()
+		filter_psf.set_name(_("PSF files	.psf"))
+		filter_psf.add_mime_type("application/x-font-linux-psf")
+		dialog.add_filter(filter_psf)
+		
+		filter_asm = Gtk.FileFilter()
+		filter_asm.set_name(_("ASM files	.asm"))
+		filter_asm.add_pattern("*.asm")
+		dialog.add_filter(filter_asm)
+
+		response = dialog.run()
+		if response == Gtk.ResponseType.OK:
+			path = dialog.get_filename()
+			dialog.destroy()
+			return path
+		dialog.destroy()
+		
+	def on_menu_about_clicked(self, submenu):
+		if self.about_window:
+			self.about_window.destroy()
+		self.about_window = AboutWindow()
+		self.about_window.show_all()
+		
+	def on_window_delete(self, widget, event):
+		self.on_quit()
+	
+	def on_menu_quit_clicked(self, submenu):
+		self.on_quit()
+		
+	def on_quit(self):
+		Gtk.main_quit()
+		
+	def __on_but_new_clicked(self, button):
+		self.new_font_dialog()
+
+	def __on_but_import_clicked(self, button):
+		self.import_font_dialog()
+
+	def on_menu_new_clicked(self, submenu):
+		self.new_font_dialog()
+
+	def on_menu_import_clicked(self, submenu):
+		self.import_font_dialog()
+
+	def on_menu_export_clicked(self, submenu):
+		self.export_font_dialog()
+
+	def new_font_dialog(self):
+		if self.font_editor: self.font_editor.destroy()
+		d = NewFontDialog(self)
+		r = d.run()
+		if r == Gtk.ResponseType.OK:
+			header = d.get_header()
+			self.button_new.destroy()
+			self.button_import.destroy()
+			self.font_editor = font_editor.FontEditor(header)
+			self.top_grid.attach(self.font_editor, 0, 1, 1, 1)
+			self.top_grid.show_all()
+		d.destroy()
+	
+	def import_font_dialog(self):
+		path = self.get_file_path(_("Import file"))
+		if not path: return
+		if self.font_editor: self.font_editor.destroy()
+		if path.lower().endswith(".asm"):
+			font = psflib.AsmImporter.import_from_file(path)
+		elif path.lower().endswith('.psf'):
+			font = psflib.PsfImporter.import_from_file(path)
+		else:
+			return
+		self.button_new.destroy()
+		self.button_import.destroy()
+		self.font_editor = font_editor.FontEditor(
+			font.get_header(), font)
+		self.top_grid.attach(self.font_editor, 0, 1, 1, 1)
+		self.top_grid.show_all()
+		
+		
+	def export_font_dialog(self):
+		if not self.font_editor:
+			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
+				Gtk.ButtonsType.OK, "Error!")
+			dialog.format_secondary_text(
+				_("You have not created a font yet."))
+			dialog.run()
+			dialog.destroy()
+			return
+
+		path = self.get_file_path(_("Export file"), "save")
+		if path == None:
+			return
+		if path.lower().endswith(".asm"):
+			exporter = psflib.AsmExporter(self.font_editor.get_font())
+			exporter.export_to_file(path)
+		elif path.lower().endswith(".psf"):
+			exporter = psflib.PsfExporter(self.font_editor.get_font())
+			exporter.export_to_file(path)
 
 if __name__ == "__main__":
 	window = PySFeditWindow()

@@ -25,7 +25,8 @@ This module contains some constants like paths to ressources.
 
 from os.path import dirname
 
-RES_DIR = dirname(__file__) + '/res/'
+PROJECT_ROOT = dirname(__file__) + '/'
+RES_DIR = PROJECT_ROOT + 'res/'
 IMG_DIR = RES_DIR + 'img/'
 LOCALE_DIR = RES_DIR + 'locale/'
 
