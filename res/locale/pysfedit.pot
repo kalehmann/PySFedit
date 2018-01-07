@@ -1,0 +1,85 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR ORGANIZATION
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"POT-Creation-Date: 2018-01-07 09:05+CET\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=CHARSET\n"
+"Content-Transfer-Encoding: ENCODING\n"
+"Generated-By: pygettext.py 1.5\n"
+
+
+#: pysfedit.py:35
+msgid "PySFedit"
+msgstr ""
+
+#: pysfedit.py:46
+msgid "File"
+msgstr ""
+
+#: pysfedit.py:49
+msgid "New"
+msgstr ""
+
+#: pysfedit.py:52 pysfedit.py:78
+msgid "Import"
+msgstr ""
+
+#: pysfedit.py:55
+msgid "Export"
+msgstr ""
+
+#: pysfedit.py:58
+msgid "Quit"
+msgstr ""
+
+#: pysfedit.py:63
+msgid "Help"
+msgstr ""
+
+#: pysfedit.py:66
+msgid "About"
+msgstr ""
+
+#: pysfedit.py:73 pysfedit.py:198
+msgid "New Font"
+msgstr ""
+
+#: pysfedit.py:97
+msgid "PSF files\t.psf"
+msgstr ""
+
+#: pysfedit.py:102
+msgid "ASM files\t.asm"
+msgstr ""
+
+#: pysfedit.py:159
+msgid "Import file"
+msgstr ""
+
+#: pysfedit.py:181
+msgid "You have not created a font yet."
+msgstr ""
+
+#: pysfedit.py:186
+msgid "Export file"
+msgstr ""
+
+#: pysfedit.py:207
+msgid "Font Size:"
+msgstr ""
+
+#: pysfedit.py:239
+msgid "Number of Glyphs:"
+msgstr ""
+
+#: pysfedit.py:255
+msgid "Include unicode table:"
+msgstr ""
+

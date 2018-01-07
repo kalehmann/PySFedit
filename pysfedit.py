@@ -26,16 +26,22 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 from os.path import dirname
+import gettext
+import locale
 
 import psflib
 import font_editor
+
+RES_DIR = dirname(__file__) + 'res/'
+IMG_DIR = RES_DIR + 'img/'
+LOCALE_DIR = RES_DIR + 'locale/'
 		
 class PySFeditWindow(Gtk.Window):
 	def __init__(self):
-		Gtk.Window.__init__(self, title="PySFedit")
+		Gtk.Window.__init__(self, title=_("PySFedit"))
 		self.set_default_size(400, 400)
 		self.connect("delete-event", self.on_window_delete)
-		self.set_icon_from_file(dirname(__file__) + "res/img/icon.png")
+		self.set_icon_from_file(IMG_DIR + "icon.png")
 
 		self.top_grid = Gtk.Grid()
 		self.add(self.top_grid)
@@ -43,39 +49,39 @@ class PySFeditWindow(Gtk.Window):
 		self.menu_bar = Gtk.MenuBar()
 		self.menu_bar.set_hexpand(True)
 
-		menu_file = Gtk.MenuItem("File")
+		menu_file = Gtk.MenuItem(_("File"))
 		submenu = Gtk.Menu()
 		menu_file.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label="New")
+		menuitem = Gtk.MenuItem(label=_("New"))
 		menuitem.connect("activate", self.on_menu_new_clicked)
 		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label="Import")
+		menuitem = Gtk.MenuItem(label=_("Import"))
 		menuitem.connect("activate", self.on_menu_import_clicked)
 		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label="Export")
+		menuitem = Gtk.MenuItem(label=_("Export"))
 		menuitem.connect("activate", self.on_menu_export_clicked)
 		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label="Quit")
+		menuitem = Gtk.MenuItem(label=_("Quit"))
 		menuitem.connect("activate", self.on_menu_quit_clicked)
 		submenu.append(menuitem)
 		self.menu_bar.append(menu_file)
 
-		menu_help = Gtk.MenuItem("Help")
+		menu_help = Gtk.MenuItem(_("Help"))
 		submenu = Gtk.Menu()
 		menu_help.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label="About")
+		menuitem = Gtk.MenuItem(label=_("About"))
 		menuitem.connect("activate", self.on_menu_about_clicked)
 		submenu.append(menuitem)
 		self.menu_bar.append(menu_help)		
 
 		self.top_grid.attach(self.menu_bar,0,0,1,1)		
 		
-		self.button_new = Gtk.Button("New Font")
+		self.button_new = Gtk.Button(_("New Font"))
 		self.button_new.connect("clicked",
 			self.__on_but_new_clicked)
 		self.top_grid.attach(self.button_new,0,1,1,1)
 		
-		self.button_import = Gtk.Button("Import")
+		self.button_import = Gtk.Button(_("Import"))
 		self.button_import.connect("clicked",
 			self.__on_but_import_clicked)
 		self.top_grid.attach(self.button_import, 0,2,1,1)
@@ -94,12 +100,12 @@ class PySFeditWindow(Gtk.Window):
 		if _type == "save":
 			dialog.set_do_overwrite_confirmation(True)
 		filter_psf = Gtk.FileFilter()
-		filter_psf.set_name("PSF files	.psf")
+		filter_psf.set_name(_("PSF files	.psf"))
 		filter_psf.add_mime_type("application/x-font-linux-psf")
 		dialog.add_filter(filter_psf)
 		
 		filter_asm = Gtk.FileFilter()
-		filter_asm.set_name("ASM files	.asm")
+		filter_asm.set_name(_("ASM files	.asm"))
 		filter_asm.add_pattern("*.asm")
 		dialog.add_filter(filter_asm)
 
@@ -156,7 +162,7 @@ class PySFeditWindow(Gtk.Window):
 		d.destroy()
 	
 	def import_font_dialog(self):
-		path = self.get_file_path("Import file")
+		path = self.get_file_path(_("Import file"))
 		if not path: return
 		if self.font_editor: self.font_editor.destroy()
 		if path.lower().endswith(".asm"):
@@ -178,12 +184,12 @@ class PySFeditWindow(Gtk.Window):
 			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
 				Gtk.ButtonsType.OK, "Error!")
 			dialog.format_secondary_text(
-					"You have not created a font yet.")
+				_("You have not created a font yet."))
 			dialog.run()
 			dialog.destroy()
 			return
 
-		path = self.get_file_path("Export file", "save")
+		path = self.get_file_path(_("Export file"), "save")
 		if path == None:
 			return
 		if path.lower().endswith(".asm"):
@@ -195,7 +201,7 @@ class PySFeditWindow(Gtk.Window):
 
 class NewFontDialog(Gtk.Dialog):
 	def __init__(self, parent):
-		Gtk.Dialog.__init__(self, "New Font", parent, 0,
+		Gtk.Dialog.__init__(self, _("New Font"), parent, 0,
 			(Gtk.STOCK_OK, Gtk.ResponseType.OK,
 			 Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
 		self.set_default_size(200,200)
@@ -204,7 +210,7 @@ class NewFontDialog(Gtk.Dialog):
 		grid = Gtk.Grid()
 		box.add(grid)
 		
-		l1 = Gtk.Label("Font Size:")
+		l1 = Gtk.Label(_("Font Size:"))
 		grid.attach(l1, 0, 0, 1, 1)
 		
 		self.entry_width = Gtk.Entry()
@@ -236,7 +242,7 @@ class NewFontDialog(Gtk.Dialog):
 		grid.attach(stack, 0, 3, 2, 1)
 		self.stack = stack
 
-		lglyph_num = Gtk.Label("Number of Glyphs:")
+		lglyph_num = Gtk.Label(_("Number of Glyphs:"))
 		box = Gtk.Box()
 		self.button256 = Gtk.RadioButton.new_with_label_from_widget(
 			None, "256")
@@ -252,7 +258,7 @@ class NewFontDialog(Gtk.Dialog):
 		grid_v1.attach(box, 1,0,1,1)
 
 
-		l3 = Gtk.Label("Include unicode table:")
+		l3 = Gtk.Label(_("Include unicode table:"))
 		grid.attach(l3, 0, 4, 1, 1)
 		
 		self.check_table = Gtk.CheckButton()
@@ -287,6 +293,10 @@ class NewFontDialog(Gtk.Dialog):
 		return header
 
 if __name__ == "__main__":
+	translation = gettext.translation('pysfedit', localedir=LOCALE_DIR,
+		fallback=True)
+	translation.install()
+	
 	window = PySFeditWindow()
 	window.show_all()
 	Gtk.main()
