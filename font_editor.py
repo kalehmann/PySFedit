@@ -29,9 +29,15 @@ from gi.repository import GdkPixbuf
 from gi.repository import GLib
 from gi.repository import Gdk
 from PIL import Image, ImageDraw
+import gettext
 
 import psflib
 from glyph_editor import GlyphEditor
+import constants as c
+
+translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
+	fallback=True)
+translation.install()
 
 class FontEditor(Gtk.Grid):
 	def __init__(self, header, font = None):
@@ -162,7 +168,7 @@ class FontEditor(Gtk.Grid):
 
 class NewUnicodeRepresentationDialog(Gtk.Dialog):
 	def __init__(self, parent, codepoint):
-		Gtk.Dialog.__init__(self, "New Font", parent, 0,
+		Gtk.Dialog.__init__(self, _("New Font"), parent, 0,
 			(Gtk.STOCK_OK, Gtk.ResponseType.OK,
 			 Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
 		self.set_default_size(150,100)
@@ -678,11 +684,11 @@ class GlyphSelector(Gtk.Grid):
 					parent_cp = int(self.model.get(parent_iter, 2)[0])
 					cp = int(self.model.get(iter, 2)[0])
 					menu_add_repr = Gtk.MenuItem(
-						"Add Unicode Representation")
+						_("Add Unicode Representation"))
 					menu_add_repr.connect("activate",
 						self.__on_add_representation_clicked, parent_cp)
 					menu_rm_repr = Gtk.MenuItem(
-						"Remove Unicode Representation")
+						_("Remove Unicode Representation"))
 					menu_rm_repr.connect("activate",
 						self.__on_remove_representation_clicked,
 						parent_cp, cp)
@@ -691,7 +697,7 @@ class GlyphSelector(Gtk.Grid):
 				else:
 					# Primary representation
 					menu_add_repr = Gtk.MenuItem(
-						"Add Unicode Representation")
+						_("Add Unicode Representation"))
 					menu_add_repr.connect("activate",
 						self.__on_add_representation_clicked, 
 						int(self.model.get(iter, 2)[0]))
@@ -738,11 +744,11 @@ class GlyphSelector(Gtk.Grid):
 		"""	
 		if codepoint == primary_cp:
 			dialog = Gtk.MessageDialog(self.get_toplevel(), 0,
-						Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
-						"Confirmation")
+				Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
+				_("Confirmation"))
 			dialog.format_secondary_text(
-				"You cannot remove this representation, because it is "+
-				"the primary representation for this glyph")
+				_("""You cannot remove this representation, because it
+is the primary representation for this glyph"""))
 			dialog.run()
 			dialog.destroy()
 			return
@@ -750,9 +756,9 @@ class GlyphSelector(Gtk.Grid):
 		dialog = Gtk.MessageDialog(self.get_toplevel(), 0,
 					Gtk.MessageType.QUESTION, (Gtk.STOCK_OK,
 					Gtk.ResponseType.OK, Gtk.STOCK_CANCEL,
-					Gtk.ResponseType.CANCEL), "Confirmation")
-		dialog.format_secondary_text("Please confirm, that you want "+
-					"to remove this additional unicode representation")		
+					Gtk.ResponseType.CANCEL), _("Confirmation"))
+		dialog.format_secondary_text(_("""Please confirm, that you want 
+to remove this additional unicode representation"""))		
 		response = dialog.run()
 		if response == Gtk.ResponseType.OK:
 			self.remove_repr(primary_cp, codepoint)

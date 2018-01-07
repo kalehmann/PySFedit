@@ -25,23 +25,23 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
-from os.path import dirname
 import gettext
 import locale
 
 import psflib
 import font_editor
+import constants as c
 
-RES_DIR = dirname(__file__) + 'res/'
-IMG_DIR = RES_DIR + 'img/'
-LOCALE_DIR = RES_DIR + 'locale/'
+translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
+	fallback=True)
+translation.install()
 		
 class PySFeditWindow(Gtk.Window):
 	def __init__(self):
 		Gtk.Window.__init__(self, title=_("PySFedit"))
 		self.set_default_size(400, 400)
 		self.connect("delete-event", self.on_window_delete)
-		self.set_icon_from_file(IMG_DIR + "icon.png")
+		self.set_icon_from_file(c.IMG_DIR + "icon.png")
 
 		self.top_grid = Gtk.Grid()
 		self.add(self.top_grid)
@@ -293,10 +293,6 @@ class NewFontDialog(Gtk.Dialog):
 		return header
 
 if __name__ == "__main__":
-	translation = gettext.translation('pysfedit', localedir=LOCALE_DIR,
-		fallback=True)
-	translation.install()
-	
 	window = PySFeditWindow()
 	window.show_all()
 	Gtk.main()
