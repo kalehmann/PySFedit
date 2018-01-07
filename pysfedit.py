@@ -70,15 +70,15 @@ class AboutWindow(Gtk.Window):
 
 %s
 """		% (
-			"An editor for psf files written in python",
-			"Copyright (c) 2018 by",
-"""
+			_("An editor for psf files written in python"),
+			_("Copyright (c) 2018 by"),
+			_("""
 PSF is short for pc screen font...
-"""
+			""")
 			)
 		)
 		self.page1.add(l)
-		self.notebook.append_page(self.page1, Gtk.Label("Info"))
+		self.notebook.append_page(self.page1, Gtk.Label(_("Info")))
 		
 		self.page2 = Gtk.Box()
 		scrolled_window = Gtk.ScrolledWindow()
@@ -91,7 +91,7 @@ PSF is short for pc screen font...
 		scrolled_window.add(textview)
 		with open(c.PROJECT_ROOT + 'gpl-3.0.txt', "r") as f:
 			textbuffer.set_text(f.read())
-		self.notebook.append_page(self.page2, Gtk.Label("Licence"))
+		self.notebook.append_page(self.page2, Gtk.Label(_("Licence")))
 		
 		
 class NewFontDialog(Gtk.Dialog):

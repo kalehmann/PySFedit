@@ -5,7 +5,7 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
-"POT-Creation-Date: 2018-01-07 19:11+CET\n"
+"POT-Creation-Date: 2018-01-07 19:09+CET\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,34 +14,6 @@ msgstr ""
 "Content-Transfer-Encoding: ENCODING\n"
 "Generated-By: pygettext.py 1.5\n"
 
-
-#: font_editor.py:171 pysfedit.py:99 pysfedit.py:230
-msgid "New Font"
-msgstr ""
-
-#: font_editor.py:687 font_editor.py:700
-msgid "Add Unicode Representation"
-msgstr ""
-
-#: font_editor.py:691
-msgid "Remove Unicode Representation"
-msgstr ""
-
-#: font_editor.py:748 font_editor.py:759
-msgid "Confirmation"
-msgstr ""
-
-#: font_editor.py:750
-msgid ""
-"You cannot remove this representation, because it\n"
-"is the primary representation for this glyph"
-msgstr ""
-
-#: font_editor.py:760
-msgid ""
-"Please confirm, that you want \n"
-"to remove this additional unicode representation"
-msgstr ""
 
 #: pysfedit.py:41 pysfedit.py:223
 msgid "About"
@@ -66,12 +38,8 @@ msgid ""
 "\t\t\t"
 msgstr ""
 
-#: pysfedit.py:81
-msgid "Info"
-msgstr ""
-
-#: pysfedit.py:94
-msgid "Licence"
+#: pysfedit.py:99 pysfedit.py:230
+msgid "New Font"
 msgstr ""
 
 #: pysfedit.py:108

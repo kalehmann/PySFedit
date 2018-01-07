@@ -5,8 +5,8 @@
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2018-01-07 11:41+0100\n"
-"PO-Revision-Date: 2018-01-07 11:43+0100\n"
+"POT-Creation-Date: 2018-01-07 19:11+0100\n"
+"PO-Revision-Date: 2018-01-07 19:13+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de_DE\n"
@@ -17,7 +17,7 @@ msgstr ""
 "X-Generator: Poedit 1.8.11\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
 
-#: font_editor.py:171 pysfedit.py:79 pysfedit.py:204
+#: font_editor.py:171 pysfedit.py:99 pysfedit.py:230
 msgid "New Font"
 msgstr "Neue Schrift"
 
@@ -49,66 +49,89 @@ msgstr ""
 "Bitte bestätige, dass du diese zusätzliche\n"
 "Unicode Repräsentation entfernen willst"
 
-#: pysfedit.py:41
-msgid "PySFedit"
-msgstr "PySFedit"
-
-#: pysfedit.py:52
-msgid "File"
-msgstr "Datei"
-
-#: pysfedit.py:55
-msgid "New"
-msgstr "Neu"
-
-#: pysfedit.py:58 pysfedit.py:84
-msgid "Import"
-msgstr "Importieren"
-
-#: pysfedit.py:61
-msgid "Export"
-msgstr "Exportieren"
-
-#: pysfedit.py:64
-msgid "Quit"
-msgstr "Beenden"
-
-#: pysfedit.py:69
-msgid "Help"
-msgstr "Hilfe"
-
-#: pysfedit.py:72
+#: pysfedit.py:41 pysfedit.py:223
 msgid "About"
 msgstr "Über"
 
-#: pysfedit.py:103
-msgid "PSF files\t.psf"
-msgstr "PSF Datein\t.psf"
+#: pysfedit.py:50 pysfedit.py:192
+msgid "PySFedit"
+msgstr "PySFedit"
+
+#: pysfedit.py:73
+msgid "An editor for psf files written in python"
+msgstr "Ein in Python geschriebener Editor für PSF Datein"
+
+#: pysfedit.py:74
+msgid "Copyright (c) 2018 by"
+msgstr "Copyright (c) 2018 bei"
+
+#: pysfedit.py:75
+msgid ""
+"\n"
+"PSF is short for pc screen font...\n"
+"\t\t\t"
+msgstr ""
+
+#: pysfedit.py:81
+msgid "Info"
+msgstr "Info"
+
+#: pysfedit.py:94
+msgid "Licence"
+msgstr "Lizenz"
 
 #: pysfedit.py:108
-msgid "ASM files\t.asm"
-msgstr "ASM Datein\t.asm"
-
-#: pysfedit.py:165
-msgid "Import file"
-msgstr "Datei importieren"
-
-#: pysfedit.py:187
-msgid "You have not created a font yet."
-msgstr "Es wurde noch keine Schrift erstellt"
-
-#: pysfedit.py:192
-msgid "Export file"
-msgstr "Datei exportieren"
-
-#: pysfedit.py:213
 msgid "Font Size:"
 msgstr "Schrftgröße"
 
-#: pysfedit.py:245
+#: pysfedit.py:140
 msgid "Number of Glyphs:"
 msgstr "Anzahl der Zeichen"
 
-#: pysfedit.py:261
+#: pysfedit.py:156
 msgid "Include unicode table:"
 msgstr "Unicode Tabelle nutzen"
+
+#: pysfedit.py:203
+msgid "File"
+msgstr "Datei"
+
+#: pysfedit.py:206
+msgid "New"
+msgstr "Neu"
+
+#: pysfedit.py:209 pysfedit.py:235
+msgid "Import"
+msgstr "Importieren"
+
+#: pysfedit.py:212
+msgid "Export"
+msgstr "Exportieren"
+
+#: pysfedit.py:215
+msgid "Quit"
+msgstr "Beenden"
+
+#: pysfedit.py:220
+msgid "Help"
+msgstr "Hilfe"
+
+#: pysfedit.py:255
+msgid "PSF files\t.psf"
+msgstr "PSF Datein\t.psf"
+
+#: pysfedit.py:260
+msgid "ASM files\t.asm"
+msgstr "ASM Datein\t.asm"
+
+#: pysfedit.py:315
+msgid "Import file"
+msgstr "Datei importieren"
+
+#: pysfedit.py:337
+msgid "You have not created a font yet."
+msgstr "Es wurde noch keine Schrift erstellt"
+
+#: pysfedit.py:342
+msgid "Export file"
+msgstr "Datei exportieren"
