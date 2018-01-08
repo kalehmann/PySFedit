@@ -62,19 +62,17 @@ class AboutWindow(Gtk.Window):
 		self.page1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		l = Gtk.Label()
 		l.set_markup(
-"""
-<span font-size="large" font-weight="bold">%s</span>
+"""<span font-size="large" font-weight="bold">%s</span>
 
 %s Karsten Lehmann \
 <a href="mailto:ka.lehmann@yahoo.com">&lt;ka.lehmann@yahoo.com&gt;</a>
 
-%s
-"""		% (
+%s"""	% (
 			_("An editor for psf files written in python"),
 			_("Copyright (c) 2018 by"),
-			_("""
-PSF is short for pc screen font...
-			""")
+			_(
+"""PSF is short for pc screen font...
+"""			)
 			)
 		)
 		self.page1.add(l)
@@ -95,95 +93,111 @@ PSF is short for pc screen font...
 		
 		
 class NewFontDialog(Gtk.Dialog):
+	"""A dialog for the user to create the header of a new font.
+	After the dialog has been closed you can get the header with the
+	get_header method.
+	
+	Args:
+		parent (Gtk.Widget): The parent widget creating this dialog.	
+	"""
 	def __init__(self, parent):
 		Gtk.Dialog.__init__(self, _("New Font"), parent, 0,
 			(Gtk.STOCK_OK, Gtk.ResponseType.OK,
 			 Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
 		self.set_default_size(200,200)
 		
+		self.psf_version = psflib.PSF1_VERSION
+		self.glyph_num = 256
+		self.has_unicode_table = False
+		
 		box = self.get_content_area()
-		grid = Gtk.Grid()
-		box.add(grid)
+		box.set_orientation(Gtk.Orientation.VERTICAL)
 		
-		l1 = Gtk.Label(_("Font Size:"))
-		grid.attach(l1, 0, 0, 1, 1)
+		l1 = Gtk.Label()
+		l1.set_markup(
+			'<span font-size="large" font-weight="bold">%s</span>' %
+			_("Font Size:")
+		)
+		box.pack_start(l1, False, False, 5)
 		
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		self.entry_width = Gtk.Entry()
 		self.entry_width.set_text("8")
 		self.entry_width.set_sensitive(False)
-		grid.attach(self.entry_width, 0, 1, 1, 1)
+		hbox.pack_start(self.entry_width, False, False, 5)
 		
 		self.entry_height = Gtk.Entry()
 		self.entry_height.set_text("8")
-		grid.attach(self.entry_height, 1, 1, 1, 1)
+		hbox.pack_start(self.entry_height, False, False, 5)
+		box.pack_start(hbox, False, False, 5)
 		
-		stack = Gtk.Stack()
-		stack.set_transition_type(Gtk.StackTransitionType.SLIDE_LEFT_RIGHT)
-		stack.set_transition_duration(50)
-		
-		grid_v1 = Gtk.Grid()
-		
-		grid_v2 = Gtk.Grid()
-				
-		stack.add_titled(grid_v1, "grid_v1", "PSFv1")
-		stack.add_titled(grid_v2, "grid_v2", "PSFv2")
-		
-		stack.connect("notify::visible-child", self.__on_stack_changed)
-		
-		stack_switcher = Gtk.StackSwitcher()
-		stack_switcher.set_stack(stack)
-		
-		grid.attach(stack_switcher, 0, 2, 2, 1)
-		grid.attach(stack, 0, 3, 2, 1)
-		self.stack = stack
-
-		lglyph_num = Gtk.Label(_("Number of Glyphs:"))
-		box = Gtk.Box()
-		self.button256 = Gtk.RadioButton.new_with_label_from_widget(
-			None, "256")
-		self.button256.connect("toggled", self.__on_glyph_num_changed,
+		notebook = Gtk.Notebook()
+		notebook.connect("switch-page", self.__on_psf_version_changed)
+		box.pack_start(notebook, False, False, 0)
+		page1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		rb256 = Gtk.RadioButton.new_with_label(None, _("256 Glyphs"))
+		rb256.connect("toggled", self.__on_radion_btn_glyphs_changed,
 			256)
-		box.pack_start(self.button256, False, False, 0)
-		self.button512 = Gtk.RadioButton.new_with_label_from_widget(
-			self.button256, "512")
-		self.button512.connect("toggled", self.__on_glyph_num_changed,
+		hbox.pack_start(rb256, False, False, 0)
+		rb512 = Gtk.RadioButton.new_from_widget(rb256)
+		rb512.set_label(_("512 Glyphs"))
+		rb512.connect("toggled", self.__on_radion_btn_glyphs_changed,
 			512)
-		box.pack_start(self.button512, False, False, 0)
-		grid_v1.attach(lglyph_num, 0,0,1,1)
-		grid_v1.attach(box, 1,0,1,1)
-
-
-		l3 = Gtk.Label(_("Include unicode table:"))
-		grid.attach(l3, 0, 4, 1, 1)
+		hbox.pack_start(rb512, False, False, 0)
+		page1.pack_start(hbox, False, False, 0)
 		
-		self.check_table = Gtk.CheckButton()
-		grid.attach(self.check_table, 1, 4, 1, 1)
-				
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		label = Gtk.Label(_("Include unicode table:"))
+		hbox.pack_start(label, False, False, 0)
+		check_button = Gtk.CheckButton()
+		check_button.connect("toggled", self.__on_btn_uni_table_toggled)
+		hbox.pack_start(check_button, False, False, 0)
+		page1.pack_start(hbox, False, False, 0)
+		
+		notebook.append_page(page1, Gtk.Label(_("PSF")))
+		
+		page2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		label = Gtk.Label(_("Include unicode table:"))
+		hbox.pack_start(label, False, False, 0)
+		check_button = Gtk.CheckButton()
+		check_button.connect("toggled", self.__on_btn_uni_table_toggled)
+		hbox.pack_start(check_button, False, False, 0)
+		page2.pack_start(hbox, False, False, 0)
+		
+		notebook.append_page(page2, Gtk.Label(_("PSF2")))
+
 		self.show_all()
 		
-	def __on_glyph_num_changed(self, button, number):
-		pass	
-	
-	def __on_stack_changed(self, stack, name):
-		if stack.get_visible_child_name() == "grid_v1":
+	def __on_psf_version_changed(self, notebook, page, page_num):
+		if page_num == 0:
 			self.entry_width.set_text("8")
 			self.entry_width.set_sensitive(False)
+			self.psf_version = psflib.PSF1_VERSION
 		else:
 			self.entry_width.set_editable(True)
 			self.entry_width.set_sensitive(True)
+			self.psf_version = psflib.PSF2_VERSION
 				
+	def __on_radion_btn_glyphs_changed(self, button, number_of_glyphs):
+		self.glyph_num = number_of_glyphs
+		
+	def __on_btn_uni_table_toggled(self, button):
+		self.has_unicode_table = button.get_active()
+			
 	def get_header(self):
 		size = (int(self.entry_width.get_text()),
 				int(self.entry_height.get_text()))
-		unicode_tab = self.check_table.get_active()
-		if self.stack.get_visible_child_name() == "grid_v1":
+		if self.psf_version == psflib.PSF1_VERSION:
 			header = psflib.PsfHeaderv1(size)
-			if unicode_tab: header.set_mode(psflib.PSF1_MODEHASTAB)
-			if self.button512.get_active():
+			if self.has_unicode_table:
+				header.set_mode(psflib.PSF1_MODEHASTAB)
+			if self.glyph_num == 512:
 				header.set_mode(psflib.PSF1_MODE512)
 		else:
 			header = psflib.PsfHeaderv2(size)
-			if unicode_tab:
+			if self.has_unicode_table:
 				header.set_flags(psflib.PSF2_HAS_UNICODE_TABLE)
 		return header
 		
@@ -199,32 +213,7 @@ class PySFeditWindow(Gtk.Window):
 
 		self.menu_bar = Gtk.MenuBar()
 		self.menu_bar.set_hexpand(True)
-
-		menu_file = Gtk.MenuItem(_("File"))
-		submenu = Gtk.Menu()
-		menu_file.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("New"))
-		menuitem.connect("activate", self.on_menu_new_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Import"))
-		menuitem.connect("activate", self.on_menu_import_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Export"))
-		menuitem.connect("activate", self.on_menu_export_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Quit"))
-		menuitem.connect("activate", self.on_menu_quit_clicked)
-		submenu.append(menuitem)
-		self.menu_bar.append(menu_file)
-
-		menu_help = Gtk.MenuItem(_("Help"))
-		submenu = Gtk.Menu()
-		menu_help.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("About"))
-		menuitem.connect("activate", self.on_menu_about_clicked)
-		submenu.append(menuitem)
-		self.menu_bar.append(menu_help)		
-
+		self.build_menu()
 		self.top_grid.attach(self.menu_bar,0,0,1,1)		
 		
 		self.button_new = Gtk.Button(_("New Font"))
@@ -239,6 +228,52 @@ class PySFeditWindow(Gtk.Window):
 		
 		self.font_editor = None
 		self.about_window = None
+
+	def build_menu(self):
+		menu_file = Gtk.MenuItem(_("File"))
+		submenu = Gtk.Menu()
+		menu_file.set_submenu(submenu)
+		menuitem = Gtk.MenuItem(label=_("New"))
+		menuitem.connect("activate", self.on_menu_new_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Import"))
+		menuitem.connect("activate", self.on_menu_import_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Export"))
+		menuitem.connect("activate", self.on_menu_export_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Preferences"))
+		menuitem.connect("activate", self.on_menu_preferences_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Quit"))
+		menuitem.connect("activate", self.on_menu_quit_clicked)
+		submenu.append(menuitem)
+		self.menu_bar.append(menu_file)
+
+		menu_edit = Gtk.MenuItem(_("Edit"))
+		submenu = Gtk.Menu()
+		menu_edit.set_submenu(submenu)
+		menuitem = Gtk.MenuItem(label=_("Copy"))
+		menuitem.connect("activate", self.on_menu_copy_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Cut"))
+		menuitem.connect("activate", self.on_menu_cut_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Paste"))
+		menuitem.connect("activate", self.on_menu_paste_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Delete"))
+		menuitem.connect("activate", self.on_menu_delete_clicked)
+		submenu.append(menuitem)
+		self.menu_bar.append(menu_edit)
+
+		menu_help = Gtk.MenuItem(_("Help"))
+		submenu = Gtk.Menu()
+		menu_help.set_submenu(submenu)
+		menuitem = Gtk.MenuItem(label=_("About"))
+		menuitem.connect("activate", self.on_menu_about_clicked)
+		submenu.append(menuitem)
+		self.menu_bar.append(menu_help)		
 
 	def get_file_path(self, title, _type="open"):
 		if _type == "open":
@@ -267,6 +302,21 @@ class PySFeditWindow(Gtk.Window):
 			dialog.destroy()
 			return path
 		dialog.destroy()
+		
+	def on_menu_preferences_clicked(self, submenu):
+		pass
+		
+	def on_menu_copy_clicked(self, submenu):
+		pass
+		
+	def on_menu_cut_clicked(self, submenu):
+		pass
+		
+	def on_menu_paste_clicked(self, submenu):
+		pass
+		
+	def on_menu_delete_clicked(self, submenu):
+		pass
 		
 	def on_menu_about_clicked(self, submenu):
 		if self.about_window:

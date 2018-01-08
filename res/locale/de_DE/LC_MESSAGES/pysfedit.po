@@ -6,7 +6,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "POT-Creation-Date: 2018-01-07 19:11+0100\n"
-"PO-Revision-Date: 2018-01-07 19:13+0100\n"
+"PO-Revision-Date: 2018-01-08 20:31+0100\n"
 "Last-Translator: \n"
 "Language-Team: \n"
 "Language: de_DE\n"
@@ -82,7 +82,7 @@ msgstr "Lizenz"
 
 #: pysfedit.py:108
 msgid "Font Size:"
-msgstr "Schrftgröße"
+msgstr "Schriftgröße"
 
 #: pysfedit.py:140
 msgid "Number of Glyphs:"
