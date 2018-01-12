@@ -39,6 +39,16 @@ translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 	fallback=True)
 translation.install()
 
+class FontEditorContext(object):
+	def __init__(self):
+		self.__header = None
+		self.__size = None
+		self.__font = None
+		
+class NewFontEditor(Gtk.Box):
+	def __init__(self, header, font=None):
+		Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL)
+
 class FontEditor(Gtk.Grid):
 	def __init__(self, header, font = None):
 		Gtk.Grid.__init__(self)
