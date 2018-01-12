@@ -171,6 +171,18 @@ class NewFontDialog(Gtk.Dialog):
 		self.show_all()
 		
 	def __on_psf_version_changed(self, notebook, page, page_num):
+		"""This method gets called when the selected page in the
+		notebook with the psf versions has changed.
+		
+		It sets the psf_version attribute of this dialog to either
+		PSF1_VERSION or PSF"_VERSION from the psflib.
+		
+		Args:
+			notebook (Gtk.Notebook): The Notebook that has switched the
+				page
+			page (Gtk.Widget): The new active page of the notbook
+			page_num (int): The index of the active page		
+		"""
 		if page_num == 0:
 			self.entry_width.set_text("8")
 			self.entry_width.set_sensitive(False)
@@ -181,12 +193,33 @@ class NewFontDialog(Gtk.Dialog):
 			self.psf_version = psflib.PSF2_VERSION
 				
 	def __on_radion_btn_glyphs_changed(self, button, number_of_glyphs):
+		"""This method gets called when one of the radio buttons for 
+		the number of glyphs of the old psf has been toggled.
+		
+		Args:
+			button (Gtk.RadioButton): The radio button, that has been
+				toggled.
+			number_of_glyphs (int): The number of glyphs the font should
+				have. Either 256 or 512.	
+		"""
 		self.glyph_num = number_of_glyphs
 		
 	def __on_btn_uni_table_toggled(self, button):
+		"""This method get called, when the check button for including
+		an unicode table of either the old psf or psf2 has been toggled.
+		
+		Args:
+			button (Gtk.CheckBox): The check box, that has been toggled.
+		"""
 		self.has_unicode_table = button.get_active()
 			
 	def get_header(self):
+		"""Use this method to get the header of the new font once the
+		dialogs run method has returned Gtk.ResponseType.OK
+		
+		Returns:
+			psflib.PsfHeader: The header of the new font		
+		"""
 		size = (int(self.entry_width.get_text()),
 				int(self.entry_height.get_text()))
 		if self.psf_version == psflib.PSF1_VERSION:
@@ -201,86 +234,19 @@ class NewFontDialog(Gtk.Dialog):
 				header.set_flags(psflib.PSF2_HAS_UNICODE_TABLE)
 		return header
 		
-class PySFeditWindow(Gtk.Window):
-	def __init__(self):
-		Gtk.Window.__init__(self, title=_("PySFedit"))
-		self.set_default_size(500, 400)
-		self.connect("delete-event", self.on_window_delete)
-		self.set_default_icon_from_file(c.IMG_DIR + "icon.png")
-
-		self.top_grid = Gtk.Grid()
-		self.add(self.top_grid)
-
-		self.menu_bar = Gtk.MenuBar()
-		self.menu_bar.set_hexpand(True)
-		self.build_menu()
-		self.top_grid.attach(self.menu_bar,0,0,1,1)		
-		
-		self.button_new = Gtk.Button(_("New Font"))
-		self.button_new.connect("clicked",
-			self.__on_but_new_clicked)
-		self.top_grid.attach(self.button_new,0,1,1,1)
-		
-		self.button_import = Gtk.Button(_("Import"))
-		self.button_import.connect("clicked",
-			self.__on_but_import_clicked)
-		self.top_grid.attach(self.button_import, 0,2,1,1)
+class PySFeditContent(Gtk.Grid):
+	def __init__(self, window):
+		Gtk.Grid.__init__(self)
+		self.window = window
 		
 		self.font_editor = None
-		self.about_window = None
-
-	def build_menu(self):
-		menu_file = Gtk.MenuItem(_("File"))
-		submenu = Gtk.Menu()
-		menu_file.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("New"))
-		menuitem.connect("activate", self.on_menu_new_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Import"))
-		menuitem.connect("activate", self.on_menu_import_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Export"))
-		menuitem.connect("activate", self.on_menu_export_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Preferences"))
-		menuitem.connect("activate", self.on_menu_preferences_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Quit"))
-		menuitem.connect("activate", self.on_menu_quit_clicked)
-		submenu.append(menuitem)
-		self.menu_bar.append(menu_file)
-
-		menu_edit = Gtk.MenuItem(_("Edit"))
-		submenu = Gtk.Menu()
-		menu_edit.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("Copy"))
-		menuitem.connect("activate", self.on_menu_copy_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Cut"))
-		menuitem.connect("activate", self.on_menu_cut_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Paste"))
-		menuitem.connect("activate", self.on_menu_paste_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Delete"))
-		menuitem.connect("activate", self.on_menu_delete_clicked)
-		submenu.append(menuitem)
-		self.menu_bar.append(menu_edit)
-
-		menu_help = Gtk.MenuItem(_("Help"))
-		submenu = Gtk.Menu()
-		menu_help.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("About"))
-		menuitem.connect("activate", self.on_menu_about_clicked)
-		submenu.append(menuitem)
-		self.menu_bar.append(menu_help)		
-
+				
 	def get_file_path(self, title, _type="open"):
 		if _type == "open":
 			action = Gtk.FileChooserAction.OPEN
 		elif _type == "save":
 			action = Gtk.FileChooserAction.SAVE
-		dialog = Gtk.FileChooserDialog(title, self,
+		dialog = Gtk.FileChooserDialog(title, self.window,
 			action,
 			(Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
 			 Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
@@ -303,67 +269,24 @@ class PySFeditWindow(Gtk.Window):
 			return path
 		dialog.destroy()
 		
-	def on_menu_preferences_clicked(self, submenu):
-		pass
-		
-	def on_menu_copy_clicked(self, submenu):
-		pass
-		
-	def on_menu_cut_clicked(self, submenu):
-		pass
-		
-	def on_menu_paste_clicked(self, submenu):
-		pass
-		
-	def on_menu_delete_clicked(self, submenu):
-		pass
-		
-	def on_menu_about_clicked(self, submenu):
-		if self.about_window:
-			self.about_window.destroy()
-		self.about_window = AboutWindow()
-		self.about_window.show_all()
-		
-	def on_window_delete(self, widget, event):
-		self.on_quit()
-	
-	def on_menu_quit_clicked(self, submenu):
-		self.on_quit()
-		
-	def on_quit(self):
-		Gtk.main_quit()
-		
-	def __on_but_new_clicked(self, button):
-		self.new_font_dialog()
-
-	def __on_but_import_clicked(self, button):
-		self.import_font_dialog()
-
-	def on_menu_new_clicked(self, submenu):
-		self.new_font_dialog()
-
-	def on_menu_import_clicked(self, submenu):
-		self.import_font_dialog()
-
-	def on_menu_export_clicked(self, submenu):
-		self.export_font_dialog()
-
 	def new_font_dialog(self):
 		if self.font_editor: self.font_editor.destroy()
-		d = NewFontDialog(self)
+		d = NewFontDialog(self.window)
 		r = d.run()
 		if r == Gtk.ResponseType.OK:
 			header = d.get_header()
-			self.button_new.destroy()
-			self.button_import.destroy()
 			self.font_editor = font_editor.FontEditor(header)
-			self.top_grid.attach(self.font_editor, 0, 1, 1, 1)
-			self.top_grid.show_all()
+			self.attach(self.font_editor, 0, 1, 1, 1)
+			self.show_all()
+			d.destroy()
+			
+			return True
 		d.destroy()
 	
 	def import_font_dialog(self):
 		path = self.get_file_path(_("Import file"))
-		if not path: return
+		if not path:
+			return
 		if self.font_editor: self.font_editor.destroy()
 		if path.lower().endswith(".asm"):
 			font = psflib.AsmImporter.import_from_file(path)
@@ -371,17 +294,17 @@ class PySFeditWindow(Gtk.Window):
 			font = psflib.PsfImporter.import_from_file(path)
 		else:
 			return
-		self.button_new.destroy()
-		self.button_import.destroy()
 		self.font_editor = font_editor.FontEditor(
 			font.get_header(), font)
-		self.top_grid.attach(self.font_editor, 0, 1, 1, 1)
-		self.top_grid.show_all()
+		self.attach(self.font_editor, 0, 1, 1, 1)
+		self.show_all()
+		
+		return True
 		
 		
 	def export_font_dialog(self):
 		if not self.font_editor:
-			dialog = Gtk.MessageDialog(self, 0, Gtk.MessageType.ERROR,
+			dialog = Gtk.MessageDialog(self.window, 0, Gtk.MessageType.ERROR,
 				Gtk.ButtonsType.OK, "Error!")
 			dialog.format_secondary_text(
 				_("You have not created a font yet."))
@@ -390,7 +313,7 @@ class PySFeditWindow(Gtk.Window):
 			return
 
 		path = self.get_file_path(_("Export file"), "save")
-		if path == None:
+		if not path:
 			return
 		if path.lower().endswith(".asm"):
 			exporter = psflib.AsmExporter(self.font_editor.get_font())
@@ -398,6 +321,245 @@ class PySFeditWindow(Gtk.Window):
 		elif path.lower().endswith(".psf"):
 			exporter = psflib.PsfExporter(self.font_editor.get_font())
 			exporter.export_to_file(path)
+		
+	
+		
+class PySFeditWindow(Gtk.Window):
+	"""This is the main window of PySFedit.
+	
+	Initially only the menu bar and two buttons for creating and
+	importing a font are visible on this window. After a font has been
+	created or imported the two buttons get destroyed and the
+	PySFeditContent containing the font editor becomes visible.	
+	"""
+	def __init__(self):
+		Gtk.Window.__init__(self, title=_("PySFedit"))
+		self.set_default_size(500, 400)
+		self.connect("delete-event", self.__on_window_delete)
+		self.set_default_icon_from_file(c.IMG_DIR + "icon.png")
+
+		self.has_font = False
+		self.about_window = None
+
+		self.grid = Gtk.Grid()
+		self.add(self.grid)
+
+		self.menu_bar = Gtk.MenuBar()
+		self.menu_bar.set_hexpand(True)
+
+		menu_file = Gtk.MenuItem(_("File"))
+		submenu = Gtk.Menu()
+		menu_file.set_submenu(submenu)
+		menuitem = Gtk.MenuItem(label=_("New"))
+		menuitem.connect("activate", self.__on_menu_new_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Import"))
+		menuitem.connect("activate", self.__on_menu_import_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Export"))
+		menuitem.connect("activate", self.__on_menu_export_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Preferences"))
+		menuitem.connect("activate", self.__on_menu_preferences_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Quit"))
+		menuitem.connect("activate", self.__on_menu_quit_clicked)
+		submenu.append(menuitem)
+		self.menu_bar.append(menu_file)
+
+		menu_edit = Gtk.MenuItem(_("Edit"))
+		submenu = Gtk.Menu()
+		menu_edit.set_submenu(submenu)
+		menuitem = Gtk.MenuItem(label=_("Copy"))
+		menuitem.connect("activate", self.__on_menu_copy_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Cut"))
+		menuitem.connect("activate", self.__on_menu_cut_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Paste"))
+		menuitem.connect("activate", self.__on_menu_paste_clicked)
+		submenu.append(menuitem)
+		menuitem = Gtk.MenuItem(label=_("Delete"))
+		menuitem.connect("activate", self.__on_menu_delete_clicked)
+		submenu.append(menuitem)
+		self.menu_bar.append(menu_edit)
+
+		menu_help = Gtk.MenuItem(_("Help"))
+		submenu = Gtk.Menu()
+		menu_help.set_submenu(submenu)
+		menuitem = Gtk.MenuItem(label=_("About"))
+		menuitem.connect("activate", self.__on_menu_about_clicked)
+		submenu.append(menuitem)
+		self.menu_bar.append(menu_help)
+		
+		self.grid.attach(self.menu_bar,0,0,1,1)		
+		
+		self.button_new = Gtk.Button(_("New Font"))
+		self.button_new.connect("clicked",
+			self.__on_but_new_clicked)
+		self.grid.attach(self.button_new,0,1,1,1)
+		
+		self.button_import = Gtk.Button(_("Import"))
+		self.button_import.connect("clicked",
+			self.__on_but_import_clicked)
+		self.grid.attach(self.button_import, 0,2,1,1)
+		
+		self.content = PySFeditContent(self)
+		self.grid.attach(self.content, 0,3,1,1)		
+		
+	def __on_menu_new_clicked(self, menu_item):
+		"""This method gets called when the entry "new" of the menu
+		"file" has been clicked and tells the PySFeditContent to create
+		a new font.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "new" item of the "file" menu		
+		"""
+		if self.content.new_font_dialog() and not self.has_font:
+			self.button_import.destroy()
+			self.button_new.destroy()
+
+	def __on_menu_import_clicked(self, menu_item):
+		"""This method gets called when the entry "import" of the menu
+		"file" has been clicked and tells the PySFeditContent to import
+		an existing font.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "import" item of the "file"
+				menu		
+		"""
+		if self.content.import_font_dialog() and not self.has_font:
+			self.button_import.destroy()
+			self.button_new.destroy()
+
+	def __on_menu_export_clicked(self, menu_item):
+		"""This method gets called when the entry "export" of the menu
+		"file" has been clicked and tells the PySFeditContent to export
+		the current font.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "export" item of the "file"
+				menu			
+		"""
+		self.content.export_font_dialog()
+		
+	def __on_menu_preferences_clicked(self, menu_item):
+		"""This method gets called when the entry "preferences" of the
+		menu "file" has been clicked and opens the PreferencesWindow.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "preferences" item of the
+				"file" menu		
+		"""
+		pass
+		
+	def __on_menu_quit_clicked(self, menu_item):
+		"""This method gets called when the entry "quit" of the menu
+		"file" has been clicked and initiates the quit process of the
+		application.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "quit" item of the "file" menu
+		"""
+		self.__on_quit()
+		
+	def __on_menu_copy_clicked(self, menu_item):
+		"""This method gets called when the entry "copy" of the menu
+		"edit" has been clicked and tells the PySFeditContent to copy
+		the bitmap of the current glyph of the font editor to the
+		clipboard.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "copy" item of the "edit" menu		
+		"""
+		pass
+		
+	def __on_menu_cut_clicked(self, menu_item):
+		"""This method gets called when the entry "cut" of the menu
+		"edit" has been clicked and tells the PySFeditContent to copy
+		the bitmap of the current glyph of the font editor to the
+		clipboard and clear it afterwards.
+
+		Args:
+			menu_item (Gtk.MenuItem): The "cut" item of the "edit" menu
+		"""
+		pass
+		
+	def __on_menu_paste_clicked(self, menu_item):
+		"""This method gets called when the entry "paste" of the menu
+		"edit" has been clicked and tells the PySFeditContent to copy
+		the bitmap stored in the clipboard to the current glyph.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "paste" item of the "edit"
+				menu
+		"""
+		pass
+		
+	def __on_menu_delete_clicked(self, menu_item):
+		"""This method gets called when the entry "delete" of the menu
+		"edit" has been clicked and tells the PySFeditContent to clear
+		the bitmap of the current glyph of the font editor.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "delete" item of the "edit"
+				menu		
+		"""
+		pass
+		
+	def __on_menu_about_clicked(self, menu_item):
+		"""This method gets called when the entry "about" of the menu
+		"help" has been clicked and show the AboutWindow.
+		
+		Args:
+			menu_item (Gtk.MenuItem): The "about" item of the "help"
+				menu
+		"""
+		if self.about_window:
+			self.about_window.destroy()
+		self.about_window = AboutWindow()
+		self.about_window.show_all()
+		
+	def __on_window_delete(self, widget, event):
+		"""This method gets called on the delete event of the window and
+		initiates the termination process of the appliication.
+		
+		Args:
+			widget (Gtk.Widget): The window that received the delete
+				event
+			event (Gdk.Widget): The delete event received by the window
+		"""
+		self.__on_quit()
+		
+	def __on_quit(self):
+		"""This method terminates the application"""
+		Gtk.main_quit()
+		
+	def __on_but_new_clicked(self, button):
+		"""This method gets called when the initial button for creating
+		a new font has been clicked and tells the PySFeditContent to
+		create a new font.
+		
+		Args:
+			button (Gtk.Button): The intial button for creating a new
+				font		
+		"""
+		if self.content.new_font_dialog() and not self.has_font:
+			self.button_import.destroy()
+			self.button_new.destroy()
+
+	def __on_but_import_clicked(self, button):
+		"""This method gets called when the initial button for importing
+		a font has been clicked and tells the PySFeditContent to import
+		a font.
+		
+		Args:
+			button (Gtk.Button): The initial button for importing a font		
+		"""
+		if self.content.import_font_dialog() and not self.has_font:
+			self.button_import.destroy()
+			self.button_new.destroy()
+			
 
 if __name__ == "__main__":
 	window = PySFeditWindow()
