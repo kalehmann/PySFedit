@@ -234,6 +234,15 @@ class NewFontDialog(Gtk.Dialog):
 				header.set_flags(psflib.PSF2_HAS_UNICODE_TABLE)
 		return header
 		
+class PreferencesWindow(Gtk.Window):
+	def __init__(self):
+		Gtk.Window.__init__(self, title=_("Preferences"))
+		self.set_default_size(600, 450)
+		self.set_resizable(True)
+		self.set_has_resize_grip(True)
+		self.set_skip_taskbar_hint(True)
+		
+		
 class PySFeditContent(Gtk.Grid):
 	def __init__(self, window):
 		Gtk.Grid.__init__(self)
@@ -340,6 +349,7 @@ class PySFeditWindow(Gtk.Window):
 
 		self.has_font = False
 		self.about_window = None
+		self.preferences_window = None
 
 		self.grid = Gtk.Grid()
 		self.add(self.grid)
@@ -451,7 +461,10 @@ class PySFeditWindow(Gtk.Window):
 			menu_item (Gtk.MenuItem): The "preferences" item of the
 				"file" menu		
 		"""
-		pass
+		if self.preferences_window:
+			self.preferences_window.destroy()
+		self.preferences_window = PreferencesWindow()
+		self.preferences_window.show_all()
 		
 	def __on_menu_quit_clicked(self, menu_item):
 		"""This method gets called when the entry "quit" of the menu
