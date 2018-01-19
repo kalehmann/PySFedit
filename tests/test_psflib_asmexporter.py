@@ -59,8 +59,9 @@ class TestAsmExporter(unittest.TestCase):
 		
 		font = psflib.PcScreenFont(header)
 		
-		glyph = font.get_glyph(48)
-		glyph.add_unicode_representation(79)
+		glyph, description = font[0]
+		description.add_unicode_value(48)
+		description.add_unicode_value(79)
 		
 		b = psflib.Byte.from_int
 		
@@ -79,9 +80,9 @@ class TestAsmExporter(unittest.TestCase):
 		header = psflib.PsfHeaderv2((10, 8))
 		font = psflib.PcScreenFont(header)
 		
-		glyph = font.get_glyph(0)
+		glyph, _ = font.add_glyph()
 		
-		glyph.copy_data(
+		glyph.set_data(
 			[
 				[0,0,0,0,0,0,0,0,0,0],
 				[0,0,0,0,0,0,0,1,0,0],
@@ -103,10 +104,11 @@ class TestAsmExporter(unittest.TestCase):
 		header = psflib.PsfHeaderv2((10, 8))
 		header.set_flags(psflib.PSF2_HAS_UNICODE_TABLE)
 		font = psflib.PcScreenFont(header)
+		glyph, description = font.add_glyph()
 		
-		glyph = font.get_glyph(0x41)
+		description.add_unicode_value(0x41)
 		
-		glyph.copy_data(
+		glyph.set_data(
 			[
 				[0,0,0,0,0,0,0,0,0,0],
 				[0,0,0,0,0,0,0,1,0,0],

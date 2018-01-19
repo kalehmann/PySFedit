@@ -55,7 +55,8 @@ class TestPsfExporter(unittest.TestCase):
 		header = psflib.PsfHeaderv1((8, 8))
 		header.set_mode(psflib.PSF1_MODEHASTAB)
 		font = psflib.PcScreenFont(header)
-		glyph_A = font.get_glyph(0x41)
+		glyph_A, ud = font[0]
+		ud.add_unicode_value(0x41)
 		
 		data_A = bytearray(
 			[0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00])
@@ -71,8 +72,8 @@ class TestPsfExporter(unittest.TestCase):
 		header = psflib.PsfHeaderv2((10, 8))
 		font = psflib.PcScreenFont(header)
 		
-		glyph_0 = font.get_glyph(0)
-		glyph_1 = font.get_glyph(1)
+		glyph_0, _ = font.add_glyph()
+		glyph_1, _ = font.add_glyph()
 		
 		data_0 = bytearray([
 			0x00, 0x00,
@@ -109,8 +110,11 @@ class TestPsfExporter(unittest.TestCase):
 		
 		font = psflib.PcScreenFont(header)
 		
-		glyph_A = font.get_glyph(ord('A'))
-		glyph_B = font.get_glyph(ord('B'))
+		glyph_A, udA = font.add_glyph()
+		glyph_B, udB = font.add_glyph()
+		
+		udA.add_unicode_value(ord('A'))
+		udB.add_unicode_value(ord('B'))
 		
 		data_A = bytearray([
 			0x00, 0x00,
@@ -133,8 +137,8 @@ class TestPsfExporter(unittest.TestCase):
 			0x00, 0x00,
 		])
 		
-		glyph_A.set_data_from_bytes(psflib.ByteArray.from_bytes(data_A))
-		glyph_B.set_data_from_bytes(psflib.ByteArray.from_bytes(data_B))
+		glyph_A.set_data_from_bytes(data_A)
+		glyph_B.set_data_from_bytes(data_B)
 		
 		exp = psflib.PsfExporter(font)
 		data = exp.export_to_data()

@@ -37,10 +37,11 @@ class TestAsmImporter(unittest.TestCase):
 		font = psflib.AsmImporter.import_from_data(
 			TEST_FONT_PSF1_512_SIMPLE_ASM)
 		
-		self.assertFalse(font.has_unicode())
-		self.assertEqual(len(font.get_glyphs()), 512)
+		self.assertFalse(font.get_header().has_unicode_table())
+		self.assertEqual(len(font), 512)
+		glyph, _ = font[0x41]
 		self.assertEqual(
-			font.get_glyphs()[0x41].get_data(),
+			glyph.get_data(),
 			[
 				[0,0,0,0,0,0,0,0],
 				[0,0,1,1,1,0,0,0],
@@ -57,20 +58,22 @@ class TestAsmImporter(unittest.TestCase):
 		font = psflib.AsmImporter.import_from_data(
 			TEST_FONT_PSF1_256_UNICODE_ASM)
 		
-		self.assertTrue(font.has_unicode())
-		self.assertEqual(len(font.get_glyphs()), 1)
+		self.assertTrue(font.get_header().has_unicode_table())
+		self.assertEqual(len(font), 256)
+		glyph, description = font[0]
 		self.assertEqual(
-			font.get_glyphs()[48].get_unicode_representations(),
+			description.get_unicode_values(),
 			[48, 79])
 
 	def test_parse_psf2_simple(self):
 		font = psflib.AsmImporter.import_from_data(
 			TEST_FONT_PSF2_SIMPLE_ASM)
 		
-		self.assertEqual(len(font.get_glyphs()), 1)
-		self.assertFalse(font.has_unicode())
+		self.assertEqual(len(font), 1)
+		self.assertFalse(font.get_header().has_unicode_table())
+		glyph, _ = font[0]
 		self.assertEqual(
-			font.get_glyphs()[0].get_data(),
+			glyph.get_data(),
 			[
 				[0,0,0,0,0,0,0,0,0,0],
 				[0,0,0,0,0,0,0,1,0,0],
@@ -87,12 +90,14 @@ class TestAsmImporter(unittest.TestCase):
 		font = psflib.AsmImporter.import_from_data(
 			TEST_FONT_PSF2_UNICODE_ASM)
 			
-		self.assertEqual(len(font.get_glyphs()), 1)
-		self.assertTrue(font.has_unicode())
-		self.assertTrue(0x41 in font.get_glyphs())
+		self.assertEqual(len(font), 1)
+		self.assertTrue(font.get_header().has_unicode_table())
+		self.assertTrue(font.has_glyph_for_unicode_value(0x41))
+		
+		glyph, _ = font[0]
 		
 		self.assertEqual(
-			font.get_glyphs()[0x41].get_data(),
+			glyph.get_data(),
 			[
 				[0,0,0,0,0,0,0,0,0,0],
 				[0,0,0,0,0,0,0,1,0,0],

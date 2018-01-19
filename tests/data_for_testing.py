@@ -54,11 +54,11 @@ for i in range(1, 256):
 	)
 TEST_FONT_PSF1_256_UNICODE_ASM += "unicode_table:\n"
 TEST_FONT_PSF1_256_UNICODE_ASM += (
-	"Unicodedescription48: db 0x30, 0x00, 0x4f, 0x00, 0xff, 0xff\n"
+	"Unicodedescription0: db 0x30, 0x00, 0x4f, 0x00, 0xff, 0xff\n"
 )
-for i in range(255):
+for i in range(1,256):
 	TEST_FONT_PSF1_256_UNICODE_ASM += (
-		"Placeholder%d: db 0xff, 0xff\n" % i
+		"Unicodedescription%d: db 0xff, 0xff\n" % i
 	)
 
 TEST_FONT_PSF2_SIMPLE_ASM = """font_header:
@@ -90,7 +90,7 @@ font_bitmaps:
 glyph_0: db 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01
     db 0x00, 0x01, 0x00, 0x00, 0x00
 unicode_table:
-Unicodedescription65: db 0x41, 0xff
+Unicodedescription0: db 0x41, 0xff
 """
 
 TEST_FONT_PSF2_UNICODE = bytearray([

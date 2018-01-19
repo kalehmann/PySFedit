@@ -121,7 +121,7 @@ class Exporter(ABC):
 		"""
 		header = self._build_header()
 		bitmaps = self._build_bitmaps()
-		if self.__font.has_unicode():
+		if self.__font.get_header().has_unicode_table():
 			unicode_table = self._build_unicode_table()
 		
 			return header + bitmaps + unicode_table
@@ -288,28 +288,28 @@ class Importer(ABC):
 			PcScreenFont
 		"""
 		self.__header = self._build_header()
-		length = self.__header.get_length()
 		font = PcScreenFont(self.__header)		
 		
-		if self.__header.has_unicode_table():
-			uc_descriptions = self._parse_unicode_descriptions()
-		else:
-			uc_descriptions = [[i] for i in range(length)]
-				
-		if len(uc_descriptions) != length:
+		for i in range(len(font)):
+			glyph = font.get_glyph(i)
+			self._build_glyph(glyph, i)
+		
+		if not self.__header.has_unicode_table():
+			
+			return font
+		
+		uc_descriptions = self._parse_unicode_descriptions()
+	
+		if len(uc_descriptions) != len(font):
 			raise Exception(
 				"The number of unicode descriptions of the font " +
 				"does not match its length."
 			)
 		
-		for i, descriptions in zip(range(length), uc_descriptions):
+		for (_, ud), descriptions in zip(font, uc_descriptions):
 			if descriptions:
-				primary_codepoint = descriptions[0]
-				glyph = font.get_glyph(primary_codepoint)
-				
-				for codepoint in descriptions[1:]:
-					glyph.add_unicode_representation(codepoint)
-				self._build_glyph(glyph, i)
+				for codepoint in descriptions:
+					ud.add_unicode_value(codepoint)
 		
 		return font				
 	
@@ -537,7 +537,7 @@ class AsmExporter(Exporter):
 				representing the bitmap of the given glyph.
 		"""
 		bits = []
-		for row in glyph.data:
+		for row in glyph.get_data():
 			for bit in row:
 				bits.append(bit)
 			missing_bits = 8 - len(row) % 8
@@ -602,14 +602,8 @@ class AsmExporter(Exporter):
 		data = "font_bitmaps:\n"
 		font = self._get_font()
 		if self.__header.has_unicode_table():
-			for i, glyph in zip(range(len(font.get_glyphs())),
-				font.get_glyphs().values()):
+			for i, (glyph, _) in zip(range(len(font)), font):
 				data += self.__glyph_to_asm(glyph, "glyph_%d" % i)
-			if self.version == PSF1_VERSION:
-				glyph_count = self.__header.get_length()
-				glyph = Glyph(self.__header.size)
-				for i in range(len(font.get_glyphs()), glyph_count):
-					data += self.__glyph_to_asm(glyph, "glyph_%d" % i)
 
 			return data
 			
@@ -634,29 +628,21 @@ class AsmExporter(Exporter):
 		font = self._get_font()
 		if self.version == PSF1_VERSION:
 			glyph_count = self.__header.get_length()
-			for puc, glyph in font.get_glyphs().items():
-				_bytes = ByteArray.from_int(puc, 2)
-				#if len(glyph.get_unicode_representations()) > 1:
-				#	_bytes += ByteArray.from_int(0xFFFE, 2)
-				for uc in glyph.get_unicode_representations():
-					if uc != puc:
-						_bytes += ByteArray.from_int(uc, 2)
+			for (glyph, description), i in zip(font, range(len(font))):
+				_bytes = ByteArray()
+				for uc in description.get_unicode_values():
+					_bytes += ByteArray.from_int(uc, 2)
 				_bytes += ByteArray.from_int(0xFFFF, 2)		
-				data += _bytes.to_asm('Unicodedescription%d' % puc)
-			for i in range(glyph_count - len(font.get_glyphs())):
-				data += ByteArray.from_int(0xFFFF, 2)\
-					.to_asm('Placeholder%d' % i)
+				data += _bytes.to_asm('Unicodedescription%d' % i)
 					
 			return data
 		# psf2
-		for puc, glyph in font.get_glyphs().items():
-			_bytes = ByteArray.from_bytes(chr(puc).encode('utf8'))
-			for uc in glyph.get_unicode_representations():
-				if uc != puc:
-					_bytes += ByteArray.from_bytes(
-						chr(uc).encode('utf8'))
+		for (glyph, description), i in zip(font, range(len(font))):
+			_bytes = ByteArray()
+			for uc in description.get_unicode_values():
+				_bytes += ByteArray.from_bytes(chr(uc).encode('utf8'))
 			_bytes += ByteArray.from_int(0xFF, 1)	
-			data += _bytes.to_asm('Unicodedescription%d' % puc)	
+			data += _bytes.to_asm('Unicodedescription%d' % i)	
 			
 		return data
 
@@ -702,7 +688,7 @@ class PsfExporter(Exporter):
 			bytearray: The bytearray built from the bitmap of the glyph.
 		"""
 		ba = bytearray()
-		for row in glyph.data:
+		for row in glyph.get_data():
 			if len(row) % 8:
 				row = row[:]
 				while len(row) % 8:
@@ -759,15 +745,8 @@ class PsfExporter(Exporter):
 		_bytes = bytearray()
 		font = self._get_font()
 		if self.__header.has_unicode_table():
-			for i, glyph in zip(range(len(font.get_glyphs())),
-				font.get_glyphs().values()):
+			for glyph, _ in font:
 				_bytes += self.glyph_to_bytearray(glyph)
-				
-			if self.version == PSF1_VERSION:
-				glyph_count = self.__header.get_length()
-				glyph = Glyph(self.__header.size)
-				for i in range(len(font.get_glyphs()), glyph_count):
-					_bytes += self.glyph_to_bytearray(glyph)
 
 			return _bytes
 			
@@ -792,24 +771,18 @@ class PsfExporter(Exporter):
 		font = self._get_font()
 		if self.version == PSF1_VERSION:
 			glyph_count = self.__header.get_length()
-			for puc, glyph in font.get_glyphs().items():
-				_bytes = ByteArray.from_int(puc, 2)
-				#if len(glyph.get_unicode_representations()) > 1:
-				#	_bytes += ByteArray.from_int(0xFFFE, 2)
-				for uc in glyph.get_unicode_representations():
-					if uc != puc:
-						_bytes += ByteArray.from_int(uc, 2)
+			for glyph, ud in font:
+				_bytes = ByteArray()
+				for uc in ud.get_unicode_values():
+					_bytes += ByteArray.from_int(uc, 2)
 				_bytes += ByteArray.from_int(0xFFFF, 2)		
 				ba += _bytes
-			for i in range(glyph_count - len(font.get_glyphs())):
-				ba += ByteArray.from_int(0xFFFF, 2)
 		else:	# psf2
-			for puc, glyph in font.get_glyphs().items():
-				_bytes = ByteArray.from_bytes(chr(puc).encode('utf8'))
-				for uc in glyph.get_unicode_representations():
-					if uc != puc:
-						_bytes += ByteArray.from_bytes(
-							chr(uc).encode('utf8'))
+			for glyph, ud in font:
+				_bytes = ByteArray()
+				for uc in ud.get_unicode_values():
+					_bytes += ByteArray.from_bytes(
+						chr(uc).encode('utf8'))
 				_bytes += ByteArray.from_int(0xFF, 1)	
 				ba += _bytes
 		
@@ -1035,7 +1008,7 @@ class PsfImporter(Importer):
 			glyph.set_data_from_bytes(
 				ByteArray.from_bytes(self._get_data()[start:end])
 			)
-	
+			
 class PsfHeader(ABC):
 	"""This class is the base for a header for the PC Screen Font
 	
@@ -1219,285 +1192,385 @@ class PsfHeaderv2(PsfHeader):
 		"""
 		return self.length
 
-class PcScreenFont(object):
-	"""This class represents a pc screen font
 	
-	The font contains zero or more glyphs. A glyph is a bitmap of a
-	character with unicode values describing the bitmap. The font
-	accesses its glyphs by the primary codepoint assigned to the glyph.
-		
-	Arguments:
-		header (PsfHeader): the header of the font
+class PcScreenFont(object):
+	"""This class represents a pc screen font.
+	
 	"""
 	def __init__(self, header):
-		self.header = header
-		self.glyphs = {}
-		self.size = header.size
-	
-	def has_unicode(self):
-		"""This function should be used to determine wether the font 
-		has an unicode table or not.
-			
-		Returns:
-			bool: True if it has an unicode table else False
-		"""
-		return self.header.has_unicode_table()
-			
+		self.__header = header
+		self.__glyph_bitmaps = [
+			GlyphBitmap(header.size)for _ in range(self.__len__())
+		]
+		self.__unicode_info = [
+			UnicodeDescription() for _ in range(self.__len__())
+		] if header.has_unicode_table() else None
+		
+		
+		
 	def get_header(self):
-		"""Get the header of the font.
+		"""Get the header of this font.
 		
 		Returns:
-			PsfHeader: The header of the font		
+			PsfHeader: The header of this font		
 		"""
-		if self.header.version_psf == PSF2_VERSION:
-			if self.header.has_unicode_table():
-				self.header.set_length(len(self.glyphs))
-			else:
-				self.header.set_length(self.__len__())
-			
-		return self.header
-			
-	def get_glyph(self, codepoint):
-		"""Get a glyph of the font by its primary codepoint
-		If the font does not have a glyph with the given codepoint as
-		primary or additional unicode representation, then a new glyph
-		with the given codepoint as primary representation gets added
-		to the font and returned.
+		
+		return self.__header
+		
+	def add_glyph(self, index=-1):
+		"""Add a new glyph to the font.
 		
 		Args:
-			codepoint (int) : the codepoint for the glyph
-		
-		Returns
-			Glyph :	glyph which is represented by the given codepoint
-		
-		"""
-		for glyph in self.glyphs.values():
-			if glyph.has_unicode_representation(codepoint):
-				return glyph
-		glyph = Glyph(self.size)
-		glyph.add_unicode_representation(codepoint)
-		self.glyphs[codepoint] = glyph
-		return glyph
-		
-	def get_glyphs(self):
-		"""Get a dictionary with all glyphs of the font.
+			index (int): The position where the new glyph should be
+				added in the font. The default is -1 for adding the new
+				glyph at the end of the font.
 		
 		Returns:
-			dict: A dictionary with the scheme
-				{ primary unicode representation : glyph }
+			tuple: A tuple with the bitmap of the newly added glyph and
+				its unicode description or None if the font has no
+				unicode table
+			None: None gets returned when the font already has the
+				maximum number of glyphs for the old psf format.
 		"""
-		return self.glyphs.copy()
+		if (self.__header.version_psf == PSF1_VERSION and
+			self.__header.get_length() == len(self.__glyph_bitmaps)):
+			
+			return
+		if index < 0:
+			index = self.__len__()
+			
+		if index > self.__len__():
+			raise ValueError("Index out of bounds")
 		
-	def update_unicode_representation(self, primary_cp, old_cp, new_cp):
-		"""Updates the unicode representation of a glyph
+		glyph = GlyphBitmap(self.__header.size)
+		self.__glyph_bitmaps.insert(index, glyph)
 		
-		Args:
-			primary_cp (int) : The primary codepoint of the glyph
-			old_cp (int) : The old value of the unicode representation,
-				which should be updated
-			new_cp (int) : The new value of the unicode representation,
-				which should be updated
+		unicode_description = None
+		if self.__header.has_unicode_table():
+			unicode_description = UnicodeDescription()
+			self.__unicode_info.insert(index, unicode_description)
+		self.__header.length += 1
+		
+		return glyph, unicode_description
+		
+	def remove_glyph(self, index):
+		"""Remove a glyph from the font by its index.
 		
 		Notes:
-			If the old_cp is equal to the primary_cp, the the primary
-			codepoint of the glyph will be updated
+			Can only remove glyphs from psf2
+			
+		Args:
+			index (int): The index of the glyph in the font		
 		"""
-		if old_cp == new_cp:
+		if self.__header.version_psf == PSF1_VERSION:
+			
 			return
-		if primary_cp == old_cp:
-			self.glyphs[new_cp] = self.glyphs[old_cp]
-			del self.glyphs[old_cp]
-			self.glyphs[new_cp].update_unicode_representation(old_cp,
-									new_cp)
-			return
-		self.glyphs[primary_cp].update_unicode_representation(old_cp,
-									new_cp)
 		
-	def remove_glyph(self, codepoint):
-		"""Remove a glyph from the font
+		if index >= self.__len__():
+			
+			return
+			
+		self.__glyph_bitmaps.pop(index)
+		if self.__header.has_unicode_table():
+			self.__unicode_info.pop(index)
+
+	def get_glyph(self, index):
+		"""Get a glyph at the given position in the font.
 		
 		Args:
-			codepoint (int) : The primary codepoint of the glyph which
-				should be removed
-		"""
-		if codepoint in self.glyphs.keys():
-			del self.glyphs[codepoint]
+			index (int): The position of the glyph in the font.
 			
+		Returns:
+			GlyphBitmap: The glyph at the given position in the font		
+		"""
+		if index >= self.__len__():
+			raise ValueError("Glyph index out of bounds")
+		
+		return self.__glyph_bitmaps[index]
+		
+	def get_unicode_description(self, index):
+		"""Get the unicode description for a glyph at a given position
+		of the font.
+		
+		Args:
+			index (int): Position of the unicode description in the
+				font
+				
+		Returns:
+			UnicodeDescription: The unicode description		
+		"""
+		if index >= self.__len__():
+			raise ValueError("Unicode description index out of bounds")
+		
+		if self.__header.has_unicode_table():
+			
+			return self.__unicode_info[index]
+		
+		return None
+		
+
+	def switch_glyphs(self, first, second):
+		"""Switch the position of two glyphs in the font.
+		
+		Args:
+			first (int):  The position of the first glyph to switch
+				positions
+			second (int): The position of the second glyph to switch
+				positions
+		"""
+		if max(first, second) >= self.__len__():
+			
+			return
+		g = self.__glyph_bitmaps[first]
+		self.__glyph_bitmaps[first] = self.__glyph_bitmaps[second]		
+		self.__glyph_bitmaps[first] = g
+			
+		if not self.__header.has_unicode_table():
+			
+			return
+		d = self.__unicode_info[first]
+		self.__unicode_info[first] = self.__unicode_info[second]
+		self.__unicode_info[first] = d
+
+	def has_glyph_for_unicode_value(self, unicode_value):
+		"""Use this method to determine whether the font has a glyph for
+		a given unicode value or not.
+		
+		Args:
+			unicode_value (int): The unicode value
+			
+		Returns:
+			bool: Whether an unicode description of a glyph in the font
+				contains the unicode value or not		
+		"""
+		if not self.__header.has_unicode_table():
+			
+			return unicode_value < self.__len__()			
+		for unicode_description in self.__unicode_info:
+			values = unicode_description.get_unicode_values()
+			if unicode_value in values:
+				
+				return True
+				
+	def get_glyph_for_unicode_value(self, unicode_value):
+		"""Use this method to get a glyph bitmap for a given unicode
+		value.
+		
+		Args:
+			unicode_value (int): The unicode value
+			
+		Returns:
+			GlyphBitmap: The glyph bitmap for the given unicode value,
+				if the font has one
+			None: gets returned if the font has no glyph bitmap for the
+				given unicode value
+		"""
+		if not self.__header.has_unicode_table():
+			if unicode_value < self.__len__():
+				
+				return self.__glyph_bitmaps[unicode_value]
+				
+			return None		
+		for i in range(self.__len__()):
+			unicode_description = self.__unicode_info[i]
+			values = unicode_description.get_unicode_values()
+			if unicode_value in values:
+				
+				return self.__glyph_bitmaps[i]
+			
+		return None
+
 	def __len__(self):
-		"""Get the lenght of the font, aka the largest primary codepoint
-		of a glyph plus one.
+		"""Get the number of glyphs and unicode descriptions this font
+		contains.
 		
 		Returns:
-			int: the len of the font
+			int: The number of glyphs this font has.
 		"""
-		if self.glyphs:
-			return max(self.glyphs.keys()) + 1
-		return 0
+		
+		return self.__header.get_length()
+		
+	def __getitem__(self, key):
+		"""Get the glyph and unicode description for the given index.
+		
+		Args:
+			key (int): The index of the glyph and its unicode
+				description in the font.
+		
+		Returns:
+			tuple: A tuple containing the glyph and its unicode
+				description. The unicode description is None if the
+				font has no unicode table.
+		"""
+		if key >= self.__len__():
+			raise AttributeError(
+				"Error, index greather than the number of glyphs in " +
+				"the font.")
+		
+		return (
+			self.__glyph_bitmaps[key],
+			self.__unicode_info[key]
+				if self.__header.has_unicode_table() else None
+		)
+		
+	def __iter__(self):
+		"""Get an interator for the font 
+		
+		"""
+		for i in range(self.__len__()):
+			yield self[i]
+		
+class GlyphBitmap(object):
+	"""This class represents the bitmap of a glyph
 	
-	def __str__(self):
-		data = u""
-		for i in self.glyphs.keys():
-			data += "\n%d : (%s)\n" % (i, get_unicode_str(i))
-			data += " -----------\n"
-			data += repr(self.glyphs[i])
-		return data
-	
-	def __repr__(self):
-		return self.__str__()
-			
-
-class Glyph(object):
-	"""This class represents a glyph of the pc screen font.
-	A glyph consists of a bitmap (the data) and unicode representations
-	describing the bitmap.
-	
-	Args:
-		size (tuple(int width, int height)) : size of the bitmap representing the
-			character
 	"""
 	def __init__(self, size):
-		"""self.data is a list containing y lists with x elements, where
-		x is the width of the glyph an y the height.
-		Therefore the correct way to iterate over self.data is:
-		
-		for row in self.data:
-			for bit in row:
-				...		
-		"""
-		self.data = [[0 for i in range(size[0])]
-						for j in range(size[1])]
-		self.touched = False
-		self.width = size[0]
-		self.height = size[1]
-		self.unicode_representations = []
-		
-	def add_unicode_representation(self, codepoint):
-		"""Add an unicode value to the glyph
-		
-		Args:
-			codepoint (int) : codepoint which should represent the glyph
-		"""
-		if codepoint not in self.unicode_representations:
-			self.unicode_representations.append(codepoint)	
-	
-	def remove_unicode_representation(self, codepoint):
-		"""Remove an unicode value from the glyph
-		
-		Args:
-			codepoint (int) : codepoint which should be removed from the
-				glyph
-		"""
-		if codepoint in self.unicode_representations:
-			self.unicode_representations.remove(codepoint)
-	
-	def update_unicode_representation(self, old_cp, new_cp):
-		"""Update the unicode representation of the glyph
-		
-		Args:
-			old_cp (int) : Old value of the unicode representation which
-				should be updated
-			new_cp (int) : New value of the unicode representation which
-				should be updated
-		"""
-		if new_cp in self.unicode_representations:
-			#self.unicode_representations.remove(old_cp)
-			return
-		for i, cp in zip(range(len(self.unicode_representations)),
-						 self.unicode_representations):
-			if cp == old_cp:
-				self.unicode_representations[i] = new_cp
-	
-	def has_unicode_representation(self, codepoint):
-		"""Check if the glyph is represented by a codepoint
-		
-		Args:
-			codepoint (int) : Codepoint to check
-			
-		Returns:
-			bool : True if the glyph is represented by the given
-				codepoint
-		"""
-		return codepoint in self.unicode_representations
-	
-	def get_unicode_representations(self):
-		"""Get a list with all unicode representations of the glyph
-		
-		Returns:
-			list: A list with all unicode representations of the glyph		
-		"""
-		return self.unicode_representations
-	
-	def copy_data(self, data):
-		"""Update the bitmap with given data
-		
-		Args:
-			data (list of lists with integers)) : the data to update the
-				bitmap with. Each element of the data represents a row
-				of the bitmap and each element in a row represents a
-				pixel.
-				The pixel is set, if its value equal 1.
-		
-		Notes:
-			The dimensions of the data should equal the size of the
-			glyph.
-		"""
-		for i, row in zip(range(self.height), data):
-			for j, element in zip(range(self.width), row):
-				self.data[i][j] = element
-		
-	def get_data(self):
-		"""Get the bitmap of the glyph
-		
-		Returns:
-			list : A list containing lists, which represent the rows of
-				the bitmap. Each element of a row is a integer and
-				represents a pixel.
-				If the value of this integer is 1, then the pixel is set
-		
-		"""
-		return self.data[:]
-	
-	def set_data_from_bytes(self, _bytes):
-		"""Set the data of the bitmap from an array of byte objects
-		
-		Args:
-			_bytes (a list of Bytes): the bytes to update the Bitmap
-				with. 
-		"""
-		bits_per_line = int(self.width / 8) 
-		bits_per_line += 1 if self.width % 8 else 0
-		bits_per_line *= 8
-		self.data = []
-		bits = []
-		for b in _bytes: bits += b.get_bits()
-		for i in range(self.height):
-			line = []
-			for j in range(self.width):
-				line.append(bits[i * bits_per_line + j])
-			self.data.append(line)
+		self.__size = size
+		self.__width = size[0]
+		self.__height = size[1]
+		self.__data = [
+			[0 for _ in range(size[0])] for _ in range(size[1])
+		]
 		
 	def get_size(self):
-		"""Get the size of the glyph
+		"""Get the size of the glyph in pixels.
 		
 		Returns:
-			tuple: A tuple with the width of the glyph as first value
-				and the height as second		
+			tuple: A tuple with the width of the bitmap as first value
+				and the height as second.		
 		"""
-		return self.width, self.height
+		return tuple(self.__size)
 		
-	def __repr__(self):
-		"""Convert the glyph to a human readable string
+	def get_data(self):
+		"""Get the data representing the bitmap of the glyph.
+		
+		The bitmap of the glyph is represented by a 2 dimensional list.
+		
+		Examples:
+			data = glyph.get_data()
+			width, height = glyph.get_size()
+			
+			for x in range(width):
+				for y in range(height):
+					data[y][x]
+			...
+			for row in glyph.get_data():
+				for pixel in row:
+					...
+					
+		Returns:
+			list: A list of lists, where each list represents a row of
+				the glyph bitmap and contains integers representing
+				each pixel.
+		"""
+		
+		return self.__data
+		
+	def set_data(self, data):
+		"""Set the data representing the bitmap of the glyph.
+		
+		Args:
+			data (list): A list of lists, where each list represents a
+				row of the glyph bitmap and contains integers
+				representing each pixel. Its dimensions should equal the
+				size of the glyph bitmap		
+		"""
+		if (len(data) != len(self.__data) or
+			len(data[0]) != len(self.__data[0])):
+			raise ValueError(
+				"Expected data to have the same dimensions as the " +
+				"GlyphBitmap"
+			)
+		for j in range(self.__height):
+			for i in range(self.__width):
+				self.__data[j][i] = data[j][i]
+	
+	def set_data_from_bytes(self, _bytes):
+		"""Set the data of the bitmap from bytes
+		
+		Args:
+			_bytes (ByteArray/bytes/bytearray): the bytes to update the
+				Bitmap with. 
+		""" 
+		if type(_bytes) != ByteArray:
+			_bytes = ByteArray.from_bytes(_bytes)
+			
+		bits_per_line = self.__width // 8 
+		bits_per_line += 1 if self.__width % 8 else 0
+		bits_per_line *= 8
+		self.__data.clear()
+		bits = []
+		for b in _bytes: bits += b.get_bits()
+		for i in range(self.__height):
+			line = []
+			for j in range(self.__width):
+				line.append(bits[i * bits_per_line + j])
+			self.__data.append(line)
+		
+
+class UnicodeDescription(object):
+	"""This class represents the unicode description of a glyph in a pc
+	screen font.
+	
+	It can hold unicode values and/or sequences of unicode value
+	describing the glyph.	
+	"""
+	def __init__(self):
+		self.__unicode_values = []
+		self.__sequences = []
+		
+	def add_unicode_value(self, value):
+		"""Add an unicode value to the description.
+		
+		Args:
+			value (int): The unicode value to add to the description		
+		"""
+		if value not in self.__unicode_values:
+			self.__unicode_values.append(value)
+		
+	def remove_value(self, value):
+		"""Remove an unicode value from the description
+		
+		Args:
+			value (int): The unicode value to remove from the
+				description		
+		"""
+		if value in self.__unicode_values:
+			self.__unicode_values.remove(value)
+		
+	def get_unicode_values(self):
+		"""Get a list with all the unicode values from the description
 		
 		Returns:
-			str: Human readable representation of the glyph		
+			list: A list of all the unicode values of the description	
 		"""
-		out = "Unicode representations:\n"
-		for uc in self.unicode_representations:
-			unistr = get_unicode_str(uc)
-			out += "  %s : (%d) \n" % (unistr if unistr else "", uc)
-		out += "\n"
-		for i in self.data:
-			for j in i:
-				out += "#" if j else "."
-			out += "\n"
-		return out
+		return self.__unicode_values
+		
+	def add_sequence(self, sequence):
+		"""Add a sequence of unicode values to the description
+		
+		Args:
+			sequence (list): The sequence of unicode values to add to
+				the description		
+		"""
+		if sequence not in self.__sequences:
+			self.__sequences.append(sequence)
+		
+	def remove_sequence(self, sequence):
+		"""Remove a sequence of unicode values from the description
+		
+		Args:
+			sequence (list): The sequence of unicode values to remove
+				from the description		
+		"""
+		if sequence in self.__sequences:
+			self.sequences.remove(sequence)
+		
+	def get_sequences(self):
+		"""Get a list with all sequences from the description
+		
+		Returns:
+			list: A list with all sequences from the description
+		"""
+		return self.__sequences
+	
