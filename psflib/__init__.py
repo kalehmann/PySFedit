@@ -1206,7 +1206,14 @@ class PcScreenFont(object):
 			UnicodeDescription() for _ in range(self.__len__())
 		] if header.has_unicode_table() else None
 		
+	def has_unicode_table(self):
+		"""Get whether this font has an unicode table or not.
 		
+		Returns:
+			bool: Whether the font has an unicode table or not
+		"""
+		
+		return self.__header.has_unicode_table()
 		
 	def get_header(self):
 		"""Get the header of this font.
@@ -1518,7 +1525,7 @@ class UnicodeDescription(object):
 	def __init__(self):
 		self.__unicode_values = []
 		self.__sequences = []
-		
+				
 	def add_unicode_value(self, value):
 		"""Add an unicode value to the description.
 		
@@ -1528,7 +1535,7 @@ class UnicodeDescription(object):
 		if value not in self.__unicode_values:
 			self.__unicode_values.append(value)
 		
-	def remove_value(self, value):
+	def remove_unicode_value(self, value):
 		"""Remove an unicode value from the description
 		
 		Args:
