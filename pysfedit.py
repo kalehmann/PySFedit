@@ -31,7 +31,7 @@ import locale
 import psflib
 import font_editor
 import constants as c
-from glyph_editor import GlyphEditorAttributes
+from preferences_window import PreferencesWindow
 
 translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 	fallback=True)
@@ -233,37 +233,6 @@ class NewFontDialog(Gtk.Dialog):
 			if self.has_unicode_table:
 				header.set_flags(psflib.PSF2_HAS_UNICODE_TABLE)
 		return header
-		
-class PreferencesWindow(Gtk.Window):
-	def __init__(self):
-		Gtk.Window.__init__(self, title=_("Preferences"))
-		self.set_default_size(600, 450)
-		self.set_resizable(True)
-		self.set_has_resize_grip(True)
-		self.set_skip_taskbar_hint(True)
-		
-		self.notebook =Gtk.Notebook()
-		self.add(self.notebook)
-		
-		self.page_glyph_editor = Gtk.Box()
-		self.notebook.append_page(self.page_glyph_editor,
-			Gtk.Label(_("GlyphEditor")))
-			
-		self.page_glyph_selector = Gtk.Box()
-		self.notebook.append_page(self.page_glyph_selector,
-			Gtk.Label(_("GlyphSelector")))
-		
-		adj = Gtk.Adjustment(12, 10, 32, 1, 10, 0)
-		self.spin_pixel_draw_size = Gtk.SpinButton()
-		self.spin_pixel_draw_size.set_adjustment(adj)
-		self.spin_pixel_draw_size.connect('value-changed', self.x)
-		self.page_glyph_editor.pack_start(self.spin_pixel_draw_size,
-			False, False, 0)
-			
-	def x(self, button):
-		s = c.get_storage(GlyphEditorAttributes)
-		s['pixel_size'] = int(button.get_value())
-		
 		
 class PySFeditContent(Gtk.Grid):
 	def __init__(self, window):

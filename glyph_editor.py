@@ -44,9 +44,9 @@ class GlyphEditorAttributes(object):
 	__UNSET_PIXEL_COLOR = [0.8, 0.8, 0.8, 1]
 	__DRAW_UNSET_PIXELS = False
 	
-	def __init__(self):
+	def __init__(self, glyph_editor):
+		self.__glyph_editor = glyph_editor
 		self.__storage = s =c.get_storage(self)
-		s.register('pixel_draw_size', self.__PIXEL_DRAW_SIZE)
 		s.register('pixel_margin', self.__PIXEL_MARGIN)
 		s.register(
 			'pixel_size',
@@ -54,7 +54,13 @@ class GlyphEditorAttributes(object):
 		)
 		s.register('seperation_lines', self.__SEPERATION_LINES)
 		s.register('unset_pixel_color', self.__UNSET_PIXEL_COLOR[:])
-		s.register('draw_unset_pixels', False)
+		s.register('draw_unset_pixels', self.__DRAW_UNSET_PIXELS)
+		
+		s.register_changed_callback('pixel_size',
+			self.__on_pixel_size_changed)
+
+	def __on_pixel_size_changed(self, key, value):
+		self.__glyph_editor.make_size_request()
 
 	def get_pixel_size(self):
 		"""Get the total size of a pixel of a glyph on the screen.
@@ -82,17 +88,6 @@ class GlyphEditorAttributes(object):
 		"""
 		return self.__storage['pixel_margin']
 		
-	def set_pixel_draw_size(self, pixel_draw_size):
-		"""This method sets the width and height of a pixel drawed on
-		the screen.
-		
-		Args:
-			pixel_draw_size (int): The width and height a pixel of a
-				pixel drawed on the screen.		
-		"""
-		if pixel_draw_size > self.__storage['pixel_size']:
-			self.__storage['pixel_size'] = pixel_draw_size
-		self.__storage['pixel_draw_size'] = pixel_draw_size
 		
 	def get_pixel_draw_size(self):
 		"""Use this method to get the width an height of a pixel drawed
@@ -101,7 +96,10 @@ class GlyphEditorAttributes(object):
 		Returns:
 			int: Width and height of a pixel drawed on the screen		
 		"""
-		return self.__storage['pixel_draw_size']
+		return (
+			self.__storage['pixel_size'] - 
+			2 * self.__storage['pixel_margin']
+		)
 	
 	def set_seperation_lines(self, seperation_lines):
 		"""This method sets wether the pixels of the GlyphEditor widget
@@ -314,7 +312,7 @@ class GlyphEditor(Gtk.Widget):
 		self.__requested_size = None
 		
 		self.set_context(GlyphEditorContext(self))
-		self.set_attributes(GlyphEditorAttributes())
+		self.set_attributes(GlyphEditorAttributes(self))
 		
 	def get_data(self):
 		"""Get a reference to the data representing the pixels of a
