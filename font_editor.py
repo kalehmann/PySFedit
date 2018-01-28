@@ -19,7 +19,7 @@
 #	long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
 
 """
-@ToDo: Add module docstring
+This module contains the font editor widget of PySFedit.
 """
 
 import gi
@@ -30,638 +30,343 @@ from gi.repository import GLib
 from gi.repository import Gdk
 from PIL import Image, ImageDraw
 import gettext
+import re
 
 import psflib
 from glyph_editor import GlyphEditor
+from edit_description_dialog import EditUnicodeDescriptionDialog
 import constants as c
 
 translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 	fallback=True)
 translation.install()
-
-class FontEditorContext(object):
-	def __init__(self):
-		self.__header = None
-		self.__size = None
-		self.__font = None
 		
-class NewFontEditor(Gtk.Box):
-	def __init__(self, header, font=None):
-		Gtk.Box.__init__(self, orientation=Gtk.Orientation.VERTICAL)
-
-class FontEditor(Gtk.Grid):
-	def __init__(self, header, font = None):
-		Gtk.Grid.__init__(self)
-		
-		self.size = header.size
-		
-		self.font_grid = GlyphEditor()
-		ctx = self.font_grid.get_context().set_glyph_size(header.size)
-		self.font_grid.get_attributes().set_seperation_lines(True)
-		self.font_grid.get_attributes().set_draw_unset_pixels(True)
-		
-		self.top_grid = Gtk.Grid()
-		self.attach(self.top_grid, 0, 0, 1, 1)
-		
-		self.clean_pixbuf = self.get_pixbuf()
-		self.active_char = None
-
-		if font:
-			self.font = font
-			min_cp = min(font.get_glyphs().keys())
-			self.active_char = min_cp
-			first_glyph = font.get_glyph(min_cp)
-			self.font_grid.set_data(first_glyph.get_data())
-		else:
-			self.font = psflib.PcScreenFont(header)
-				
-		self.button_add = Gtk.Button(None,
-				image=Gtk.Image(stock=Gtk.STOCK_ADD))
-		self.button_remove = Gtk.Button(None,
-				image=Gtk.Image(stock=Gtk.STOCK_REMOVE))
-		self.glyph_selector = GlyphSelector(font)	
-		
-		self.button_debug = Gtk.Button("Debug")
-		self.button_debug.connect("clicked", self.on_debug)
-		self.top_grid.attach(self.button_debug, 2, 0, 1, 1)
-		
-		self.top_grid.attach(self.button_add, 0, 0, 1, 1)
-		self.top_grid.attach(self.button_remove, 1, 0, 1, 1)
-		self.attach(self.glyph_selector, 3, 1, 1, 1)
-		self.attach(self.font_grid, 0,1,3,1)
-		
-		
-		self.glyph_selector.set_changed_callback(
-				self.on_selector_changed)
-		self.glyph_selector.set_edited_callback(
-				self.on_char_edited)
-		self.glyph_selector.set_repr_added_callback(
-				self.on_repr_added)
-		self.glyph_selector.set_repr_removed_callback(
-				self.on_repr_removed)
-				
-		self.button_add.connect("clicked", self.on_button_add_clicked)
-		self.button_remove.connect("clicked",
-				self.on_button_remove_clicked)
-				
-	@staticmethod
-	def initialize_with_font(font):
-		return FontEditor(font.get_header(), font)
-				
-	def get_font(self):
-		return self.font
-
-	def get_pixbuf(self):
-		img = Image.new('RGBA', self.size, (0,0,0,0))
-		draw = ImageDraw.Draw(img)
-		for y, row in zip(range(self.size[1]),
-								self.font_grid.get_data()):
-			for x, pixel in zip(range(self.size[0]), row):
-				if pixel == 1:
-					draw.point((x, y), (0,0,0,255))
-		data = img.tobytes()
-		w, h = img.size
-		data = GLib.Bytes.new(data)		
-		pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(data,
-					GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4)
-		return pixbuf
-		
-	def on_button_add_clicked(self, button):		
-		pixbuf = self.clean_pixbuf
-		char_id = self.glyph_selector.get_new_id()
-		self.glyph_selector.add_glyph(char_id, pixbuf)
-				
-	def on_char_change(self, new_id):
-		if self.active_char == None:
-			self.glyph_selector.update_pixbuf(new_id, self.get_pixbuf())
-			glyph = self.font.get_glyph(new_id)
-			glyph.copy_data(self.font_grid.get_data())
-			return
-		glyph = self.font.get_glyph(self.active_char)
-		glyph.copy_data(self.font_grid.get_data())
-		pixbuf = self.get_pixbuf()
-		self.font_grid.reset()
-		self.glyph_selector.update_pixbuf(self.active_char, pixbuf)
-		glyph = self.font.get_glyph(new_id)
-		self.font_grid.set_data(glyph.get_data())
-		
-	def on_button_remove_clicked(self, button):
-		if self.active_char != None:
-			char_id = self.active_char
-			self.glyph_selector.remove_glyph(self.active_char)
-			self.font.remove_glyph(char_id)
-			self.active_char = self.glyph_selector.get_selected_id()
-			
-	def on_selector_changed(self, char_id):
-		self.on_char_change(char_id)
-		self.active_char = char_id
-
-	def on_char_edited(self, primary_cp, old_cp, new_cp):
-		self.font.update_unicode_representation(primary_cp, old_cp,
-				new_cp)
-		if primary_cp == old_cp:
-			self.active_char = new_cp
-			
-	def on_repr_added(self, primary_cp, repr_cp):
-		glyph = self.font.get_glyph(primary_cp)
-		glyph.add_unicode_representation(repr_cp)
-		
-	def on_repr_removed(self, primary_cp, repr_cp):
-		glyph = self.font.get_glyph(primary_cp)
-		glyph.remove_unicode_representation(repr_cp)
-		
-	def on_debug(self, button):
-		print(self.font)
-		
-	def __set_font(self):
-		print("test")
-
-class NewUnicodeRepresentationDialog(Gtk.Dialog):
-	def __init__(self, parent, codepoint):
-		Gtk.Dialog.__init__(self, _("New Font"), parent, 0,
-			(Gtk.STOCK_OK, Gtk.ResponseType.OK,
-			 Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
-		self.set_default_size(150,100)
-		
-		self.codepoint = codepoint
-		
-		box = self.get_content_area()
-		grid = Gtk.Grid()
-		box.add(grid)
-		
-		l1 = Gtk.Label("Unicode")
-		l2 = Gtk.Label("Codepoint")
-		
-		self.entry_uc = Gtk.Entry()
-		self.entry_uc.set_text(psflib.get_unicode_str(codepoint))
-		self.entry_uc.connect("activate", self.__on_entry_uc_changed)
-		
-		adjustment = Gtk.Adjustment(0, 0, 65535, 1, 1, 0)
-		self.spin_cp = Gtk.SpinButton()
-		self.spin_cp.set_numeric(True)
-		self.spin_cp.connect("value-changed", self.__on_spin_cp_changed)
-		self.spin_cp.set_adjustment(adjustment)
-		self.spin_cp.set_value(codepoint)
-		
-		grid.attach(l1, 0, 0, 1, 1)
-		grid.attach(l2, 1, 0, 1, 1)
-		grid.attach(self.entry_uc, 0, 1, 1, 1)
-		grid.attach(self.spin_cp, 1, 1, 1, 1)
-		
-		self.show_all()
-		
-	def __on_spin_cp_changed(self, spin):
-		self.codepoint = int(spin.get_value())
-		uc = psflib.get_unicode_str(self.codepoint)
-		self.entry_uc.set_text(uc)
-
-	def __on_entry_uc_changed(self, entry):
-		txt = entry.get_text()
-		codepoint = psflib.get_codepoint(txt)
-		if codepoint:
-			self.codepoint = codepoint
-			self.spin_cp.set_value(codepoint)
-		else:
-			uc = psflib.get_unicode_str(self.codepoint)
-			entry.set_text(uc)
-
-	def get_codepoint(self):
-		return self.codepoint
-
-class GlyphSelector(Gtk.Grid):
-	"""
+class GlyphSelectorContext(object):
+	
+	__GLYPH_SELECTOR_PREVIEW_SIZE = [32, 32]
+	__SHOW_GLYPH_INDEX = True
+	__ALLOW_ENTERING_SEQUENCES = False
+	"""This class represents the context of the glyph selector and can
+	be used to modfiy its appeareance.
 	
 	Args:
-		font (PcScreenFont): A font to initialize the glyphselector
-			with.	
+		font (PcScreenFont): The font of the glyph selector
+		glyph_selector (GlyphSelector): The glyph selector, that uses
+			this context
+	
 	"""
-	TITLE_CODEPOINT = "Codepoint"
-	TITLE_UNICODE = "Unicode"
+	def __init__(self, font, glyph_selector):
+		self.__font = font
+		self.__glyph_preview_size = \
+			self.__GLYPH_SELECTOR_PREVIEW_SIZE[:]
+		self.__parent_glyph_selector = glyph_selector
+		self.__show_glyph_index = True
+		self.__allow_entering_sequences = \
+			self.__ALLOW_ENTERING_SEQUENCES
 	
-	def __init__(self, font = None):
-		Gtk.ScrolledWindow.__init__(self)
-		
-		self.changed_callback = None
-		self.edited_callback = None
-		self.repr_added_callback = None
-		self.repr_removed_callback = None
-		
-		self.chars = {}
-		self.char_display_size = (24, 24)
-		
-		self.clean_pixbuf = GdkPixbuf.Pixbuf.new(
-								GdkPixbuf.Colorspace.RGB, True, 8, 1, 1)
-		self.clean_pixbuf.fill(0)
-		
-		self.scrolled_window = Gtk.ScrolledWindow()
-		
-		self.model = Gtk.TreeStore(GdkPixbuf.Pixbuf, str, str)
-		self.tree_view = Gtk.TreeView.new_with_model(self.model)
-
-		char_renderer = Gtk.CellRendererPixbuf()
-		char_column = Gtk.TreeViewColumn("Char", char_renderer,
-						pixbuf=0)
-		self.tree_view.append_column(char_column)
-		
-		unicode_renderer = Gtk.CellRendererText(
-							mode=Gtk.CellRendererMode.EDITABLE)
-		unicode_renderer.set_property("editable", True)
-		unicode_renderer.connect("edited", self.__on_unicode_edited)
-		unicode_column = Gtk.TreeViewColumn("Unicode", unicode_renderer,
-							text=1)
-		self.tree_view.append_column(unicode_column)
-		
-		codepoint_renderer = Gtk.CellRendererText(
-								mode=Gtk.CellRendererMode.EDITABLE)
-		codepoint_renderer.set_property("editable", True)
-		codepoint_renderer.connect("edited", self.__on_codepoint_edited)
-		codepoint_column = Gtk.TreeViewColumn("Codepoint",
-							codepoint_renderer, text=2)
-		self.tree_view.append_column(codepoint_column)
-		
-		box = Gtk.Box()
-		box.add(self.tree_view)
-		self.scrolled_window.add(box)		
-		self.scrolled_window.set_property("min-content-width", 250)
-		self.scrolled_window.set_property("min-content-height", 200)
-		
-		self.selection = self.tree_view.get_selection()
-		self.selection.set_mode(Gtk.SelectionMode.SINGLE)
-		self.selection.connect("changed", self.__on_selection_changed)
-		self.tree_view.connect("button-press-event",
-				self.__on_treeview_clicked_event)
-		self.tree_view.set_enable_tree_lines(True)
-		
-		self.attach(self.scrolled_window, 0, 1, 1, 1)
-		
-		if font:
-			self.__load_font_data(font)
-		
-	def set_glyph_display_size(self, size):
-		"""Set the display size of the pixbuf showing a glyph
+	def switch_rows(self, first, second):
+		"""Switch two rows. This also changes the positions of the
+		glyphs in the font.
 		
 		Args:
-			size (tuple/list) : Contains the with and height		
+			first (int): The index of the first row
+			second (int): The index of the second row		
 		"""
-		self.char_display_size = size
-		iter = self.model.get_iter_first()
-		while iter:
-			pixbuf = self.model.get(iter, 0)[0]
-			pixbuf = pixbuf.scale_simple(self.char_display_size[0],
-						self.char_display_size[1],
-						GdkPixbuf.InterpType.NEAREST)
-			self.model.set_value(iter, 0, pixbuf)
-			iter = self.model.iter_next(iter)
-		
-	def add_glyph(self, primary_codepoint, pixbuf):
-		"""Add a glyph
-		
-		Args:
-			primary_codepoint (int) : The primary codepoint of the glyph
-			pixbuf (GdkPixbuf.Pixbuf) : The pixbuf showing the glyph
-		
-		"""
-		pixbuf = pixbuf.scale_simple(self.char_display_size[0],
-						self.char_display_size[1],
-						GdkPixbuf.InterpType.NEAREST)
-		uc = psflib.get_unicode_str(primary_codepoint)
-		iter = self.model.append(None, [pixbuf, uc,
-						str(primary_codepoint)])
-		path = self.model.get_path(iter)
-		if self.has_glyph(primary_codepoint):
-			self.remove_glyph(primary_codepoint)
-		self.chars[primary_codepoint] = []
-		self.selection.select_iter(iter)
-		self.add_repr(primary_codepoint, primary_codepoint)
-		
-	def add_repr(self, primary_codepoint, codepoint):
-		"""Add an unicode representation to an glyph
-		
-		Args:
-			primary_codepoint (int) : The primary codepoint of the glyph
-				to add a representation to
-			codepoitn : The codepoint of the representation to add
-		"""
-		if codepoint in self.chars[primary_codepoint]:
-			return
-		self.chars[primary_codepoint].append(codepoint)
-		iter = self.__get_iter_by_cp(primary_codepoint)
-		uc = psflib.get_unicode_str(codepoint)
-		self.model.append(iter, [self.clean_pixbuf, uc, str(codepoint)])
-		if self.repr_added_callback:
-			self.repr_added_callback(primary_codepoint, codepoint)
-		
-	def remove_glyph(self, primary_codepoint):
-		"""Removes a glyhp
-		
-		Args:
-			primary_codepoint (int) : The primary codepoint of the glyph		
-		"""
-		iter = self.__get_iter_by_cp(primary_codepoint)
-		if iter:	
-			self.model.remove(iter)
-		del self.chars[primary_codepoint]
-		
-		to_select = self.model.get_iter_first()
-		if to_select:
-			self.selection.select_iter(to_select)
+		if first == second:
 			
-	def remove_repr(self, primary_codepoint, codepoint):
-		"""Remove an unicode representation from a glyph
+			return
+			
+		lb = self.__parent_glyph_selector
+		first_row = lb.get_row_at_index(first)
+		second_row = lb.get_row_at_index(second)
+				
+		(lower_index, lower_row), (higher_index, higher_row) = sorted(
+			[
+				(first, first_row),
+				(second, second_row)
+			],
+			key=lambda x: x[0]
+		)
 		
-		Args:
-			primary_codepoint (int) : The primary codepoint of the glyph
-				to remove a representation from
-			codepoint (int) : The codepoint of the representation
-		"""
-		iter = self.__get_iter_by_cp(primary_codepoint)
-		child = self.model.iter_children(iter)
-		self.chars[primary_codepoint].remove(codepoint)
-		while child:
-			child_cp = int(self.model.get(child, 2)[0])
-			if child_cp == codepoint:
-				self.model.remove(child)
-				break
-			child = self.model.iter_next(child)
-		to_select = self.__get_iter_by_cp(primary_codepoint)
-		if to_select:
-			self.selection.select_iter(to_select)
-		if self.repr_removed_callback:
-			self.repr_removed_callback(primary_codepoint, codepoint)
+		lb.remove(lower_row)
+		lb.remove(higher_row)
+		lb.insert(higher_row, lower_index)
+		lb.insert(lower_row, higher_index)
 		
-	def update_pixbuf(self, primary_codepoint, pixbuf):
-		"""Update the pixbuf of a glyph in the treeview
+		lb.select_row(second_row)
 		
-		Args:
-			primary_codepoint (int) : The primary codepoint of the glyph
-				which pixbuf should be updated
-			pixbuf (GdkPixbuf.Pixbuf) : The new pixbuf of the glyph
-		"""
-		iter = self.__get_iter_by_cp(primary_codepoint)
-		if iter:
-			pixbuf = pixbuf.scale_simple(self.char_display_size[0],
-						self.char_display_size[1],
-						GdkPixbuf.InterpType.NEAREST)
-			self.model.set_value(iter, 0, pixbuf)
+		lb.show_all()
+		self.update_rows()
 		
-	def has_glyph(self, primary_codepoint):
-		"""Test if a glyph with the given primary codepoint already
-		exists
-		
-		Returns:
-			bool : True if there is already a glyph with the given
-				primary codepoint else false
-		"""
-		return primary_codepoint in self.chars.keys()
-		
-	def get_new_id(self):
-		"""Return a new codepoint which is not yet associated to a glyph
-		
-		Returns:
-			int : codepoint which is not yet associated to a glyph
-		"""
-		values = []
-		for reprs in self.chars.values():
-			for _repr in reprs:
-				if _repr not in values:
-					values.append(_repr)
-		for value in values:
-			if value-1 not in values and value > 1:
-				return value - 1
-			if value+1 not in values:
-				return value + 1
-		return 0
+		self.__font.switch_glyphs(first, second)
 	
-	def set_changed_callback(self, callback):
-		"""Sets a callback that gets called, when a new glyph has been
-		selected
+	def add_glyph(self, index=-1):
+		"""Add a new glyph.
 		
 		Args:
-			callback (callable) : The callback to call when a new glyph
-			has been selected
-		
-		Arguments passed to the callback:
-			-> the primary codepoint of the newly selected char
+			index (int): The position where the glyph should be added.
+				The default is -1 meaning at the end		
 		"""
-		self.changed_callback = callback
-		
-	def set_edited_callback(self, callback):
-		"""Sets a callback that gets called, when the unicode
-		information of a glyph has been edited
+		glyph, _ = self.__font.add_glyph(index)
+		if glyph:
+			row = GlyphRow(self, len(self.__font) - 1)
+			row.connect('drag-data-received',
+				self.__parent_glyph_selector._on_drag_data_received,
+				row)
+			self.__parent_glyph_selector.add(row)
+			self.__parent_glyph_selector.show_all()
+			self.__parent_glyph_selector.select_row(row)
+		if self.__show_glyph_index:
+			for row in self.__parent_glyph_selector.get_children():
+				row.update()	
+	
+	def remove_glyph(self, index=-1):
+		"""Remove a glyph.
 		
 		Args:
-			callback (callable) : The callback to call when the unicode
-				value of a glyph has been edited
-		
-	    Arguments passed to the callback:
-			-> the primary codepoint of the char
-			-> the old unicode representation
-			-> the new unicode representation
+			index (int): The index of the glyph that should be removed.
+				The default is -1 meaning the currently selected glyph		
 		"""
-		self.edited_callback = callback
-		
-	def set_repr_added_callback(self, callback):
-		"""Sets a callback that gets called when a unicode
-		representation is added to a glyph.
-		
-		Args:
-			callback (callable) : The callback to call when a new
-				representation has been added to a glyph
-		
-		Arguments passed to the callback:
-			-> the primary codepoint of the glyph
-			-> the codepoint of the newly added representation
-		"""
-		self.repr_added_callback = callback
-		
-	def set_repr_removed_callback(self, callback):
-		"""Sets a callback that gets called when a unicode
-		representation is removed from a glyph.
-		
-		Args:
-			callback (callable) : The callback to call when a 
-				representation has been removed from a glyph
-		
-		Arguments passed to the callback:
-			-> the primary codepoint of the glyph
-			-> the codepoint of the removed representation
-		"""
-		self.repr_removed_callback = callback
-				
-	def get_selected_id(self):
-		"""Returns the primary codepoint of the currently selected glyph
-		
-		Returns:
-			int : The primary codepoint of the currently selected glyph
-		"""
-		model, iter = self.selection.get_selected()
-		if iter:
-			return int(model.get_value(iter, 2))
-		return None
-		
-	def __get_iter_by_cp(self, primary_codepoint):
-		"""Get a structure for accessing a row in the treemodel by the
-		primary codepoint of the glyph in the row
-		
-		Args:
-			primary_codepoint (int) : The primary codepoint of the glyph
-				in the row
-				
-		Returns
-			Gtk.TreeIter : Structure for accessing the row in the
-				treemodel	
-			None : If there is no glyph with the given primary codepoint	
-		"""
-		iter = self.model.get_iter_first()
-		while iter:
-			if int(self.model.get(iter, 2)[0]) == primary_codepoint:
-				return iter
-			iter = self.model.iter_next(iter)
-		return None
-		
-		
-	def __on_selection_changed(self, treeselection):
-		"""This method is called when a new row in the treeview is
-		selected
-		
-		Args:
-			treeselection (Gtk.TreeSelection) : The treeselection
-				associated with the treeview
-		
-		"""
-		model, treepaths = treeselection.get_selected_rows()
-		for path in treepaths:
-			iter = model.get_iter(path)
+		if self.__font.get_header().version_psf == psflib.PSF1_VERSION:
 			
-			while iter:
-				char_id = model.get_value(iter, 2)
-				iter = self.model.iter_parent(iter)
-		
-			if self.changed_callback:
-				self.changed_callback(int(char_id))
-		
-	def __on_codepoint_edited(self, cellrenderer, path, new_cp_str):
-		"""This method is called when a codepoint in the treeview has
-		been edited
-		
-		Args:
-			cellrenderer (Gtk.CellRendererText) : The renderer of the
-				edited cell
-			path (Gtk.TreePath) : The path of the row in the treeview
-			new_cp_str (str) : A string which contains the new codepoint
-		"""
-		iter = self.model.get_iter(path)
-		try:
-			old_codepoint = int(self.model.get(iter, 2)[0])
-			new_codepoint = int(new_cp_str)
-		except ValueError:
 			return
-		if old_codepoint == new_codepoint:
-			return
-		self.__update_glyph_repr(iter, old_codepoint,
-				new_codepoint)
-			
-	def __on_unicode_edited(self, cellrenderer, path, new_uc):
-		"""This method is called when an unicode value in the treeview
-		has been edited
-		
-		Args:
-			cellrenderer (Gtk.CellRendererText) : The renderer of the
-				edited cell
-			path (Gtk.TreePath) : The path of the row in the treeview
-			new_uc (str) : The new unicode representation as string
-		
-		"""
-		iter = self.model.get_iter(path)
-		old_codepoint = int(self.model.get(iter, 2)[0])
-		new_codepoint = psflib.get_codepoint(new_uc)
-		if not new_codepoint:
-			return
-		self.__update_glyph_repr(iter, old_codepoint,
-				new_codepoint)
-			
-	def __update_glyph_repr(self, iter, old_codepoint,
-			new_codepoint):
-		"""This method updates a representation of a glyph.
-		
-		Args:
-			iter (Gtk.TreeIter) : The structure for accessing the row
-				of the representation
-			old_codepoint (int) : The old codepoint of the
-				representation
-			new_codepoint (int) : The new codepoint of the
-				representation
-		"""
-		new_uc = psflib.get_unicode_str(new_codepoint)
-		parent_iter = self.model.iter_parent(iter)
-		if parent_iter:
-			# Additional representation
-			primary_codepoint = int(self.model.get(parent_iter, 2)[0])
-			if new_codepoint in self.chars[primary_codepoint]:
-				return
-			self.chars[primary_codepoint].remove(old_codepoint)
-			self.chars[primary_codepoint].append(new_codepoint)
-			if old_codepoint == primary_codepoint:
-				self.chars[new_codepoint] = self.chars[old_codepoint]
-				del self.chars[old_codepoint]
-				parent_uc = psflib.get_unicode_str(new_codepoint)
-				self.model.set_value(parent_iter, 1, parent_uc)
-				self.model.set_value(parent_iter, 2, str(new_codepoint))
-				
+		if index == -1:
+			row = self.__parent_glyph_selector.get_selected_row()
+			index = row.get_index()
 		else:
-			# Primary representation
-			if new_codepoint in self.chars.keys():
-				return
-			primary_codepoint = old_codepoint
-			self.chars[new_codepoint] = self.chars[old_codepoint]
-			del self.chars[old_codepoint]
-			child = self.model.iter_children(iter)
-			child_old_cp = None
-			child_new_cp = None
-			while child:
-				child_cp = int(self.model.get(child, 2)[0])
-				if child_cp == old_codepoint:
-					child_old_cp = child
-				elif child_cp == new_codepoint:
-					child_new_cp = child
-				child = self.model.iter_next(child)
-			if not child_new_cp:
-				self.model.set_value(child_old_cp, 1, new_uc)
-				self.model.set_value(child_old_cp, 2,
-					str(new_codepoint))
-				self.chars[new_codepoint].remove(old_codepoint)
-				self.chars[new_codepoint].append(new_codepoint)
-					
-		self.model.set_value(iter, 1, new_uc)
-		self.model.set_value(iter, 2, str(new_codepoint))
-		if self.edited_callback:
-			self.edited_callback(primary_codepoint, old_codepoint,
-					new_codepoint)
+			row = self.__parent.glyph_selector.get_row_at_index(index)
+		if not row:
+			
+			return
+		if index > 0:
+			next_row = self.__parent_glyph_selector.get_row_at_index(
+				index - 1)
+			self.__parent_glyph_selector.select_row(next_row)
+		elif len(self.__parent_glyph_selector.get_children()) > 1:
+			# The row that will be deleted is the first row. Select the
+			# second row.
+			next_row = self.__parent_glyph_selector.get_row_at_index(1)
+			self.__parent_glyph_selector.select_row(next_row)
 
-	def __load_font_data(self, font):
-		"""Load glyphs and their unicode representations from a
-		PcScreenFont.
+		row.destroy()
+		self.__font.remove_glyph(index)
+	
+		if self.__show_glyph_index:
+			self.update_rows()
+	
+	def update_rows(self):
+		"""Update information of all rows of the glyph selector."""
+		for row in self.__parent_glyph_selector.get_children():
+			row.update()
+	
+	def get_font(self):
+		"""Get the font of the glyph selector
+		
+		Returns:
+			PcScreenFont: The font of the glyph selector		
+		"""
+		return self.__font
+		
+	def get_glyph_preview_size(self):
+		"""Get the size of the preview image for each glyph in the glyph
+		selector in pixels.
+		
+		Returns:
+			list: The width and the height of the preview images of the
+				glyphs in the glyph selector in pixels		
+		"""		
+		
+		return self.__glyph_preview_size
+		
+	def set_glyph_preview_size(self, size):
+		"""Set the size of the preview images of the glyphs in the glyph
+		selector in pixels.
 		
 		Args:
-			font (PcScreenFont): The font to laod glyphs and unicode
-				representations from.
+			size (list): The widht and the height of the preview images
+				of the glyphs in the glyph selector in pixels.		
 		"""
-		for pc, glyph in font.get_glyphs().items():
-			pixbuf = self.__pixbuf_from_glyph(glyph)
-			self.add_glyph(pc, pixbuf)
-			for cp in glyph.get_unicode_representations():
-				self.add_repr(pc, cp)
-		to_select = self.model.get_iter_first()
-		if to_select:
-			self.selection.select_iter(to_select)
+		self.__glyph_preview_size = size
+		
+	def get_show_glyph_index(self):
+		"""Get wether the glyph selector should show the index of each
+		glyph in the font or not.
+		
+		Returns:
+			bool: Whether to show the index of each glyph in the font or
+				not.		
+		"""
+		
+		return self.__show_glyph_index
+		
+	def set_show_glyph_index(self, show_glyph_index):
+		"""Set wether the glyph selector should show the index of each
+		glyph in the font or not.
+		
+		Args:
+			show_glyph_index (bool): Whether to show the index of each
+				glyph in the font or not.		
+		"""
+		self.__show_glyph_index = show_glyph_index
+
+	def get_allow_entering_sequences(self):
+		"""Get whether entering unicode sequences is allowed or not.
+		
+		Returns:
+			bool: whether entering unicode sequences is allowed or not.		
+		"""
+		
+		return self.__allow_entering_sequences
+		
+	def set_allow_entering_sequences(self, allow):
+		"""Set whether entering unicode sequences is allowed or not.
+		
+		Args:
+			allow (bool): Whether entering unicode sequences is allowed
+				or not.		
+		"""
+		self.__allow_entering_sequences = allow
+
+class GlyphRow(Gtk.ListBoxRow):
+	GLYPH_ROW_ATOM = Gdk.Atom.intern('GLYPH_ROW', False)
+	TARGET_GlYPH_ROW_INFO = 0
+	
+	"""A row in the glyph selector, containing a handle for rearranging
+	the rows, optional the index of the row, a preview image of the
+	glyph referenced by the row, a list of unicode representations for
+	this glyph and a button for editing these.
+	
+	Args:
+		context (GlyphSelectorContext): The context of the parent
+			glyph selector
+		index (int): The initial index of the row	
+	"""
+	def __init__(self, context, index):
+		Gtk.ListBoxRow.__init__(self)
+		font = context.get_font()
+		self.__glyph, self.__description = font[index]
+		self.__context = context
+		self.__index = index
+		self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		self.add(self.box)
+		
+		self.handle = Gtk.EventBox()
+		self.handle.add(
+			Gtk.Image.new_from_icon_name(
+				"open-menu-symbolic",
+				Gtk.IconSize.MENU
+			)
+		)
+		self.handle.connect('drag-data-get', self.__on_drag_data_get)
+		self.box.pack_start(self.handle, False, False, 0)
+		
+		self.l_index = Gtk.Label()
+		self.box.pack_start((self.l_index), False, False, 0)
+		if self.__context.get_show_glyph_index():
+			self.l_index.set_text("%d" % index)
+		
+		pixbuf = self.get_pixbuf_from_glyph_bitmap(self.__glyph)
+		self.image = Gtk.Image.new_from_pixbuf(pixbuf)
+		self.box.pack_start(self.image, False, False, 5)
+		
+		self.l_descriptions = Gtk.Label()
+		self.box.pack_start(self.l_descriptions, True, True, 2)
+		
+		if font.has_unicode_table():
+			self.btn_edit = Gtk.Button(None, image=Gtk.Image(
+				stock=Gtk.STOCK_EDIT))
+			self.btn_edit.connect("clicked", self.__on_btn_edit_clicked)
+			self.box.pack_end(self.btn_edit, False, False, 0)
+		self.set_label_descriptions()
+
+		self.handle.drag_source_set(
+			Gdk.ModifierType.BUTTON1_MASK,
+			None,
+			Gdk.DragAction.MOVE
+		)
+		
+		self.drag_dest_set(
+			Gtk.DestDefaults.ALL,
+			None,
+			Gdk.DragAction.MOVE
+		)
+
+		targets = Gtk.TargetList.new()
+		targets.add(self.GLYPH_ROW_ATOM, 0, self.TARGET_GlYPH_ROW_INFO)
+		self.handle.drag_source_set_target_list(targets)
+		self.drag_dest_set_target_list(targets)
+		
+	def __on_drag_data_get(self, widget, context, data, info, time):
+		"""This method gets called while drag and drop when this row
+		has been dropped somewhere.
+		
+		Args:
+			widget (Gtk.Widget): This row
+			context (Gtk.DragContext): The drag context
+			data (Gtk.SelectionData): The data that needs to be filled
+				in this method.
+			info (int): The info that has been registered with the 
+				target of this drag and drop operation.
+			time (int): The timestamp of the event		
+		"""
+		data.set(self.GLYPH_ROW_ATOM, 0,
+			bytes('%d' % self.get_index(), 'utf8'))
+
+	def get_index(self):
+		"""Get the index of the row. This method works even before the
+		rows has been assigned to the glyph selector.
+		
+		Returns:
+			int: The index of the row
+		"""
+		if super().get_index() == -1:
 			
-	def __pixbuf_from_glyph(self, glyph):
-		size = glyph.get_size()
+			return self.__index
+		
+		return super().get_index()
+
+	def update(self):
+		"""This method updates the label with the index of this row."""
+		if self.__context.get_show_glyph_index():
+			self.l_index.set_text('%d' % self.get_index())
+		else:
+			self.l_index.set_text()
+
+	def set_label_descriptions(self):
+		"""This method updates the label with the unicode
+		representations of the glyph referenced by this row.		
+		"""
+		if self.__description:
+			printable = ""
+			for uc in self.__description.get_unicode_values():
+				printable += chr(uc)
+			self.l_descriptions.set_text(printable)
+			
+			return
+		index = 0 if self.get_index() == -1 else self.get_index()
+
+		self.l_descriptions.set_text(chr(self.get_index()))
+
+	def get_pixbuf_from_glyph_bitmap(self, glyph):
+		"""Get the a preview image from the given glyph.
+		
+		Args:
+			glyph (psflib.GlyphBitmap): The glyph to the a preview image
+				of
+		
+		Returns:
+			GdkPixbuf.Pixbuf: The preview image of the given glyph
+				bitmap.		
+		"""
+		width, height = size = glyph.get_size()
+		data = glyph.get_data()
+		
+		size = max(width, height), max(width, height)
+		
 		img = Image.new('RGBA', size, (0,0,0,0))
 		draw = ImageDraw.Draw(img)
-		for y, row in zip(range(size[1]),
-								glyph.get_data()):
-			for x, pixel in zip(range(size[0]), row):
+		for y, row in zip(range(height), data):
+			for x, pixel in zip(range(width), row):
 				if pixel == 1:
 					draw.point((x, y), (0,0,0,255))
 		data = img.tobytes()
@@ -669,107 +374,276 @@ class GlyphSelector(Gtk.Grid):
 		data = GLib.Bytes.new(data)		
 		pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(data,
 					GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4)
-		return pixbuf
-			
-	def __on_treeview_clicked_event(self, treeview, event):
-		"""This method is called, when the user does a right click
-		at the tree view.
-		
-		Args:
-			treeview (Gtk.TreeView) : The treeview on which the right
-				click occured
-			event (Gdk.Event) : The event of the click
-		"""
-		if event.button == 3:
-			data = treeview.get_path_at_pos(int(event.x), int(event.y))
-			if data: #and event.type == Gdk.EventType._2BUTTON_PRESS:
-				path, column, x, y = data
-				iter = self.model.get_iter(path)
-				
-				menu = Gtk.Menu()
-				
-				parent_iter = self.model.iter_parent(iter)
-				if parent_iter:
-					# Addtional representation
-					parent_cp = int(self.model.get(parent_iter, 2)[0])
-					cp = int(self.model.get(iter, 2)[0])
-					menu_add_repr = Gtk.MenuItem(
-						_("Add Unicode Representation"))
-					menu_add_repr.connect("activate",
-						self.__on_add_representation_clicked, parent_cp)
-					menu_rm_repr = Gtk.MenuItem(
-						_("Remove Unicode Representation"))
-					menu_rm_repr.connect("activate",
-						self.__on_remove_representation_clicked,
-						parent_cp, cp)
-					menu.append(menu_add_repr)
-					menu.append(menu_rm_repr)
-				else:
-					# Primary representation
-					menu_add_repr = Gtk.MenuItem(
-						_("Add Unicode Representation"))
-					menu_add_repr.connect("activate",
-						self.__on_add_representation_clicked, 
-						int(self.model.get(iter, 2)[0]))
-					menu.append(menu_add_repr)
 					
-				menu.show_all()
-				menu.popup(None, None, None, self, 3, event.time)
-
-	def __on_add_representation_clicked(self, menuitem, codepoint):
-		"""This method is called when the user requested to add an
-		unicode representation to an glyph.
+		preview_size = self.__context.get_glyph_preview_size()
+		return pixbuf.scale_simple(*preview_size,
+			GdkPixbuf.InterpType.NEAREST)
+	
+	def get_glyph_data(self):
+		"""Get the data of the glyph referenced by this row.
 		
-		It gives the user an dialog to enter the new unicode
-		representation
-		
-		Args:
-			menuitem (Gtk.MenuItem) : The menu item which generated
-				this call
-			codepoint (int) : The codepoint of the glyph to add a
-				representation to.
+		Returns:
+			list: The data of the glyph bitmap referenced by this row		
 		"""
-		d = NewUnicodeRepresentationDialog(self.get_toplevel(),
-				codepoint)
-		r = d.run()
-		if r == Gtk.ResponseType.OK:
-			cp = d.get_codepoint()
-			self.add_repr(codepoint, cp)
-		d.destroy()
 		
-	def __on_remove_representation_clicked(self, menuitem, primary_cp,
-			codepoint):
-		"""This method is called when the user requested the removal
-		of an unicode representation of a glyph.
+		return self.__glyph.get_data()
 		
-		It asks the user if to confirm the removal and removes the 
-		representation if necessary.
+	def update_glyph_data(self, data):
+		"""Update the data and the preview image of the glyph referenced
+		by this row.
 		
 		Args:
-			menuitem (Gtk.MenuItem) : The menu item which generated this
-				call
-			primary_cp (int) : The primary codepoint of the glyph  to
-				remove an unicode representation from
-			codepoint (int) : The codepoint to remove from the glyph
-		"""	
-		if codepoint == primary_cp:
-			dialog = Gtk.MessageDialog(self.get_toplevel(), 0,
-				Gtk.MessageType.INFO, Gtk.ButtonsType.OK,
-				_("Confirmation"))
-			dialog.format_secondary_text(
-				_("""You cannot remove this representation, because it
-is the primary representation for this glyph"""))
-			dialog.run()
-			dialog.destroy()
-			return
+			data (list): The new data of the glyph		
+		"""
+		self.__glyph.set_data(data)
+		pixbuf = self.get_pixbuf_from_glyph_bitmap(self.__glyph)
+		self.image.set_from_pixbuf(pixbuf)
 		
-		dialog = Gtk.MessageDialog(self.get_toplevel(), 0,
-					Gtk.MessageType.QUESTION, (Gtk.STOCK_OK,
-					Gtk.ResponseType.OK, Gtk.STOCK_CANCEL,
-					Gtk.ResponseType.CANCEL), _("Confirmation"))
-		dialog.format_secondary_text(_("""Please confirm, that you want 
-to remove this additional unicode representation"""))		
-		response = dialog.run()
-		if response == Gtk.ResponseType.OK:
-			self.remove_repr(primary_cp, codepoint)
-		dialog.destroy()
+	def __on_btn_edit_clicked(self, button):
+		"""This method gets called when the button for editing the
+		unicode descriptions of the glyph referenced by this row has
+		been clicked and opens an EditUnicodeDescriptionDialog.
+		
+		Args:
+			button (Gtk.Button): The button for editing the unicode
+				description of the glyph referenced by this row		
+		"""
+		d = EditUnicodeDescriptionDialog(self.get_toplevel(),
+			self.__description, self.__context)
+		d.run()
+		d.destroy()
+		self.set_label_descriptions()
+	
+
+class GlyphSelector(Gtk.ListBox):
+	"""A widget for displaying glyphs from a pc screen font.
+	
+	Args:
+		font (psflib.PcScreenFont): The font which glyphs should be
+			displayed by this widget		
+		glyph_editor (GlyphEditor): The glyph editor widget of the font
+			editor
+	"""
+	def __init__(self, font, glyph_editor):
+		Gtk.ListBox.__init__(self)
+		self.set_selection_mode(Gtk.SelectionMode.SINGLE)
+		
+		self.context = GlyphSelectorContext(font, self)
+		
+		self.connect('row-selected', self.__on_row_selected)
+		self.__font = font
+		self.__glyph_editor = glyph_editor
+		self.__editor_context = glyph_editor.get_context()
+		self.__editor_context.register_on_changed_callback(
+			self.__on_glyph_edited)
+
+		for i in range(len(self.__font)):
+			row = GlyphRow(self.context, i)
+			row.connect('drag-data-received',
+				self._on_drag_data_received, row)
+			self.add(row)
+			
+		# Select the first row
+		if len(font):
+			first_row = self.get_row_at_index(0)
+			self.select_row(first_row)
+
+	def get_context(self):
+		"""Get the context of the glyph selector.
+		
+		Returns:
+			GlyphSelectorContext: The context of the glyph selector		
+		"""
+		
+		return self.context
+		
+	def _on_drag_data_received(self, widget, context, x, y, data, info,
+		time, row):
+		"""This method gets called, when a row of the glyph selector has
+		received data in a drag and drop operation.
+		
+		Args:
+			widget (Gtk.Widget): The glyph selector row, that has
+				received the data
+			context (Gtk.DragContext): The drag context
+			x (int): X-coordinate of the drop
+			y (int): Y-coordinate of the drop
+			data (Gtk.SelectionData): The data that needs to be filled
+				in this method.
+			info (int): The info that has been registered with the 
+				target of this drag and drop operation.
+			time (int): The timestamp of the event	
+		"""	
+		self.context.switch_rows(int(data.get_data()),
+			row.get_index())
+
+	def __on_glyph_edited(self, data):
+		"""This method gets called, when the data of the glyph editor
+		widget has changed.
+		
+		Args:
+			data (list): The new data of the glyph editor widget		
+		"""
+		self.get_selected_row().update_glyph_data(data)
+		
+	def __on_row_selected(self, listbox, row):
+		"""This method gets called, when the selected row changes.
+		
+		Args:
+			row (GlyphSelectorRow): The newly selected row		
+		"""
+		self.__editor_context.reset_pixels()
+		if row:
+			self.__glyph_editor.set_data(row.get_glyph_data())
+
+class FontEditorContext(object):
+	"""The context of the font editor widget.
+	
+	Args:
+		font (psflib.PcScreenFont): The font that the font editor
+			handles.	
+	"""
+	def __init__(self, font=None):
+		self.__header = font.get_header()
+		self.__bitmap_size = None
+		self.__font = font
+	
+	def get_font(self):
+		"""Get the font that the font editor handles.
+		
+		Returns:
+			psflib.PcScreenFont: The font that the font editor handles		
+		"""
+		return self.__font
+		
+class FontEditor(Gtk.Box):
+	"""The font editor widget.
+	
+	A widget for editing the glyph bitmaps of a pc screen font and
+	setting	their unicode representations.
+	
+	Args:
+		header (psflib.PsfHeader): The header of the font that should be
+			edited in this font editor.
+		font (psflib.PcScreenFont): The font that should be edited in
+			this font editor. If None is given a new on will be created
+			with the header.	
+	"""
+	def __init__(self, header, font=None):
+		Gtk.Box.__init__(self, orientation=Gtk.Orientation.HORIZONTAL)
+		
+		if not font:
+			font = psflib.PcScreenFont(header)
+		
+		self.context = FontEditorContext(font)
+		
+		# GlyphEditor
+		self.glyph_editor = GlyphEditor()
+		self.glyph_editor.get_context().set_glyph_size(header.size)
+		self.glyph_editor.get_attributes().set_seperation_lines(True)
+		self.glyph_editor.get_attributes().set_draw_unset_pixels(True)
+		
+		glyph_editor_wrapper = Gtk.Box(
+			orientation=Gtk.Orientation.VERTICAL)
+		self.pack_start(glyph_editor_wrapper, True, True, 0)
+		
+		button_wrapper = Gtk.Box(
+			orientation=Gtk.Orientation.HORIZONTAL)
+		glyph_editor_wrapper.pack_start(button_wrapper, False, True, 1)
+		
+		# ButtonAdd
+		self.button_add = Gtk.Button(None,
+				image=Gtk.Image(stock=Gtk.STOCK_ADD))
+		self.button_add.connect("clicked", self.__on_btn_add_clicked)
+		self.button_add.set_sensitive(
+			header.version_psf != psflib.PSF1_VERSION
+		)
+		button_wrapper.pack_start(self.button_add, True, True, 1)
+		
+		# ButtonRemove
+		self.button_remove = Gtk.Button(None,
+				image=Gtk.Image(stock=Gtk.STOCK_REMOVE))
+		self.button_remove.set_sensitive(
+			bool(len(font)) and
+			header.version_psf != psflib.PSF1_VERSION
+		)
+		self.button_remove.connect("clicked",
+			self.__on_btn_remove_clicked)
+		button_wrapper.pack_start(self.button_remove, True, True, 0)
+		
+		glyph_editor_wrapper.pack_start(self.glyph_editor, True, True,
+			0)
+		
+		# GlyphSelector
+		self.glyph_selector_wrapper = Gtk.ScrolledWindow()
+		self.glyph_selector = GlyphSelector(
+			self.context.get_font(), self.glyph_editor)
+		self.glyph_selector_wrapper.add(self.glyph_selector)
+		self.glyph_selector_wrapper.set_propagate_natural_height(True)
+		self.glyph_selector_wrapper.set_min_content_width(250)
+		self.pack_start(self.glyph_selector_wrapper, True, True, 10)
+		
+	def get_font(self):
+		"""Get the font handled by this font editor.
+		
+		Returns:
+			psflib.PcScreenFont: The font handled by this font editor.		
+		"""
+		
+		return self.context.get_font()
+
+	def __on_btn_add_clicked(self, button):
+		"""This method gets called when the button for adding a new
+		glyph to the font handled by this widget has been clicked.
+		
+		Args:
+			button (Gtk.Button): The button for adding a new glyph to
+				the font handled by this widget		
+		"""
+		self.glyph_selector.get_context().add_glyph()
+				
+		def row_tick_callback(widget, clock, self):
+			"""Gtk.TickCallback
+			A callback that gets called before a new frame. 
+			
+			Args:
+				widget (Gtk.Widget): The widget this callback has been
+					added to.
+				clock (Gdk.FrameClock): The frame clock for this widget
+				self (FontEditor): The font editor, explicit is better
+					than implicit ;)
+			
+			Returns:
+				GLib.SOURCE_CONTINUE: if the callback should be called
+					another time.
+				Glib.SOURCE_REMOVE: if the callback should be removed
+					from the widget.
+			
+			"""
+			_, y = widget.translate_coordinates(self.glyph_selector,
+				0, 0)
+			if y == -1:
+			
+				return GLib.SOURCE_CONTINUE
+			vadj = self.glyph_selector_wrapper.get_vadjustment()
+			vadj.set_value(int(y))
+			
+			return GLib.SOURCE_REMOVE
+		
+		row = self.glyph_selector.get_children()[-1]
+		row.add_tick_callback(row_tick_callback, self)
+		
+		self.button_remove.set_sensitive(True)
+		
+	def __on_btn_remove_clicked(self, button):
+		"""This method gets called when the button for removing a glyph
+		from the font handled by this widget has been clicked.
+		
+		Args:
+			button (Gtk.Button): The button for removing a glyph from
+				the font handled by this widget		
+		"""
+		self.glyph_selector.get_context().remove_glyph()
+
+		if not self.glyph_selector.get_children():
+			button.set_sensitive(False)

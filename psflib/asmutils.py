@@ -42,7 +42,7 @@ class AsmParser(object):
 	__LABEL_EXPR = re.compile('([a-zA-Z0-9_]+:)')
 	# There are more operants for declaring initialized data, but we
 	# just need these two
-	__DECLARATORS_EXPR = re.compile('(db|DB|dw|DW|dd|DD)')
+	__DECLARATORS_EXPR = re.compile('\\b(db|DB|dw|DW|dd|DD)')
 	__HEXADECIMAL_EXPR = re.compile(
 		'(0[x|h][0-9a-fA-F]+|[0-9a-fA-F]+h)')
 	__OCTAL_EXPR = re.compile('(0[o|q][0-7]+|[0-7]+[o|q])')
@@ -173,6 +173,7 @@ class AsmParser(object):
 				i = i.replace('h', '')
 				ints.append(int(i, 16))
 			elif None != self.__DECIMAL_EXPR.match(i):
+				print(i)
 				i = i.replace('d', '')
 				ints.append(int(i, 10))
 			else:

@@ -39,7 +39,7 @@ class TestPsfImporter(unittest.TestCase):
 		font = psflib.PsfImporter.import_from_data(
 			TEST_FONT_PSF1_512_SIMPLE)
 		
-		self.assertFalse(font.get_header().has_unicode_table())
+		self.assertFalse(font.has_unicode_table())
 		self.assertEqual(len(font), 512)
 			
 		data = [int(psflib.Byte(row))
@@ -52,7 +52,7 @@ class TestPsfImporter(unittest.TestCase):
 		font = psflib.PsfImporter.import_from_data(
 			TEST_FONT_PSF1_256_UNICODE)
 			
-		self.assertTrue(font.get_header().has_unicode_table())
+		self.assertTrue(font.has_unicode_table())
 		self.assertEqual(len(font), 256)
 		
 		glyph = font.get_glyph_for_unicode_value(0x41)
@@ -64,7 +64,7 @@ class TestPsfImporter(unittest.TestCase):
 	def test_import_psf2_simple(self):
 		font = psflib.PsfImporter.import_from_data(TEST_FONT_PSF2_SIMPLE)
 		
-		self.assertFalse(font.get_header().has_unicode_table())
+		self.assertFalse(font.has_unicode_table())
 		self.assertEqual(len(font), 2)
 		
 		self.assertTrue(font.has_glyph_for_unicode_value(0))
@@ -77,7 +77,7 @@ class TestPsfImporter(unittest.TestCase):
 	def test_import_psf2_unicode(self):
 		font = psflib.PsfImporter.import_from_data(TEST_FONT_PSF2_UNICODE)
 		
-		self.assertTrue(font.get_header().has_unicode_table())
+		self.assertTrue(font.has_unicode_table())
 		self.assertEqual(len(font), 2)
 		
 		self.assertTrue(font.has_glyph_for_unicode_value(ord('A')))

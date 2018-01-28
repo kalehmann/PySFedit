@@ -188,7 +188,6 @@ class NewFontDialog(Gtk.Dialog):
 			self.entry_width.set_sensitive(False)
 			self.psf_version = psflib.PSF1_VERSION
 		else:
-			self.entry_width.set_editable(True)
 			self.entry_width.set_sensitive(True)
 			self.psf_version = psflib.PSF2_VERSION
 				

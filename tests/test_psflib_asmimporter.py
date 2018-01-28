@@ -37,7 +37,7 @@ class TestAsmImporter(unittest.TestCase):
 		font = psflib.AsmImporter.import_from_data(
 			TEST_FONT_PSF1_512_SIMPLE_ASM)
 		
-		self.assertFalse(font.get_header().has_unicode_table())
+		self.assertFalse(font.has_unicode_table())
 		self.assertEqual(len(font), 512)
 		glyph, _ = font[0x41]
 		self.assertEqual(
@@ -58,7 +58,7 @@ class TestAsmImporter(unittest.TestCase):
 		font = psflib.AsmImporter.import_from_data(
 			TEST_FONT_PSF1_256_UNICODE_ASM)
 		
-		self.assertTrue(font.get_header().has_unicode_table())
+		self.assertTrue(font.has_unicode_table())
 		self.assertEqual(len(font), 256)
 		glyph, description = font[0]
 		self.assertEqual(
@@ -70,7 +70,7 @@ class TestAsmImporter(unittest.TestCase):
 			TEST_FONT_PSF2_SIMPLE_ASM)
 		
 		self.assertEqual(len(font), 1)
-		self.assertFalse(font.get_header().has_unicode_table())
+		self.assertFalse(font.has_unicode_table())
 		glyph, _ = font[0]
 		self.assertEqual(
 			glyph.get_data(),
@@ -91,7 +91,7 @@ class TestAsmImporter(unittest.TestCase):
 			TEST_FONT_PSF2_UNICODE_ASM)
 			
 		self.assertEqual(len(font), 1)
-		self.assertTrue(font.get_header().has_unicode_table())
+		self.assertTrue(font.has_unicode_table())
 		self.assertTrue(font.has_glyph_for_unicode_value(0x41))
 		
 		glyph, _ = font[0]

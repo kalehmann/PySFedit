@@ -1,6 +1,23 @@
 #! /usr/bin/python3
 # -*- coding: utf-8 -*-
 
+# Copyright (c) 2018 by Karsten Lehmann <ka.lehmann@yahoo.com>
+
+#	This file is part of PySFedit.
+#
+#	PySFedit is free software: you can redistribute it and/or modify
+#	it under the terms of the GNU General Public License as published by
+#	the Free Software Foundation, either version 3 of the License, or
+# 	(at your option) any later version.
+#
+#	PySFedit is distributed in the hope that it will be useful,
+#	but WITHOUT ANY WARRANTY; without even the implied warranty of
+#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#	GNU General Public License for more details.
+#
+# 	You should have received a copy of the GNU General Public License
+#	long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
+
 """
 This module contains a custom gtk widget, which provides a canvas for
 drawing glyphs.
@@ -151,6 +168,7 @@ class GlyphEditorContext(object):
 		self.__glyph_size = self.__GLYPH_SIZE[:]
 		self.__pixels = self.__get_pixel_list()
 		self.__parent_glyph_editor = glyph_editor
+		self.__on_changed_callbacks = []	
 		
 	def __get_pixel_list(self):
 		"""Returns a list representing the pixels of the glyph.
@@ -175,6 +193,23 @@ class GlyphEditorContext(object):
 			list: A list of lists of integers.		
 		"""
 		return self.__pixels
+		
+	def set_pixels(self, data):
+		"""Set the pixels of the glyph editor.
+		
+		Args:
+			data (list): A list of the data to update the pixels of the
+				glyph editor with. Its dimensions should equal the
+				glyph size
+		"""
+		width, height = self.__glyph_size
+		if len(data[0]) != width or len(data) != height:
+			raise Exception(
+				"data should have the same dimensions as the glyphs"
+			)
+		for x in range(width):
+			for y in range(height):
+				self.__pixels[y][x] = data[y][x]
 
 	def set_glyph_size(self, glyph_size):
 		"""This method sets the number of pixels representing a glyph.
@@ -215,6 +250,9 @@ class GlyphEditorContext(object):
 			self.__pixels[y][x] = 1
 		elif action == self.CLEAR_PIXEL:
 			self.__pixels[y][x] = 0
+		
+		for callback in self.__on_changed_callbacks:
+			callback(self.__pixels)
 			
 	def reset_pixels(self):
 		"""Clear all pixels		
@@ -224,6 +262,28 @@ class GlyphEditorContext(object):
 		# over the get_pixels() method, he can still use it.
 		self.__pixels.clear()
 		self.__pixels += self.__get_pixel_list()
+		self.__parent_glyph_editor.queue_draw()
+		
+	def register_on_changed_callback(self, callback):
+		"""Register a callback that should be called every time the
+		pixels of the glyph editor are edited.
+		
+		Args:
+			callback (callable): The callback. It should take the pixels
+				of the glyph editor as onyl argument.
+		"""
+		self.__on_changed_callbacks.append(callback)
+		
+	def unregister_on_changed_callback(self, callback):
+		"""Unregister a callback.
+		
+		Args:
+			callback (callable): The callback that shoudl be
+				unregistered
+		"""
+		if callback in self.__on_changed_callbacks:
+			self.__on_changed_callbacks.remove(callback)
+
 
 class GlyphEditor(Gtk.Widget):
 	"""Custom widget for drawing glyphs.
@@ -270,9 +330,7 @@ class GlyphEditor(Gtk.Widget):
 			data (list): A list containg lists (the rows) of integers
 				(the pixels)
 		"""
-		for row, i in zip(data, range(len(self.__pixels))):
-			for d, j in zip(row, range(len(row))):
-				self.__pixels[i][j] = d
+		self.__context.set_pixels(data)
 		self.queue_draw()
 		
 	def reset(self):

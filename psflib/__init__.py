@@ -69,6 +69,7 @@ def bytearray_to_int(_bytearray):
 	Notes:
 		The bytearray should be little endian
 	"""
+	
 	return int.from_bytes(_bytearray, byteorder='little',
 		signed=False)
 
@@ -83,8 +84,26 @@ def get_unicode_str(codepoint):
 			controll sequence or undefined
 	"""
 	if 0x20 <= codepoint <= 0x7e or 0xa0 <= codepoint: #<= 0xff:
+		
 		return chr(codepoint)
+		
 	return ""
+
+def get_str_form_unicode_sequence(sequence):
+	"""Get an unicode string with a combining character from a sequence
+	of unicode values.
+	
+	Args:
+		sequence (list): A list of integers representing unicode values
+		
+	Returns:
+		str: A string with the combining character	
+	"""
+	_str = u""
+	for value in sequence:
+		_str += chr(value)
+	
+	return _str
 		
 def get_codepoint(char):
 	"""Get the codepoint of a character
@@ -1109,7 +1128,8 @@ class PsfHeaderv1(PsfHeader):
 		Returns:
 			bool: True if the font has an unicode table else False		
 		"""
-		return ( self.mode & PSF1_MODEHASTAB or
+		
+		return bool( self.mode & PSF1_MODEHASTAB or
 			self.mode & PSF1_MODEHASSEQ )
 			
 	def get_length(self):
@@ -1196,6 +1216,8 @@ class PsfHeaderv2(PsfHeader):
 class PcScreenFont(object):
 	"""This class represents a pc screen font.
 	
+	Args:
+		header (PsfHeader): The header of the font
 	"""
 	def __init__(self, header):
 		self.__header = header
@@ -1242,7 +1264,7 @@ class PcScreenFont(object):
 		if (self.__header.version_psf == PSF1_VERSION and
 			self.__header.get_length() == len(self.__glyph_bitmaps)):
 			
-			return
+			return None, None
 		if index < 0:
 			index = self.__len__()
 			
@@ -1280,6 +1302,8 @@ class PcScreenFont(object):
 		self.__glyph_bitmaps.pop(index)
 		if self.__header.has_unicode_table():
 			self.__unicode_info.pop(index)
+		
+		self.__header.length -= 1
 
 	def get_glyph(self, index):
 		"""Get a glyph at the given position in the font.
@@ -1387,6 +1411,18 @@ class PcScreenFont(object):
 			
 		return None
 
+	def get_glyph_index(self, glyph):
+		"""Get the index of a glyph.
+		
+		Args:
+			glyph (GlyphBitmap): The glyph
+			
+		Returns:
+			int: The index of the glyph in the font		
+		"""
+		
+		return self.__glyph_bitmaps.index(glyph)
+
 	def __len__(self):
 		"""Get the number of glyphs and unicode descriptions this font
 		contains.
@@ -1422,7 +1458,9 @@ class PcScreenFont(object):
 		
 	def __iter__(self):
 		"""Get an interator for the font 
-		
+	
+		Returns:
+			generator: An iterator for the font
 		"""
 		for i in range(self.__len__()):
 			yield self[i]
@@ -1430,6 +1468,9 @@ class PcScreenFont(object):
 class GlyphBitmap(object):
 	"""This class represents the bitmap of a glyph
 	
+	Args:
+		size (tuple): A tuple containing the width and the height of the
+			glyph bitmap.
 	"""
 	def __init__(self, size):
 		self.__size = size
@@ -1581,3 +1622,12 @@ class UnicodeDescription(object):
 		"""
 		return self.__sequences
 	
+	def copy(self, other):
+		"""Copy the data from another description
+		
+		Args:
+			other (UnicodeDescription): The unicode description to copy
+				the data from
+		"""
+		self.__unicode_values = other.get_unicode_values()[:]
+		self.__sequences = other.get_sequences()[:]
