@@ -18,32 +18,22 @@
 # 	You should have received a copy of the GNU General Public License
 #	long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
 
-
 """
-This module contains some constants like paths to ressources.
+@ToDo: Add module docstring
 """
 
-from os.path import dirname
+from abc import ABC
 
-PROJECT_ROOT = dirname(__file__) + '/'
-RES_DIR = PROJECT_ROOT + 'res/'
-IMG_DIR = RES_DIR + 'img/'
-LOCALE_DIR = RES_DIR + 'locale/'
-
-PROJECT_STORAGE = {}
-
-def get_storage(_object):
-	if type(_object) == type:
-		name = _object.__name__
-	else:
-		name = type(_object).__name__
-	if name not in PROJECT_STORAGE:
-		PROJECT_STORAGE[name] = Storage()
-	
-	return PROJECT_STORAGE[name]
-
-class Storage(dict):
-	def register(self, key, default):
-		if not key in self:
-			self[key] = default
-	
+class Context(ABC):
+	def __init__(self):
+		print(type(self).__name__)
+		
+	def register_value(self, key, defaut):
+		pass
+		
+	def set_value(self, key, value):
+		pass
+		
+	def get_value(self, key):
+		pass
+		
