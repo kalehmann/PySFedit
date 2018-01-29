@@ -58,8 +58,8 @@ class Storage(dict):
 			self[key] = default
 	
 	def __setitem__(self, key, value):
+		super(Storage, self).__setitem__(key, value)
 		if key in self.__changed_callbacks:
 			for cb in self.__changed_callbacks[key]:
 				cb(key, value)
 		
-		super(Storage, self).__setitem__(key, value)
