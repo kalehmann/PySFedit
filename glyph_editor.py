@@ -38,25 +38,16 @@ class GlyphEditorAttributes(object):
 	example how it looks and how large all pixels of the glyph are
 	drawed on the screen.	
 	"""
-	__PIXEL_DRAW_SIZE = 12
-	__PIXEL_MARGIN = 2
-	__SEPERATION_LINES = True
-	__UNSET_PIXEL_COLOR = [0.8, 0.8, 0.8, 1]
-	__DRAW_UNSET_PIXELS = False
+	DEFAULT_PIXEL_DRAW_SIZE = 12
+	DEFAULT_PIXEL_MARGIN = 2
+	DEFAULT_SEPERATION_LINES = True
+	DEFAULT_UNSET_PIXEL_COLOR = [0.8, 0.8, 0.8, 1]
+	DEFAULT_DRAW_UNSET_PIXELS = False
 	
 	def __init__(self, glyph_editor):
 		self.__glyph_editor = glyph_editor
-		self.__storage = s =c.get_storage(self)
-		s.register('pixel_margin', self.__PIXEL_MARGIN)
-		s.register(
-			'pixel_size',
-			self.__PIXEL_DRAW_SIZE + 2 * self.__PIXEL_MARGIN
-		)
-		s.register('seperation_lines', self.__SEPERATION_LINES)
-		s.register('unset_pixel_color', self.__UNSET_PIXEL_COLOR[:])
-		s.register('draw_unset_pixels', self.__DRAW_UNSET_PIXELS)
-		
-		s.register_changed_callback('pixel_size',
+		self.__storage = c.get_storage(self)
+		self.__storage.register_changed_callback('pixel_size',
 			self.__on_pixel_size_changed)
 
 	def __on_pixel_size_changed(self, key, value):
@@ -537,3 +528,19 @@ class GlyphEditor(Gtk.Widget):
 		self.register_window(window)
 		self.set_realized(True)
 		window.set_background_pattern(None)
+
+s = c.get_storage(GlyphEditorAttributes)
+s.register('pixel_margin', GlyphEditorAttributes.DEFAULT_PIXEL_MARGIN)
+s.register(
+	'pixel_size',
+	GlyphEditorAttributes.DEFAULT_PIXEL_DRAW_SIZE +
+	2 * GlyphEditorAttributes.DEFAULT_PIXEL_MARGIN
+)
+s.register('seperation_lines',
+	GlyphEditorAttributes.DEFAULT_SEPERATION_LINES)
+s.register('unset_pixel_color',
+	GlyphEditorAttributes.DEFAULT_UNSET_PIXEL_COLOR[:])
+s.register('draw_unset_pixels',
+	GlyphEditorAttributes.DEFAULT_DRAW_UNSET_PIXELS)
+
+

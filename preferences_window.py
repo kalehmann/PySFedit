@@ -29,6 +29,7 @@ from gi.repository import Gtk
 import constants as c
 
 from glyph_editor import GlyphEditorAttributes
+from font_editor import GlyphSelectorContext
 
 class PreferencesWindow(Gtk.Window):
 	def __init__(self):
@@ -97,3 +98,29 @@ class GlyphEditorPage(Gtk.Grid):
 		
 	def __on_pixel_margin_changed(self, button):
 		self.__storage['pixel_margin'] = int(button.get_value())
+		
+class GlyphSelectorPage(Gtk.Grid):
+	def __init__(self):
+		Gtk.Grid.__init__(self)
+		
+		self.__storage = c.get_storage(GlyphSelectorContext)
+		
+		label_preview_size = Gtk.Label(_("Glyph preview size:"))
+		self.spin_preview_size = Gtk.SpinButton()
+		adj = Gtk.Adjustment(24, 24, 64, 1, 10, 0)
+		self.spin_preview_size.set_adjustment(adj)
+		self.spin_preview_size.set_value(self.__storage['preview_size'])
+		
+		self.attach(label_preview_size, 0, 0, 1, 1)
+		self.attach(self.spin_preview_size, 1, 0, 1, 1)
+		
+		label_glyph_indices = Gtk.Label(_("Show glyph indices"))
+		self.glyph_indices = Gtk.CheckButton()
+		self.glyph_indices.set_active(
+			self.__storage['glpyh_indices']
+		)
+		
+		self.attach(label_glyph_indices, 0, 1, 1, 1)
+		self.attach(self.glyph_indices, 1, 1, 1, 1)
+
+		self.show_all()

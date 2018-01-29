@@ -27,8 +27,9 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=3
+current_page=2
 FILE_NAME_0=6562;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpysfedit.py;0;4
 FILE_NAME_1=853;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpsflib%2F__init__.py;0;4
-FILE_NAME_2=795;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2FGlyphEditor.py;0;4
-FILE_NAME_3=0;None;0;EUTF-8;1;1;0;%2Froot%2FDesktop%2Ftor;0;4
+FILE_NAME_2=3713;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpreferences_window.py;0;4
+FILE_NAME_3=1051;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fconstants.py;0;4
+FILE_NAME_4=5158;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ffont_editor.py;0;4

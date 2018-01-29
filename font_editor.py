@@ -40,12 +40,12 @@ import constants as c
 translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 	fallback=True)
 translation.install()
-		
+
 class GlyphSelectorContext(object):
 	
-	__GLYPH_SELECTOR_PREVIEW_SIZE = [32, 32]
-	__SHOW_GLYPH_INDEX = True
-	__ALLOW_ENTERING_SEQUENCES = False
+	DEFAULT_GLYPH_SELECTOR_PREVIEW_SIZE = 32
+	DEFAULT_SHOW_GLYPH_INDEX = True
+	DEFAULT_ALLOW_ENTERING_SEQUENCES = False
 	"""This class represents the context of the glyph selector and can
 	be used to modfiy its appeareance.
 	
@@ -57,12 +57,10 @@ class GlyphSelectorContext(object):
 	"""
 	def __init__(self, font, glyph_selector):
 		self.__font = font
-		self.__glyph_preview_size = \
-			self.__GLYPH_SELECTOR_PREVIEW_SIZE[:]
 		self.__parent_glyph_selector = glyph_selector
-		self.__show_glyph_index = True
-		self.__allow_entering_sequences = \
-			self.__ALLOW_ENTERING_SEQUENCES
+
+		self.__storage = c.get_storage(self)
+		
 	
 	def switch_rows(self, first, second):
 		"""Switch two rows. This also changes the positions of the
@@ -172,21 +170,21 @@ class GlyphSelectorContext(object):
 		selector in pixels.
 		
 		Returns:
-			list: The width and the height of the preview images of the
+			int: The width and the height of the preview images of the
 				glyphs in the glyph selector in pixels		
 		"""		
 		
-		return self.__glyph_preview_size
+		return self.__storage['glyph_preview_size']
 		
 	def set_glyph_preview_size(self, size):
 		"""Set the size of the preview images of the glyphs in the glyph
 		selector in pixels.
 		
 		Args:
-			size (list): The widht and the height of the preview images
+			size (int): The widht and the height of the preview images
 				of the glyphs in the glyph selector in pixels.		
 		"""
-		self.__glyph_preview_size = size
+		self.__storage['glyph_preview_size'] = size
 		
 	def get_show_glyph_index(self):
 		"""Get wether the glyph selector should show the index of each
@@ -197,7 +195,7 @@ class GlyphSelectorContext(object):
 				not.		
 		"""
 		
-		return self.__show_glyph_index
+		return self.__storage['show_glyph_index']
 		
 	def set_show_glyph_index(self, show_glyph_index):
 		"""Set wether the glyph selector should show the index of each
@@ -207,7 +205,7 @@ class GlyphSelectorContext(object):
 			show_glyph_index (bool): Whether to show the index of each
 				glyph in the font or not.		
 		"""
-		self.__show_glyph_index = show_glyph_index
+		self.__storage['show_glyph_index'] = show_glyph_index
 
 	def get_allow_entering_sequences(self):
 		"""Get whether entering unicode sequences is allowed or not.
@@ -216,7 +214,7 @@ class GlyphSelectorContext(object):
 			bool: whether entering unicode sequences is allowed or not.		
 		"""
 		
-		return self.__allow_entering_sequences
+		return self.__storage['allow_entering_sequences']
 		
 	def set_allow_entering_sequences(self, allow):
 		"""Set whether entering unicode sequences is allowed or not.
@@ -225,7 +223,7 @@ class GlyphSelectorContext(object):
 			allow (bool): Whether entering unicode sequences is allowed
 				or not.		
 		"""
-		self.__allow_entering_sequences = allow
+		self.__storage['allow_entering_sequences'] = allow
 
 class GlyphRow(Gtk.ListBoxRow):
 	GLYPH_ROW_ATOM = Gdk.Atom.intern('GLYPH_ROW', False)
@@ -376,7 +374,7 @@ class GlyphRow(Gtk.ListBoxRow):
 					GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4)
 					
 		preview_size = self.__context.get_glyph_preview_size()
-		return pixbuf.scale_simple(*preview_size,
+		return pixbuf.scale_simple(preview_size, preview_size,
 			GdkPixbuf.InterpType.NEAREST)
 	
 	def get_glyph_data(self):
@@ -647,3 +645,12 @@ class FontEditor(Gtk.Box):
 
 		if not self.glyph_selector.get_children():
 			button.set_sensitive(False)
+			
+s = c.get_storage(GlyphSelectorContext)
+s.register('glyph_preview_size', 
+	GlyphSelectorContext.DEFAULT_GLYPH_SELECTOR_PREVIEW_SIZE)
+s.register('show_glyph_index', 
+	GlyphSelectorContext.DEFAULT_SHOW_GLYPH_INDEX)
+s.register('allow_entering_sequences',
+	GlyphSelectorContext.DEFAULT_ALLOW_ENTERING_SEQUENCES)
+
