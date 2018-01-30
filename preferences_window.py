@@ -19,7 +19,8 @@
 #	long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
 
 """
-@ToDo: Add module docstring
+This module contains a window for configuring the appeareance and
+behavior of PySFedit.
 """
 
 import gi
@@ -32,6 +33,10 @@ from glyph_editor import GlyphEditorAttributes
 from font_editor import GlyphSelectorContext
 
 class PreferencesWindow(Gtk.Window):
+	"""The main preferences window.
+	It contains a notebook that holds a page for each module of PySFedit
+	that can be configured.	
+	"""
 	def __init__(self):
 		Gtk.Window.__init__(self, title=_("Preferences"))
 		self.set_default_size(600, 450)
@@ -51,6 +56,12 @@ class PreferencesWindow(Gtk.Window):
 			Gtk.Label(_("GlyphSelector")))
 		
 class GlyphEditorPage(Gtk.Grid):
+	"""A page for configuring the glyph editor of pysfedit.
+	
+	This page looks like a table, that has the name of each configurable
+	property in the first column and a widget for configuring it in the
+	second column
+	"""
 	def __init__(self):
 		Gtk.Grid.__init__(self)
 	
@@ -91,6 +102,14 @@ class GlyphEditorPage(Gtk.Grid):
 		self.show_all()
 	
 	def __on_draw_sep_lines_changed(self, button):
+		"""This method gets called each time, the checkbutton for
+		seperation lines between the pixel of the glyph editor has
+		been toggled.
+		
+		Args:
+			button (Gtk.CheckButton): The button for drawing seperation
+				lines between the pixels of the glyph editor		
+		"""
 		self.__storage['seperation_lines'] = button.get_active()
 	
 	def __on_pixel_size_changed(self, button):

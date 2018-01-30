@@ -27,10 +27,11 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=5
+current_page=2
 FILE_NAME_0=6562;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpysfedit.py;0;4
 FILE_NAME_1=853;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpsflib%2F__init__.py;0;4
-FILE_NAME_2=4065;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpreferences_window.py;0;4
+FILE_NAME_2=4633;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpreferences_window.py;0;4
 FILE_NAME_3=1051;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fconstants.py;0;4
-FILE_NAME_4=1435;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ffont_editor.py;0;4
-FILE_NAME_5=1616;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fglyph_editor.py;0;4
+FILE_NAME_4=3597;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ffont_editor.py;0;4
+FILE_NAME_5=1780;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fglyph_editor.py;0;4
+FILE_NAME_6=4500;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fedit_description_dialog.py;0;4
