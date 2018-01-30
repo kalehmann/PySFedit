@@ -135,9 +135,10 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 			row = TextRow(chr(value))
 			self.lb_descriptions.add(row)
 		for sequence in description.get_sequences():
-			row = TextRow(chr(
+			print(sequence)
+			row = TextRow(
 				psflib.get_str_form_unicode_sequence(sequence)
-			))
+			)
 			self.lb_descriptions.add(row)
 					
 		editor_wrapper = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)

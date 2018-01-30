@@ -60,7 +60,21 @@ class GlyphSelectorContext(object):
 		self.__parent_glyph_selector = glyph_selector
 
 		self.__storage = c.get_storage(self)
+		self.__storage.register_changed_callback(
+			'show_glyph_index',
+			self.__on_show_glyph_index_changed
+		)
 		
+		self.__storage.register_changed_callback(
+			'glyph_preview_size',
+			self.__on_glyph_preview_size_changed
+		)
+		
+	def __on_show_glyph_index_changed(self, key, value):
+		self.update_rows()
+	
+	def __on_glyph_preview_size_changed(self, key, value):
+		self.update_rows()
 	
 	def switch_rows(self, first, second):
 		"""Switch two rows. This also changes the positions of the
@@ -114,7 +128,7 @@ class GlyphSelectorContext(object):
 			self.__parent_glyph_selector.add(row)
 			self.__parent_glyph_selector.show_all()
 			self.__parent_glyph_selector.select_row(row)
-		if self.__show_glyph_index:
+		if self.__storage['show_glyph_index']:
 			for row in self.__parent_glyph_selector.get_children():
 				row.update()	
 	
@@ -244,6 +258,7 @@ class GlyphRow(Gtk.ListBoxRow):
 		font = context.get_font()
 		self.__glyph, self.__description = font[index]
 		self.__context = context
+		self.__glyph_prev_size = context.get_glyph_preview_size()
 		self.__index = index
 		self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		self.add(self.box)
@@ -328,7 +343,13 @@ class GlyphRow(Gtk.ListBoxRow):
 		if self.__context.get_show_glyph_index():
 			self.l_index.set_text('%d' % self.get_index())
 		else:
-			self.l_index.set_text()
+			self.l_index.set_text('')
+		
+		new_prev_size = self.__context.get_glyph_preview_size()
+		if new_prev_size !=	self.__glyph_prev_size:
+			self.__glyph_prev_size = new_prev_size
+			pixbuf = self.get_pixbuf_from_glyph_bitmap(self.__glyph)
+			self.image.set_from_pixbuf(pixbuf)
 
 	def set_label_descriptions(self):
 		"""This method updates the label with the unicode

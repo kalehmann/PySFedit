@@ -46,7 +46,7 @@ class PreferencesWindow(Gtk.Window):
 		self.notebook.append_page(self.page_glyph_editor,
 			Gtk.Label(_("GlyphEditor")))
 			
-		self.page_glyph_selector = Gtk.Box()
+		self.page_glyph_selector = GlyphSelectorPage()
 		self.notebook.append_page(self.page_glyph_selector,
 			Gtk.Label(_("GlyphSelector")))
 		
@@ -109,7 +109,12 @@ class GlyphSelectorPage(Gtk.Grid):
 		self.spin_preview_size = Gtk.SpinButton()
 		adj = Gtk.Adjustment(24, 24, 64, 1, 10, 0)
 		self.spin_preview_size.set_adjustment(adj)
-		self.spin_preview_size.set_value(self.__storage['preview_size'])
+		self.spin_preview_size.set_value(
+			self.__storage['glyph_preview_size'])
+		self.spin_preview_size.connect(
+			'value-changed',
+			self.__on_glyph_preview_size_changed
+		)
 		
 		self.attach(label_preview_size, 0, 0, 1, 1)
 		self.attach(self.spin_preview_size, 1, 0, 1, 1)
@@ -117,10 +122,36 @@ class GlyphSelectorPage(Gtk.Grid):
 		label_glyph_indices = Gtk.Label(_("Show glyph indices"))
 		self.glyph_indices = Gtk.CheckButton()
 		self.glyph_indices.set_active(
-			self.__storage['glpyh_indices']
+			self.__storage['show_glyph_index']
+		)
+		self.glyph_indices.connect(
+			'toggled',
+			self.__on_glyph_indices_changed
 		)
 		
 		self.attach(label_glyph_indices, 0, 1, 1, 1)
 		self.attach(self.glyph_indices, 1, 1, 1, 1)
+		
+		label_allow_sequences = Gtk.Label(_('Allow unicode sequences'))
+		self.allow_sequences = Gtk.CheckButton()
+		self.allow_sequences.set_active(
+			self.__storage['allow_entering_sequences']
+		)
+		self.allow_sequences.connect(
+			'toggled',
+			self.__on_allow_sequences_changed
+		)
+
+		self.attach(label_allow_sequences, 0, 2, 1, 1)
+		self.attach(self.allow_sequences, 1, 2, 1, 1)
 
 		self.show_all()
+
+	def __on_glyph_preview_size_changed(self, button):
+		self.__storage['glyph_preview_size'] = button.get_value()
+
+	def __on_glyph_indices_changed(self, button):
+		self.__storage['show_glyph_index'] = button.get_active()
+		
+	def __on_allow_sequences_changed(self, button):
+		self.__storage['allow_entering_sequences'] = button.get_active()
