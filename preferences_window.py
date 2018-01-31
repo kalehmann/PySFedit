@@ -60,7 +60,7 @@ class GlyphEditorPage(Gtk.Grid):
 	
 	This page looks like a table, that has the name of each configurable
 	property in the first column and a widget for configuring it in the
-	second column
+	second column.
 	"""
 	def __init__(self):
 		Gtk.Grid.__init__(self)
@@ -102,7 +102,7 @@ class GlyphEditorPage(Gtk.Grid):
 		self.show_all()
 	
 	def __on_draw_sep_lines_changed(self, button):
-		"""This method gets called each time, the checkbutton for
+		"""This method gets called each time, the check button for
 		seperation lines between the pixel of the glyph editor has
 		been toggled.
 		
@@ -113,12 +113,33 @@ class GlyphEditorPage(Gtk.Grid):
 		self.__storage['seperation_lines'] = button.get_active()
 	
 	def __on_pixel_size_changed(self, button):
+		"""This method gets called each time, the spin button the the 
+		the drawing size of a pixel of the glyph editor has been
+		changed.
+		
+		Args:
+			button (Gtk.SpinButton): The spin button for the drawing
+				size of a pixel of the glyph editor.
+		"""
 		self.__storage['pixel_size'] = int(button.get_value())
 		
 	def __on_pixel_margin_changed(self, button):
+		"""This method gets called each time, the spin button for the
+		margin of a pixel of the glyph editor has been changed.
+		
+		Args:
+			button (Gtk.SpinButton): The spin button for the margin of a
+				pixel of the glyph editor.
+		"""
 		self.__storage['pixel_margin'] = int(button.get_value())
 		
 class GlyphSelectorPage(Gtk.Grid):
+	"""A page for configuring the glyph selector of PySFedit.
+	
+	This page looks like a table, that has the name of each configurable
+	property in the first column and a widget for configuring it in the
+	second column.
+	"""
 	def __init__(self):
 		Gtk.Grid.__init__(self)
 		
@@ -167,10 +188,32 @@ class GlyphSelectorPage(Gtk.Grid):
 		self.show_all()
 
 	def __on_glyph_preview_size_changed(self, button):
+		"""This method gets called each time, the spin button for the
+		preview size of a glyph in the glyph selector has been changed.
+		
+		Args:
+			button (Gtk.SpinButton): The spin button for the preview
+				size of a glyph in the glyph selector		
+		"""
 		self.__storage['glyph_preview_size'] = button.get_value()
 
 	def __on_glyph_indices_changed(self, button):
+		"""This method gets called each time, the check button for
+		showing the indices of the glyphs in the glyph selector has been
+		toggled.
+		
+		Args:
+			button (Gtk.CheckButton): The check button for showing the
+				indices of the glyphs in the glyph selector.		
+		"""
 		self.__storage['show_glyph_index'] = button.get_active()
 		
 	def __on_allow_sequences_changed(self, button):
+		"""This method gets called each time, the check button for
+		allowing the input of unicode sequences has been toggled.
+		
+		Args:
+			button (Gtk.CheckButton): The check button for allowing the
+				input of unicode sequences		
+		"""
 		self.__storage['allow_entering_sequences'] = button.get_active()
