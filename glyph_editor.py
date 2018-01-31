@@ -48,10 +48,11 @@ class GlyphEditorAttributes(object):
 		self.__glyph_editor = glyph_editor
 		self.__storage = c.get_storage(self)
 		self.__storage.register_changed_callback('pixel_size',
-			self.__on_pixel_size_changed)
-
-	def __on_pixel_size_changed(self, key, value):
-		self.__glyph_editor.make_size_request()
+			lambda key, value: self.__glyph_editor.make_size_request())
+		self.__storage.register_changed_callback('pixel_margin',
+			lambda key, value: self.__glyph_editor.queue_draw())
+		self.__storage.register_changed_callback('seperation_lines',
+			lambda key, value: self.__glyph_editor.queue_draw())
 
 	def get_pixel_size(self):
 		"""Get the total size of a pixel of a glyph on the screen.
