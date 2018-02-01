@@ -203,6 +203,8 @@ class GlyphEditorContext(object):
 		for x in range(width):
 			for y in range(height):
 				self.__pixels[y][x] = data[y][x]
+		for callback in self.__on_changed_callbacks:
+			callback(self.__pixels)
 
 	def set_glyph_size(self, glyph_size):
 		"""This method sets the number of pixels representing a glyph.

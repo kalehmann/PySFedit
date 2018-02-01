@@ -611,6 +611,18 @@ class FontEditor(Gtk.Box):
 		
 		return self.context.get_font()
 
+	def delete_current_bitmap(self):
+		context = self.glyph_editor.get_context()
+		size = context.get_glyph_size()
+			
+		context.set_pixels(
+			[
+				[0 for i in range(size[0])]
+					for j in range(size[1])
+			]
+		)
+		self.glyph_editor.queue_draw()
+		
 	def __on_btn_add_clicked(self, button):
 		"""This method gets called when the button for adding a new
 		glyph to the font handled by this widget has been clicked.

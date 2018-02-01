@@ -270,7 +270,10 @@ class PySFeditContent(Gtk.Grid):
 		dialog.destroy()
 		
 	def new_font_dialog(self):
-		if self.font_editor: self.font_editor.destroy()
+		if self.font_editor:
+			self.font_editor.destroy()
+			self.window.set_menu_edit_items_sensitive(False)
+			
 		d = NewFontDialog(self.window)
 		r = d.run()
 		if r == Gtk.ResponseType.OK:
@@ -279,7 +282,8 @@ class PySFeditContent(Gtk.Grid):
 			self.attach(self.font_editor, 0, 1, 1, 1)
 			self.show_all()
 			d.destroy()
-			
+			self.window.set_menu_edit_items_sensitive(True)
+
 			return True
 		d.destroy()
 	
@@ -287,7 +291,9 @@ class PySFeditContent(Gtk.Grid):
 		path = self.get_file_path(_("Import file"))
 		if not path:
 			return
-		if self.font_editor: self.font_editor.destroy()
+		if self.font_editor:
+			self.font_editor.destroy()
+			self.window.set_menu_edit_items_sensitive(False)
 		if path.lower().endswith(".asm"):
 			font = psflib.AsmImporter.import_from_file(path)
 		elif path.lower().endswith('.psf'):
@@ -298,9 +304,9 @@ class PySFeditContent(Gtk.Grid):
 			font.get_header(), font)
 		self.attach(self.font_editor, 0, 1, 1, 1)
 		self.show_all()
-		
+		self.window.set_menu_edit_items_sensitive(True)
+
 		return True
-		
 		
 	def export_font_dialog(self):
 		if not self.font_editor:
@@ -321,8 +327,9 @@ class PySFeditContent(Gtk.Grid):
 		elif path.lower().endswith(".psf"):
 			exporter = psflib.PsfExporter(self.font_editor.get_font())
 			exporter.export_to_file(path)
-		
 	
+	def delete_current_bitmap(self):
+		self.font_editor.delete_current_bitmap()
 		
 class PySFeditWindow(Gtk.Window):
 	"""This is the main window of PySFedit.
@@ -371,19 +378,30 @@ class PySFeditWindow(Gtk.Window):
 		menu_edit = Gtk.MenuItem(_("Edit"))
 		submenu = Gtk.Menu()
 		menu_edit.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("Copy"))
-		menuitem.connect("activate", self.__on_menu_copy_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Cut"))
-		menuitem.connect("activate", self.__on_menu_cut_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Paste"))
-		menuitem.connect("activate", self.__on_menu_paste_clicked)
-		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Delete"))
-		menuitem.connect("activate", self.__on_menu_delete_clicked)
-		submenu.append(menuitem)
+		self.mi_copy = Gtk.MenuItem(label=_("Copy"))
+		self.mi_copy.connect("activate", self.__on_menu_copy_clicked)
+		self.mi_copy.set_sensitive(False)
+		submenu.append(self.mi_copy)
+		self.mi_cut = Gtk.MenuItem(label=_("Cut"))
+		self.mi_cut.connect("activate", self.__on_menu_cut_clicked)
+		self.mi_cut.set_sensitive(False)
+		submenu.append(self.mi_cut)
+		self.mi_paste = Gtk.MenuItem(label=_("Paste"))
+		self.mi_paste.connect("activate", self.__on_menu_paste_clicked)
+		self.mi_paste.set_sensitive(False)
+		submenu.append(self.mi_paste)
+		self.mi_delete = Gtk.MenuItem(label=_("Delete"))
+		self.mi_delete.connect("activate", self.__on_menu_delete_clicked)
+		self.mi_delete.set_sensitive(False)
+		submenu.append(self.mi_delete)
 		self.menu_bar.append(menu_edit)
+		
+		self.edit_menu_items = [
+			self.mi_copy,
+			self.mi_cut,
+			self.mi_paste,
+			self.mi_delete
+		]
 
 		menu_help = Gtk.MenuItem(_("Help"))
 		submenu = Gtk.Menu()
@@ -407,6 +425,17 @@ class PySFeditWindow(Gtk.Window):
 		
 		self.content = PySFeditContent(self)
 		self.grid.attach(self.content, 0,3,1,1)		
+		
+	def set_menu_edit_items_sensitive(self, value):
+		"""Call set_sensitive on all menu items in the edit menu.
+		
+		Args:
+			value (bool): Whether to set the menu items sensitive or
+				not.
+		"""
+		for mi in self.edit_menu_items:
+			mi.set_sensitive(value)
+		self.show_all()
 		
 	def __on_menu_new_clicked(self, menu_item):
 		"""This method gets called when the entry "new" of the menu
@@ -509,7 +538,7 @@ class PySFeditWindow(Gtk.Window):
 			menu_item (Gtk.MenuItem): The "delete" item of the "edit"
 				menu		
 		"""
-		pass
+		self.content.delete_current_bitmap()
 		
 	def __on_menu_about_clicked(self, menu_item):
 		"""This method gets called when the entry "about" of the menu
