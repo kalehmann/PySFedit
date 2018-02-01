@@ -611,7 +611,26 @@ class FontEditor(Gtk.Box):
 		
 		return self.context.get_font()
 
+	def copy_current_bitmap_to_clipboard(self):
+		"""Copy the current glyph bitmap to the clipboard.		
+		"""
+		pass
+		
+	def cut_current_bitmap_to_clipboard(self):
+		"""Copy the current glyph bitmap to the clipboard and then
+		delete it.		
+		"""
+		pass
+		
+	def paste_bitmap_from_clipboard(self):
+		"""Paste the content of the glyph editor into the current glyph
+		bitmap.
+		"""
+		pass
+
 	def delete_current_bitmap(self):
+		"""Delete the current glyph bitmap.
+		"""
 		context = self.glyph_editor.get_context()
 		size = context.get_glyph_size()
 			
