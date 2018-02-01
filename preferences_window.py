@@ -64,37 +64,44 @@ class GlyphEditorPage(Gtk.Grid):
 	"""
 	def __init__(self):
 		Gtk.Grid.__init__(self)
+		self.set_column_spacing(10)
 	
 		self.__storage = c.get_storage(GlyphEditorAttributes)
 	
-		label_seperation_lines = Gtk.Label(_('Draw seperation lines:'))
+		label_seperation_lines = Gtk.Label.new_with_mnemonic(
+			_('Draw seperation _lines:'))
 		self.seperation_lines = Gtk.CheckButton()
 		self.seperation_lines.set_active(
 			self.__storage['seperation_lines'])
 		self.seperation_lines.connect('toggled',
 			self.__on_draw_sep_lines_changed)
+		label_seperation_lines.set_mnemonic_widget(self.seperation_lines)
 		
 		self.attach(label_seperation_lines, 0, 0, 1, 1)
 		self.attach(self.seperation_lines, 1, 0, 1, 1)
 	
-		label_pixel_size = Gtk.Label(_('Pixel size:'))
+		label_pixel_size = Gtk.Label.new_with_mnemonic(
+			_('Pixel _size:'))
 		self.spin_pixel_size = Gtk.SpinButton()
 		adj = Gtk.Adjustment(10, 10, 32, 1, 10, 1)
 		self.spin_pixel_size.set_adjustment(adj)
 		self.spin_pixel_size.set_value(self.__storage['pixel_size'])
 		self.spin_pixel_size.connect('value-changed',
 			self.__on_pixel_size_changed)
+		label_pixel_size.set_mnemonic_widget(self.spin_pixel_size)
 		
 		self.attach(label_pixel_size, 0, 1, 1, 1)
 		self.attach(self.spin_pixel_size, 1, 1, 1, 1)
 		
-		label_pixel_margin = Gtk.Label(_('Pixel margin:'))
+		label_pixel_margin = Gtk.Label.new_with_mnemonic(
+			_('Pixel _margin:'))
 		self.spin_pixel_margin = Gtk.SpinButton()
 		adj = Gtk.Adjustment(0, 0, 10, 1, 10, 1)
 		self.spin_pixel_margin.set_adjustment(adj)
 		self.spin_pixel_margin.set_value(self.__storage['pixel_margin'])
 		self.spin_pixel_margin.connect('value-changed',
 			self.__on_pixel_margin_changed)
+		label_pixel_margin.set_mnemonic_widget(self.spin_pixel_margin)
 		
 		self.attach(label_pixel_margin, 0, 2, 1, 1)
 		self.attach(self.spin_pixel_margin, 1, 2, 1, 1)
@@ -142,10 +149,12 @@ class GlyphSelectorPage(Gtk.Grid):
 	"""
 	def __init__(self):
 		Gtk.Grid.__init__(self)
+		self.set_column_spacing(10)
 		
 		self.__storage = c.get_storage(GlyphSelectorContext)
 		
-		label_preview_size = Gtk.Label(_("Glyph preview size:"))
+		label_preview_size = Gtk.Label.new_with_mnemonic(
+			_("Glyph _preview size:"))
 		self.spin_preview_size = Gtk.SpinButton()
 		adj = Gtk.Adjustment(24, 24, 64, 1, 10, 0)
 		self.spin_preview_size.set_adjustment(adj)
@@ -155,11 +164,13 @@ class GlyphSelectorPage(Gtk.Grid):
 			'value-changed',
 			self.__on_glyph_preview_size_changed
 		)
+		label_preview_size.set_mnemonic_widget(self.spin_preview_size)
 		
 		self.attach(label_preview_size, 0, 0, 1, 1)
 		self.attach(self.spin_preview_size, 1, 0, 1, 1)
 		
-		label_glyph_indices = Gtk.Label(_("Show glyph indices"))
+		label_glyph_indices = Gtk.Label.new_with_mnemonic(
+			_("Show glyph _indices:"))
 		self.glyph_indices = Gtk.CheckButton()
 		self.glyph_indices.set_active(
 			self.__storage['show_glyph_index']
@@ -168,11 +179,13 @@ class GlyphSelectorPage(Gtk.Grid):
 			'toggled',
 			self.__on_glyph_indices_changed
 		)
+		label_glyph_indices.set_mnemonic_widget(self.glyph_indices)
 		
 		self.attach(label_glyph_indices, 0, 1, 1, 1)
 		self.attach(self.glyph_indices, 1, 1, 1, 1)
 		
-		label_allow_sequences = Gtk.Label(_('Allow unicode sequences'))
+		label_allow_sequences = Gtk.Label.new_with_mnemonic(
+			_('Allow unicode _sequences:'))
 		self.allow_sequences = Gtk.CheckButton()
 		self.allow_sequences.set_active(
 			self.__storage['allow_entering_sequences']
@@ -181,6 +194,7 @@ class GlyphSelectorPage(Gtk.Grid):
 			'toggled',
 			self.__on_allow_sequences_changed
 		)
+		label_allow_sequences.set_mnemonic_widget(self.allow_sequences)
 
 		self.attach(label_allow_sequences, 0, 2, 1, 1)
 		self.attach(self.allow_sequences, 1, 2, 1, 1)
