@@ -331,6 +331,9 @@ class PySFeditContent(Gtk.Grid):
 	def copy_current_bitmap(self):
 		self.font_editor.copy_current_bitmap_to_clipboard()
 	
+	def cut_current_bitmap(self):
+		self.font_editor.cut_current_bitmap_to_clipboard()
+	
 	def paste_bitmap_from_clipboard(self):
 		self.font_editor.paste_bitmap_from_clipboard()
 	
@@ -522,7 +525,7 @@ class PySFeditWindow(Gtk.Window):
 		Args:
 			menu_item (Gtk.MenuItem): The "cut" item of the "edit" menu
 		"""
-		pass
+		self.content.cut_current_bitmap()
 		
 	def __on_menu_paste_clicked(self, menu_item):
 		"""This method gets called when the entry "paste" of the menu
