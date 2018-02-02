@@ -545,6 +545,19 @@ class FontEditorContext(object):
 		"""
 		self.__clipboard.set_image(bitmap)
 		
+	def get_bitmap_from_clipboard(self):
+		"""Get a bitmap from the clipboard.
+		
+		Returns:
+			GdkPixBuf.Pixbuf: The bitmap from the clipboard
+			None: if there is no bitmap
+		
+		Notes:
+			You must explicitely use unref() on the pixbuf
+		"""
+		
+		return self.__clipboard.wait_for_image()
+		
 class FontEditor(Gtk.Box):
 	"""The font editor widget.
 	
@@ -640,7 +653,16 @@ class FontEditor(Gtk.Box):
 		"""Paste the content of the glyph editor into the current glyph
 		bitmap.
 		"""
-		pass
+		bitmap = self.context.get_bitmap_from_clipboard()
+		
+		if not bitmap:
+			
+			return
+		context = self.glyph_editor.get_context()
+		context.set_current_glyph_from_pixbuf(bitmap)
+		
+		self.glyph_editor.queue_draw()
+		#bitmap.unref()
 
 	def delete_current_bitmap(self):
 		"""Delete the current glyph bitmap.

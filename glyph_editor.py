@@ -215,7 +215,7 @@ class GlyphEditorContext(object):
 		Args:
 			glyph_size (list):	The size of a glyph [width, height]
 		"""
-		self.__glyph_size = glyph_size[:]
+		self.__glyph_size = list(glyph_size)
 		
 		# We do not overwrite self.__pixels here, but modify it. So
 		# if someone have a reference to self.__pixels, for example
@@ -307,6 +307,34 @@ class GlyphEditorContext(object):
 					
 		return pixbuf
 
+	def set_current_glyph_from_pixbuf(self, pixbuf):
+		"""Update the data of the current glyph bitmap from a pixbuf.
+		The pixbuf should have the same dimensions as the glyphs in the
+		font.
+		
+		Args:
+			pixbuf (GdkPixBuf.PixBuf): The pixbuf to update the data of
+				the current glyph bitmap with.
+		"""
+		size = w, h = [pixbuf.get_width(), pixbuf.get_height()]
+		if size != self.__glyph_size:
+			
+			return
+		data = pixbuf.get_pixels()
+		stride = pixbuf.get_rowstride()
+		mode = 'RGBA'
+		img = Image.frombytes(mode, size, data, 'raw', mode, stride)
+		
+		data = []
+		
+		for y in range(size[1]):
+			row  = []
+			for x in range(size[0]):
+				i = 1 if sum(img.getpixel((x,y))) else 0
+				row.append(i)
+			data.append(row)
+				
+		self.set_pixels(data)	
 
 class GlyphEditor(Gtk.Widget):
 	"""Custom widget for drawing glyphs.
