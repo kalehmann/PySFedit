@@ -75,7 +75,7 @@ class GlyphSelectorContext(object):
 	
 	def __on_glyph_preview_size_changed(self, key, value):
 		self.update_rows()
-	
+
 	def switch_rows(self, first, second):
 		"""Switch two rows. This also changes the positions of the
 		glyphs in the font.
@@ -526,6 +526,7 @@ class FontEditorContext(object):
 		self.__header = font.get_header()
 		self.__bitmap_size = None
 		self.__font = font
+		self.__clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 	
 	def get_font(self):
 		"""Get the font that the font editor handles.
@@ -534,6 +535,15 @@ class FontEditorContext(object):
 			psflib.PcScreenFont: The font that the font editor handles		
 		"""
 		return self.__font
+	
+	def copy_glyph_bitmap_to_clipboard(self, bitmap):
+		"""Copy a glyph bitmap onto the clipboard.
+		
+		Args:
+			bitmap (GdkPixBuf.PixBuf): The glyph bitmap that should be
+				copied onto the clipboard.		
+		"""
+		self.__clipboard.set_image(bitmap)
 		
 class FontEditor(Gtk.Box):
 	"""The font editor widget.
@@ -614,7 +624,11 @@ class FontEditor(Gtk.Box):
 	def copy_current_bitmap_to_clipboard(self):
 		"""Copy the current glyph bitmap to the clipboard.		
 		"""
-		pass
+		context = self.glyph_editor.get_context()
+		
+		bitmap = context.get_pixbuf_from_current_glyph()
+		
+		self.context.copy_glyph_bitmap_to_clipboard(bitmap)
 		
 	def cut_current_bitmap_to_clipboard(self):
 		"""Copy the current glyph bitmap to the clipboard and then

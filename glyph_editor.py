@@ -31,6 +31,9 @@ gi.require_version("Gtk", "3.0")
 gi.require_foreign("cairo")
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import GLib
+from gi.repository import GdkPixbuf
+from PIL import Image, ImageDraw
 import constants as c
 
 class GlyphEditorAttributes(object):
@@ -278,6 +281,31 @@ class GlyphEditorContext(object):
 		"""
 		if callback in self.__on_changed_callbacks:
 			self.__on_changed_callbacks.remove(callback)
+
+	def get_pixbuf_from_current_glyph(self):
+		"""Get a pixbuf with the current glyph bitmap. Thats usefull for
+		storing it in the clipboard.
+		
+		Returns:
+			GdkPixBuf.PixBuf: The pixbuf with the current selected glyph
+				bitmap.		
+		"""
+		width, height = size = self.__glyph_size
+		data = self.__pixels
+				
+		img = Image.new('RGBA', size, (0,0,0,0))
+		draw = ImageDraw.Draw(img)
+		for y, row in zip(range(height), data):
+			for x, pixel in zip(range(width), row):
+				if pixel == 1:
+					draw.point((x, y), (0,0,0,255))
+		data = img.tobytes()
+		w, h = img.size
+		data = GLib.Bytes.new(data)		
+		pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(data,
+					GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4)
+					
+		return pixbuf
 
 
 class GlyphEditor(Gtk.Widget):

@@ -327,6 +327,9 @@ class PySFeditContent(Gtk.Grid):
 		elif path.lower().endswith(".psf"):
 			exporter = psflib.PsfExporter(self.font_editor.get_font())
 			exporter.export_to_file(path)
+			
+	def copy_current_bitmap(self):
+		self.font_editor.copy_current_bitmap_to_clipboard()
 	
 	def delete_current_bitmap(self):
 		self.font_editor.delete_current_bitmap()
@@ -505,7 +508,7 @@ class PySFeditWindow(Gtk.Window):
 		Args:
 			menu_item (Gtk.MenuItem): The "copy" item of the "edit" menu		
 		"""
-		pass
+		self.content.copy_current_bitmap()
 		
 	def __on_menu_cut_clicked(self, menu_item):
 		"""This method gets called when the entry "cut" of the menu
