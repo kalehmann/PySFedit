@@ -25,6 +25,7 @@
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
+from gi.repository import Gdk
 import gettext
 import locale
 
@@ -368,6 +369,9 @@ class PySFeditWindow(Gtk.Window):
 		self.connect("delete-event", self.__on_window_delete)
 		self.set_default_icon_from_file(c.IMG_DIR + "icon.png")
 
+		self.accel_group = Gtk.AccelGroup()
+		self.add_accel_group(self.accel_group)
+
 		self.has_font = False
 		self.about_window = None
 		self.preferences_window = None
@@ -378,43 +382,76 @@ class PySFeditWindow(Gtk.Window):
 		self.menu_bar = Gtk.MenuBar()
 		self.menu_bar.set_hexpand(True)
 
-		menu_file = Gtk.MenuItem(_("File"))
+		menu_file = Gtk.MenuItem.new_with_mnemonic(_("_File"))
 		submenu = Gtk.Menu()
 		menu_file.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("New"))
+		menuitem = Gtk.MenuItem.new_with_mnemonic(_("_New"))
 		menuitem.connect("activate", self.__on_menu_new_clicked)
+		menuitem.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_n, 
+			Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE
+		)
 		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Import"))
+		menuitem = Gtk.MenuItem.new_with_mnemonic(_("_Import"))
 		menuitem.connect("activate", self.__on_menu_import_clicked)
+		menuitem.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_o, 
+			Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE
+		)
 		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Export"))
+		menuitem = Gtk.MenuItem.new_with_mnemonic(_("_Export"))
 		menuitem.connect("activate", self.__on_menu_export_clicked)
+		menuitem.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_s, 
+			Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE
+		)
 		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Preferences"))
+		menuitem = Gtk.MenuItem.new_with_mnemonic(_("_Preferences"))
 		menuitem.connect("activate", self.__on_menu_preferences_clicked)
 		submenu.append(menuitem)
-		menuitem = Gtk.MenuItem(label=_("Quit"))
+		menuitem = Gtk.MenuItem.new_with_mnemonic(_("_Quit"))
 		menuitem.connect("activate", self.__on_menu_quit_clicked)
+		menuitem.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_q, 
+			Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE
+		)
 		submenu.append(menuitem)
 		self.menu_bar.append(menu_file)
 
-		menu_edit = Gtk.MenuItem(_("Edit"))
+		menu_edit = Gtk.MenuItem.new_with_mnemonic(_("_Edit"))
 		submenu = Gtk.Menu()
 		menu_edit.set_submenu(submenu)
-		self.mi_copy = Gtk.MenuItem(label=_("Copy"))
+		self.mi_copy = Gtk.MenuItem.new_with_mnemonic(_("_Copy"))
 		self.mi_copy.connect("activate", self.__on_menu_copy_clicked)
+		self.mi_copy.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_c, 
+			Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE
+		)
 		self.mi_copy.set_sensitive(False)
 		submenu.append(self.mi_copy)
-		self.mi_cut = Gtk.MenuItem(label=_("Cut"))
+		self.mi_cut = Gtk.MenuItem.new_with_mnemonic(_("Cu_t"))
 		self.mi_cut.connect("activate", self.__on_menu_cut_clicked)
+		self.mi_cut.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_x, 
+			Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE
+		)
 		self.mi_cut.set_sensitive(False)
 		submenu.append(self.mi_cut)
-		self.mi_paste = Gtk.MenuItem(label=_("Paste"))
+		self.mi_paste = Gtk.MenuItem.new_with_mnemonic(_("_Paste"))
 		self.mi_paste.connect("activate", self.__on_menu_paste_clicked)
+		self.mi_paste.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_v, 
+			Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE
+		)
 		self.mi_paste.set_sensitive(False)
 		submenu.append(self.mi_paste)
-		self.mi_delete = Gtk.MenuItem(label=_("Delete"))
-		self.mi_delete.connect("activate", self.__on_menu_delete_clicked)
+		self.mi_delete = Gtk.MenuItem.new_with_mnemonic(_("_Delete"))
+		self.mi_delete.connect("activate",
+			self.__on_menu_delete_clicked)
+		self.mi_delete.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_d, 
+			Gdk.ModifierType.CONTROL_MASK, Gtk.AccelFlags.VISIBLE
+		)
 		self.mi_delete.set_sensitive(False)
 		submenu.append(self.mi_delete)
 		self.menu_bar.append(menu_edit)
@@ -426,11 +463,15 @@ class PySFeditWindow(Gtk.Window):
 			self.mi_delete
 		]
 
-		menu_help = Gtk.MenuItem(_("Help"))
+		menu_help = Gtk.MenuItem.new_with_mnemonic(_("_Help"))
 		submenu = Gtk.Menu()
 		menu_help.set_submenu(submenu)
-		menuitem = Gtk.MenuItem(label=_("About"))
+		menuitem = Gtk.MenuItem.new_with_mnemonic(_("_About"))
 		menuitem.connect("activate", self.__on_menu_about_clicked)
+		menuitem.add_accelerator(
+			"activate", self.accel_group, Gdk.KEY_F1, 
+			0, Gtk.AccelFlags.VISIBLE
+		)
 		submenu.append(menuitem)
 		self.menu_bar.append(menu_help)
 		
