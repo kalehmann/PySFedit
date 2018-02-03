@@ -497,12 +497,12 @@ class PySFeditWindow(Gtk.Window):
 		
 		self.grid.attach(self.menu_bar,0,0,1,1)		
 		
-		self.button_new = Gtk.Button(_("New Font"))
+		self.button_new = Gtk.Button.new_with_mnemonic(_("_New Font"))
 		self.button_new.connect("clicked",
 			self.__on_but_new_clicked)
 		self.grid.attach(self.button_new,0,1,1,1)
 		
-		self.button_import = Gtk.Button(_("Import"))
+		self.button_import = Gtk.Button.new_with_mnemonic(_("_Import"))
 		self.button_import.connect("clicked",
 			self.__on_but_import_clicked)
 		self.grid.attach(self.button_import, 0,2,1,1)
