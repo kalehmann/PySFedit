@@ -329,15 +329,29 @@ class PySFeditContent(Gtk.Grid):
 			exporter.export_to_file(path)
 			
 	def copy_current_bitmap(self):
+		"""Copy the data of the glyph bitmap that is currently selected
+		in the glyph selector to the clipboard		
+		"""
 		self.font_editor.copy_current_bitmap_to_clipboard()
 	
 	def cut_current_bitmap(self):
+		"""Copy the data of the glyph bitmap that is currently selected
+		in the glyph selector to the clipboard and then clear the data
+		of the glyph bitmap.		
+		"""
 		self.font_editor.cut_current_bitmap_to_clipboard()
 	
 	def paste_bitmap_from_clipboard(self):
+		"""Grab a bitmap from the clipboard (if there is any) and copy
+		its content into the glyph bitmap that is currently selected in
+		the glyph selector		
+		"""
 		self.font_editor.paste_bitmap_from_clipboard()
 	
 	def delete_current_bitmap(self):
+		"""Clear the data of the glyph bitmap that is currently selected
+		in the glyph selector		
+		"""
 		self.font_editor.delete_current_bitmap()
 		
 class PySFeditWindow(Gtk.Window):
