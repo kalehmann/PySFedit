@@ -90,6 +90,7 @@ class GlyphSelectorContext(object):
 			
 		lb = self.__parent_glyph_selector
 		row = lb.get_row_at_index(old_index)
+		lb.select_row(lb.get_row_at_index(new_index))
 		lb.remove(row)
 		lb.insert(row, new_index)
 		
@@ -436,7 +437,7 @@ class GlyphSelector(Gtk.ListBox):
 	"""
 	def __init__(self, font, glyph_editor):
 		Gtk.ListBox.__init__(self)
-		self.set_selection_mode(Gtk.SelectionMode.SINGLE)
+		self.set_selection_mode(Gtk.SelectionMode.BROWSE)
 		
 		self.context = GlyphSelectorContext(font, self)
 		
@@ -494,14 +495,16 @@ class GlyphSelector(Gtk.ListBox):
 		Args:
 			data (list): The new data of the glyph editor widget		
 		"""
-		self.get_selected_row().update_glyph_data(data)
+		row = self.get_selected_row()
+		if  row:
+			row.update_glyph_data(data)
 		
 	def __on_row_selected(self, listbox, row):
 		"""This method gets called, when the selected row changes.
 		
 		Args:
 			row (GlyphSelectorRow): The newly selected row		
-		"""
+		"""		
 		self.__editor_context.reset_pixels()
 		if row:
 			self.__glyph_editor.set_data(row.get_glyph_data())
