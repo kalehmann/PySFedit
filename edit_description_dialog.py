@@ -219,6 +219,10 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 		current = self.__get_current_values()
 		row = self.lb_descriptions.get_selected_row()
 		
+		if not row:
+			
+			return
+		
 		if (self.nb_editor.get_current_page() == self.PAGE_HR):
 			user_input = self.entry_unicode.get_text()	
 			if len(user_input) == 1:
