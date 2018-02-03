@@ -76,7 +76,7 @@ class GlyphSelectorContext(object):
 	def __on_glyph_preview_size_changed(self, key, value):
 		self.update_rows()
 
-	def switch_rows(self, first, second):
+	def move_row(self, old_index, new_index):
 		"""Switch two rows. This also changes the positions of the
 		glyphs in the font.
 		
@@ -84,33 +84,21 @@ class GlyphSelectorContext(object):
 			first (int): The index of the first row
 			second (int): The index of the second row		
 		"""
-		if first == second:
+		if old_index == new_index:
 			
 			return
 			
 		lb = self.__parent_glyph_selector
-		first_row = lb.get_row_at_index(first)
-		second_row = lb.get_row_at_index(second)
-				
-		(lower_index, lower_row), (higher_index, higher_row) = sorted(
-			[
-				(first, first_row),
-				(second, second_row)
-			],
-			key=lambda x: x[0]
-		)
+		row = lb.get_row_at_index(old_index)
+		lb.remove(row)
+		lb.insert(row, new_index)
 		
-		lb.remove(lower_row)
-		lb.remove(higher_row)
-		lb.insert(higher_row, lower_index)
-		lb.insert(lower_row, higher_index)
-		
-		lb.select_row(second_row)
+		lb.select_row(row)
 		
 		lb.show_all()
 		self.update_rows()
 		
-		self.__font.switch_glyphs(first, second)
+		self.__font.move_glyph(old_index, new_index)
 	
 	def add_glyph(self, index=-1):
 		"""Add a new glyph.
@@ -350,6 +338,9 @@ class GlyphRow(Gtk.ListBoxRow):
 			self.__glyph_prev_size = new_prev_size
 			pixbuf = self.get_pixbuf_from_glyph_bitmap(self.__glyph)
 			self.image.set_from_pixbuf(pixbuf)
+		
+		self.set_label_descriptions()
+
 
 	def set_label_descriptions(self):
 		"""This method updates the label with the unicode
@@ -493,7 +484,7 @@ class GlyphSelector(Gtk.ListBox):
 				target of this drag and drop operation.
 			time (int): The timestamp of the event	
 		"""	
-		self.context.switch_rows(int(data.get_data()),
+		self.context.move_row(int(data.get_data()),
 			row.get_index())
 
 	def __on_glyph_edited(self, data):
