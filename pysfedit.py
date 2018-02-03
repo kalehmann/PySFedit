@@ -78,7 +78,8 @@ class AboutWindow(Gtk.Window):
 			)
 		)
 		self.page1.add(l)
-		self.notebook.append_page(self.page1, Gtk.Label(_("Info")))
+		self.notebook.append_page(
+			self.page1, Gtk.Label.new_with_mnemonic(_("_Info")))
 		
 		self.page2 = Gtk.Box()
 		scrolled_window = Gtk.ScrolledWindow()
@@ -91,7 +92,8 @@ class AboutWindow(Gtk.Window):
 		scrolled_window.add(textview)
 		with open(c.PROJECT_ROOT + 'gpl-3.0.txt', "r") as f:
 			textbuffer.set_text(f.read())
-		self.notebook.append_page(self.page2, Gtk.Label(_("Licence")))
+		self.notebook.append_page(
+			self.page2, Gtk.Label.new_with_mnemonic(_("_Licence")))
 		
 		
 class NewFontDialog(Gtk.Dialog):
