@@ -31,27 +31,31 @@ gi.require_version("Gtk", "3.0")
 gi.require_foreign("cairo")
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import GLib
+from gi.repository import GdkPixbuf
+from PIL import Image, ImageDraw
+import constants as c
 
 class GlyphEditorAttributes(object):
 	"""This class represents the attributes of a GlyphEditor, for
 	example how it looks and how large all pixels of the glyph are
 	drawed on the screen.	
 	"""
-	__PIXEL_DRAW_SIZE = 12
-	__PIXEL_MARGIN = 2
-	__SEPERATION_LINES = True
-	__UNSET_PIXEL_COLOR = [0.8, 0.8, 0.8, 1]
-	__DRAW_UNSET_PIXELS = False
+	DEFAULT_PIXEL_DRAW_SIZE = 12
+	DEFAULT_PIXEL_MARGIN = 2
+	DEFAULT_SEPERATION_LINES = True
+	DEFAULT_UNSET_PIXEL_COLOR = [0.8, 0.8, 0.8, 1]
+	DEFAULT_DRAW_UNSET_PIXELS = False
 	
-	def __init__(self):
-		self.__pixel_draw_size = self.__PIXEL_DRAW_SIZE
-		self.__pixel_margin = self.__PIXEL_MARGIN
-		self.__pixel_size = (
-			self.__pixel_draw_size + 2 * self.__pixel_margin
-		)
-		self.__seperation_lines = self.__SEPERATION_LINES
-		self.__unset_pixel_color = self.__UNSET_PIXEL_COLOR[:]
-		self.__draw_unset_pixels = False
+	def __init__(self, glyph_editor):
+		self.__glyph_editor = glyph_editor
+		self.__storage = c.get_storage(self)
+		self.__storage.register_changed_callback('pixel_size',
+			lambda key, value: self.__glyph_editor.make_size_request())
+		self.__storage.register_changed_callback('pixel_margin',
+			lambda key, value: self.__glyph_editor.queue_draw())
+		self.__storage.register_changed_callback('seperation_lines',
+			lambda key, value: self.__glyph_editor.queue_draw())
 
 	def get_pixel_size(self):
 		"""Get the total size of a pixel of a glyph on the screen.
@@ -59,7 +63,7 @@ class GlyphEditorAttributes(object):
 		Returns:
 			int: The total size of a pixel of a glyph on the screen
 		"""
-		return self.__pixel_size
+		return self.__storage['pixel_size']
 			
 	def set_pixel_margin(self, pixel_margin):
 		"""This method sets the margin of a pixel of a glyph on the
@@ -68,7 +72,7 @@ class GlyphEditorAttributes(object):
 		Args:
 			pixel_margin (int): The margin of a pixel on the screen.
 		"""
-		self.__pixel_margin = pixel_margin
+		self.__storage['pixel_margin'] = pixel_margin
 		
 	def get_pixel_margin(self):
 		"""Use this method to get the margin of a pixel on the
@@ -77,19 +81,8 @@ class GlyphEditorAttributes(object):
 		Returns:
 			int: The margin of a pixel		
 		"""
-		return self.__pixel_margin
+		return self.__storage['pixel_margin']
 		
-	def set_pixel_draw_size(self, pixel_draw_size):
-		"""This method sets the width and height of a pixel drawed on
-		the screen.
-		
-		Args:
-			pixel_draw_size (int): The width and height a pixel of a
-				pixel drawed on the screen.		
-		"""
-		if pixel_draw_size > self.__pixel_size:
-			self.__pixel_size = pixel_draw_size
-		self.__pixel_draw_size = pixel_draw_size
 		
 	def get_pixel_draw_size(self):
 		"""Use this method to get the width an height of a pixel drawed
@@ -98,7 +91,10 @@ class GlyphEditorAttributes(object):
 		Returns:
 			int: Width and height of a pixel drawed on the screen		
 		"""
-		return self.__pixel_draw_size
+		return (
+			self.__storage['pixel_size'] - 
+			2 * self.__storage['pixel_margin']
+		)
 	
 	def set_seperation_lines(self, seperation_lines):
 		"""This method sets wether the pixels of the GlyphEditor widget
@@ -108,7 +104,7 @@ class GlyphEditorAttributes(object):
 			seperation_lines (bool): Defines wether the pixels of the
 				GlyphEditor widget are seperated by lines or no		
 		"""
-		self.__seperation_lines = seperation_lines
+		self.__storage['seperation_lines'] = seperation_lines
 		
 	def get_seperation_lines(self):
 		"""Use this method to find out, if the pixels of the GlyphEditor
@@ -118,7 +114,7 @@ class GlyphEditorAttributes(object):
 			bool: Wether the pixels of the GlyphEditor widget are
 				seperated by lines or not.		
 		"""
-		return self.__seperation_lines
+		return self.__storage['seperation_lines']
 		
 	def set_unset_pixel_color(self, unset_pixel_color):
 		"""Use this method to set the color of unset pixels.
@@ -127,7 +123,7 @@ class GlyphEditorAttributes(object):
 			unset_pixel_color (list): A list of four floating point
 				values [red, green, blue, alpha]
 		"""
-		self.__unset_pixel_color = unset_pixel_color[:]
+		self.__storage['unset_pixel_color'] = unset_pixel_color[:]
 		
 	def get_unset_pixel_color(self):
 		"""Use this method to get the color of unset pixels.
@@ -136,7 +132,7 @@ class GlyphEditorAttributes(object):
 			list: A list of four floating point values
 				[red, green, blue, alpha]
 		"""
-		return self.__unset_pixel_color
+		return self.__storage['unset_pixel_color']
 		
 	def set_draw_unset_pixels(self, draw_unset_pixels):
 		"""Set wether to draw unset pixels or not.
@@ -144,7 +140,7 @@ class GlyphEditorAttributes(object):
 		Args:
 			draw_unset_pixels (bool): Wether to draw unset pixels or not
 		"""
-		self.__draw_unset_pixels = draw_unset_pixels
+		self.__storage['draw_unset_pixels'] = draw_unset_pixels
 		
 	def get_draw_unset_pixels(self):
 		"""Get wether to draw unset pixels or not.
@@ -152,7 +148,7 @@ class GlyphEditorAttributes(object):
 		Returns:
 			bool: Wether to draw unset pixels or not.		
 		"""
-		return self.__draw_unset_pixels
+		return self.__storage['draw_unset_pixels']
 	
 class GlyphEditorContext(object):
 	"""This class represent the context of a glyph editor widget,
@@ -210,6 +206,8 @@ class GlyphEditorContext(object):
 		for x in range(width):
 			for y in range(height):
 				self.__pixels[y][x] = data[y][x]
+		for callback in self.__on_changed_callbacks:
+			callback(self.__pixels)
 
 	def set_glyph_size(self, glyph_size):
 		"""This method sets the number of pixels representing a glyph.
@@ -217,7 +215,7 @@ class GlyphEditorContext(object):
 		Args:
 			glyph_size (list):	The size of a glyph [width, height]
 		"""
-		self.__glyph_size = glyph_size[:]
+		self.__glyph_size = list(glyph_size)
 		
 		# We do not overwrite self.__pixels here, but modify it. So
 		# if someone have a reference to self.__pixels, for example
@@ -284,6 +282,59 @@ class GlyphEditorContext(object):
 		if callback in self.__on_changed_callbacks:
 			self.__on_changed_callbacks.remove(callback)
 
+	def get_pixbuf_from_current_glyph(self):
+		"""Get a pixbuf with the current glyph bitmap. Thats usefull for
+		storing it in the clipboard.
+		
+		Returns:
+			GdkPixBuf.PixBuf: The pixbuf with the current selected glyph
+				bitmap.		
+		"""
+		width, height = size = self.__glyph_size
+		data = self.__pixels
+				
+		img = Image.new('RGBA', size, (0,0,0,0))
+		draw = ImageDraw.Draw(img)
+		for y, row in zip(range(height), data):
+			for x, pixel in zip(range(width), row):
+				if pixel == 1:
+					draw.point((x, y), (0,0,0,255))
+		data = img.tobytes()
+		w, h = img.size
+		data = GLib.Bytes.new(data)		
+		pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(data,
+					GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4)
+					
+		return pixbuf
+
+	def set_current_glyph_from_pixbuf(self, pixbuf):
+		"""Update the data of the current glyph bitmap from a pixbuf.
+		The pixbuf should have the same dimensions as the glyphs in the
+		font.
+		
+		Args:
+			pixbuf (GdkPixBuf.PixBuf): The pixbuf to update the data of
+				the current glyph bitmap with.
+		"""
+		size = w, h = [pixbuf.get_width(), pixbuf.get_height()]
+		if size != self.__glyph_size:
+			
+			return
+		data = pixbuf.get_pixels()
+		stride = pixbuf.get_rowstride()
+		mode = 'RGBA'
+		img = Image.frombytes(mode, size, data, 'raw', mode, stride)
+		
+		data = []
+		
+		for y in range(size[1]):
+			row  = []
+			for x in range(size[0]):
+				i = 1 if sum(img.getpixel((x,y))) else 0
+				row.append(i)
+			data.append(row)
+				
+		self.set_pixels(data)	
 
 class GlyphEditor(Gtk.Widget):
 	"""Custom widget for drawing glyphs.
@@ -311,7 +362,7 @@ class GlyphEditor(Gtk.Widget):
 		self.__requested_size = None
 		
 		self.set_context(GlyphEditorContext(self))
-		self.set_attributes(GlyphEditorAttributes())
+		self.set_attributes(GlyphEditorAttributes(self))
 		
 	def get_data(self):
 		"""Get a reference to the data representing the pixels of a
@@ -536,3 +587,19 @@ class GlyphEditor(Gtk.Widget):
 		self.register_window(window)
 		self.set_realized(True)
 		window.set_background_pattern(None)
+
+s = c.get_storage(GlyphEditorAttributes)
+s.register('pixel_margin', GlyphEditorAttributes.DEFAULT_PIXEL_MARGIN)
+s.register(
+	'pixel_size',
+	GlyphEditorAttributes.DEFAULT_PIXEL_DRAW_SIZE +
+	2 * GlyphEditorAttributes.DEFAULT_PIXEL_MARGIN
+)
+s.register('seperation_lines',
+	GlyphEditorAttributes.DEFAULT_SEPERATION_LINES)
+s.register('unset_pixel_color',
+	GlyphEditorAttributes.DEFAULT_UNSET_PIXEL_COLOR[:])
+s.register('draw_unset_pixels',
+	GlyphEditorAttributes.DEFAULT_DRAW_UNSET_PIXELS)
+
+

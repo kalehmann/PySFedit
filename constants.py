@@ -30,3 +30,36 @@ RES_DIR = PROJECT_ROOT + 'res/'
 IMG_DIR = RES_DIR + 'img/'
 LOCALE_DIR = RES_DIR + 'locale/'
 
+PROJECT_STORAGE = {}
+
+def get_storage(_object):
+	if type(_object) == type:
+		name = _object.__name__
+	else:
+		name = type(_object).__name__
+	if name not in PROJECT_STORAGE:
+		PROJECT_STORAGE[name] = Storage()
+	
+	return PROJECT_STORAGE[name]
+
+class Storage(dict):
+	def __init__(self, *args, **kwargs):
+		super(Storage, self).__init__(*args, **kwargs)
+		self.__changed_callbacks = {}
+	
+	def register_changed_callback(self, key, callback):
+		if not key in self.__changed_callbacks:
+			self.__changed_callbacks[key] = []
+		
+		self.__changed_callbacks[key].append(callback)
+	
+	def register(self, key, default):
+		if not key in self:
+			self[key] = default
+	
+	def __setitem__(self, key, value):
+		super(Storage, self).__setitem__(key, value)
+		if key in self.__changed_callbacks:
+			for cb in self.__changed_callbacks[key]:
+				cb(key, value)
+		

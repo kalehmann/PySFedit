@@ -40,12 +40,12 @@ import constants as c
 translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 	fallback=True)
 translation.install()
-		
+
 class GlyphSelectorContext(object):
 	
-	__GLYPH_SELECTOR_PREVIEW_SIZE = [32, 32]
-	__SHOW_GLYPH_INDEX = True
-	__ALLOW_ENTERING_SEQUENCES = False
+	DEFAULT_GLYPH_SELECTOR_PREVIEW_SIZE = 32
+	DEFAULT_SHOW_GLYPH_INDEX = True
+	DEFAULT_ALLOW_ENTERING_SEQUENCES = False
 	"""This class represents the context of the glyph selector and can
 	be used to modfiy its appeareance.
 	
@@ -57,13 +57,25 @@ class GlyphSelectorContext(object):
 	"""
 	def __init__(self, font, glyph_selector):
 		self.__font = font
-		self.__glyph_preview_size = \
-			self.__GLYPH_SELECTOR_PREVIEW_SIZE[:]
 		self.__parent_glyph_selector = glyph_selector
-		self.__show_glyph_index = True
-		self.__allow_entering_sequences = \
-			self.__ALLOW_ENTERING_SEQUENCES
+
+		self.__storage = c.get_storage(self)
+		self.__storage.register_changed_callback(
+			'show_glyph_index',
+			self.__on_show_glyph_index_changed
+		)
+		
+		self.__storage.register_changed_callback(
+			'glyph_preview_size',
+			self.__on_glyph_preview_size_changed
+		)
+		
+	def __on_show_glyph_index_changed(self, key, value):
+		self.update_rows()
 	
+	def __on_glyph_preview_size_changed(self, key, value):
+		self.update_rows()
+
 	def switch_rows(self, first, second):
 		"""Switch two rows. This also changes the positions of the
 		glyphs in the font.
@@ -116,7 +128,7 @@ class GlyphSelectorContext(object):
 			self.__parent_glyph_selector.add(row)
 			self.__parent_glyph_selector.show_all()
 			self.__parent_glyph_selector.select_row(row)
-		if self.__show_glyph_index:
+		if self.__storage['show_glyph_index']:
 			for row in self.__parent_glyph_selector.get_children():
 				row.update()	
 	
@@ -172,21 +184,21 @@ class GlyphSelectorContext(object):
 		selector in pixels.
 		
 		Returns:
-			list: The width and the height of the preview images of the
+			int: The width and the height of the preview images of the
 				glyphs in the glyph selector in pixels		
 		"""		
 		
-		return self.__glyph_preview_size
+		return self.__storage['glyph_preview_size']
 		
 	def set_glyph_preview_size(self, size):
 		"""Set the size of the preview images of the glyphs in the glyph
 		selector in pixels.
 		
 		Args:
-			size (list): The widht and the height of the preview images
+			size (int): The widht and the height of the preview images
 				of the glyphs in the glyph selector in pixels.		
 		"""
-		self.__glyph_preview_size = size
+		self.__storage['glyph_preview_size'] = size
 		
 	def get_show_glyph_index(self):
 		"""Get wether the glyph selector should show the index of each
@@ -197,7 +209,7 @@ class GlyphSelectorContext(object):
 				not.		
 		"""
 		
-		return self.__show_glyph_index
+		return self.__storage['show_glyph_index']
 		
 	def set_show_glyph_index(self, show_glyph_index):
 		"""Set wether the glyph selector should show the index of each
@@ -207,7 +219,7 @@ class GlyphSelectorContext(object):
 			show_glyph_index (bool): Whether to show the index of each
 				glyph in the font or not.		
 		"""
-		self.__show_glyph_index = show_glyph_index
+		self.__storage['show_glyph_index'] = show_glyph_index
 
 	def get_allow_entering_sequences(self):
 		"""Get whether entering unicode sequences is allowed or not.
@@ -216,7 +228,7 @@ class GlyphSelectorContext(object):
 			bool: whether entering unicode sequences is allowed or not.		
 		"""
 		
-		return self.__allow_entering_sequences
+		return self.__storage['allow_entering_sequences']
 		
 	def set_allow_entering_sequences(self, allow):
 		"""Set whether entering unicode sequences is allowed or not.
@@ -225,7 +237,7 @@ class GlyphSelectorContext(object):
 			allow (bool): Whether entering unicode sequences is allowed
 				or not.		
 		"""
-		self.__allow_entering_sequences = allow
+		self.__storage['allow_entering_sequences'] = allow
 
 class GlyphRow(Gtk.ListBoxRow):
 	GLYPH_ROW_ATOM = Gdk.Atom.intern('GLYPH_ROW', False)
@@ -246,6 +258,7 @@ class GlyphRow(Gtk.ListBoxRow):
 		font = context.get_font()
 		self.__glyph, self.__description = font[index]
 		self.__context = context
+		self.__glyph_prev_size = context.get_glyph_preview_size()
 		self.__index = index
 		self.box = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		self.add(self.box)
@@ -330,7 +343,13 @@ class GlyphRow(Gtk.ListBoxRow):
 		if self.__context.get_show_glyph_index():
 			self.l_index.set_text('%d' % self.get_index())
 		else:
-			self.l_index.set_text()
+			self.l_index.set_text('')
+		
+		new_prev_size = self.__context.get_glyph_preview_size()
+		if new_prev_size !=	self.__glyph_prev_size:
+			self.__glyph_prev_size = new_prev_size
+			pixbuf = self.get_pixbuf_from_glyph_bitmap(self.__glyph)
+			self.image.set_from_pixbuf(pixbuf)
 
 	def set_label_descriptions(self):
 		"""This method updates the label with the unicode
@@ -376,7 +395,7 @@ class GlyphRow(Gtk.ListBoxRow):
 					GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4)
 					
 		preview_size = self.__context.get_glyph_preview_size()
-		return pixbuf.scale_simple(*preview_size,
+		return pixbuf.scale_simple(preview_size, preview_size,
 			GdkPixbuf.InterpType.NEAREST)
 	
 	def get_glyph_data(self):
@@ -507,6 +526,7 @@ class FontEditorContext(object):
 		self.__header = font.get_header()
 		self.__bitmap_size = None
 		self.__font = font
+		self.__clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
 	
 	def get_font(self):
 		"""Get the font that the font editor handles.
@@ -515,6 +535,28 @@ class FontEditorContext(object):
 			psflib.PcScreenFont: The font that the font editor handles		
 		"""
 		return self.__font
+	
+	def copy_glyph_bitmap_to_clipboard(self, bitmap):
+		"""Copy a glyph bitmap onto the clipboard.
+		
+		Args:
+			bitmap (GdkPixBuf.PixBuf): The glyph bitmap that should be
+				copied onto the clipboard.		
+		"""
+		self.__clipboard.set_image(bitmap)
+		
+	def get_bitmap_from_clipboard(self):
+		"""Get a bitmap from the clipboard.
+		
+		Returns:
+			GdkPixBuf.Pixbuf: The bitmap from the clipboard
+			None: if there is no bitmap
+		
+		Notes:
+			You must explicitely use unref() on the pixbuf
+		"""
+		
+		return self.__clipboard.wait_for_image()
 		
 class FontEditor(Gtk.Box):
 	"""The font editor widget.
@@ -592,6 +634,62 @@ class FontEditor(Gtk.Box):
 		
 		return self.context.get_font()
 
+	def copy_current_bitmap_to_clipboard(self):
+		"""Copy the current glyph bitmap to the clipboard.		
+		"""
+		context = self.glyph_editor.get_context()
+		
+		bitmap = context.get_pixbuf_from_current_glyph()
+		
+		self.context.copy_glyph_bitmap_to_clipboard(bitmap)
+		
+	def cut_current_bitmap_to_clipboard(self):
+		"""Copy the current glyph bitmap to the clipboard and then
+		delete it.		
+		"""
+		context = self.glyph_editor.get_context()
+		bitmap = context.get_pixbuf_from_current_glyph()
+		self.context.copy_glyph_bitmap_to_clipboard(bitmap)
+		
+		width, height = context.get_glyph_size()
+	
+		context.set_pixels(
+			[
+				[0 for i in range(width)]
+					for j in range(height)
+			]
+		)
+		self.glyph_editor.queue_draw()		
+		
+	def paste_bitmap_from_clipboard(self):
+		"""Paste the content of the glyph editor into the current glyph
+		bitmap.
+		"""
+		bitmap = self.context.get_bitmap_from_clipboard()
+		
+		if not bitmap:
+			
+			return
+		context = self.glyph_editor.get_context()
+		context.set_current_glyph_from_pixbuf(bitmap)
+		
+		self.glyph_editor.queue_draw()
+		#bitmap.unref()
+
+	def delete_current_bitmap(self):
+		"""Delete the current glyph bitmap.
+		"""
+		context = self.glyph_editor.get_context()
+		size = context.get_glyph_size()
+			
+		context.set_pixels(
+			[
+				[0 for i in range(size[0])]
+					for j in range(size[1])
+			]
+		)
+		self.glyph_editor.queue_draw()
+		
 	def __on_btn_add_clicked(self, button):
 		"""This method gets called when the button for adding a new
 		glyph to the font handled by this widget has been clicked.
@@ -647,3 +745,12 @@ class FontEditor(Gtk.Box):
 
 		if not self.glyph_selector.get_children():
 			button.set_sensitive(False)
+			
+s = c.get_storage(GlyphSelectorContext)
+s.register('glyph_preview_size', 
+	GlyphSelectorContext.DEFAULT_GLYPH_SELECTOR_PREVIEW_SIZE)
+s.register('show_glyph_index', 
+	GlyphSelectorContext.DEFAULT_SHOW_GLYPH_INDEX)
+s.register('allow_entering_sequences',
+	GlyphSelectorContext.DEFAULT_ALLOW_ENTERING_SEQUENCES)
+
