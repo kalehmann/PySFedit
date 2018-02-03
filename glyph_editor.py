@@ -44,6 +44,8 @@ class GlyphEditorAttributes(object):
 	DEFAULT_PIXEL_DRAW_SIZE = 12
 	DEFAULT_PIXEL_MARGIN = 2
 	DEFAULT_SEPERATION_LINES = True
+	DEFAULT_SEPERATION_LINE_COLOR = [0.5, 0.5, 0.5, 1]
+	DEFAULT_PENCIL_OUTLINE_COLOR = [0.1, 0.7, 0.1, 1]
 	DEFAULT_UNSET_PIXEL_COLOR = [0.8, 0.8, 0.8, 1]
 	DEFAULT_DRAW_UNSET_PIXELS = False
 	
@@ -115,7 +117,41 @@ class GlyphEditorAttributes(object):
 				seperated by lines or not.		
 		"""
 		return self.__storage['seperation_lines']
+	
+	def get_seperation_line_color(self):
+		"""Use this method to get the color of the seperation lines.
 		
+		Returns:
+			list: The color as RGBA list
+		"""
+		
+		return self.__storage['seperation_line_color']
+	
+	def set_seperation_line_color(self, color):
+		"""Use this method to set the color of the seperation lines.
+		
+		Args:
+			color (list): The color as RGBA list		
+		"""
+		self.__storage['seperation_line_color'] = color
+	
+	def get_pencil_outline_color(self):
+		"""Get the color of the pencil outline.
+		
+		Returns:
+			list: The color as RGBA list		
+		"""
+		
+		return self.__storage['pencil_outline_color']
+		
+	def set_pencil_outline_color(self, color):
+		"""Set the color of the pencil outline.
+		
+		Args:
+			color (list): The color as RGBA list.		
+		"""
+		self.__storage['pencil_outline_color'] = color
+	
 	def set_unset_pixel_color(self, unset_pixel_color):
 		"""Use this method to set the color of unset pixels.
 		
@@ -149,6 +185,71 @@ class GlyphEditorAttributes(object):
 			bool: Wether to draw unset pixels or not.		
 		"""
 		return self.__storage['draw_unset_pixels']
+
+class GlyphEditorPencil(object):
+	"""This class represents a pencil of the glyph editor.
+	
+	Args:
+		mask (list): A 2 dimensional nested list of 0s and 1s
+			representing the mask of the pencil
+	"""
+	def __init__(self, mask=None):
+		self.__mask = None
+		self.__pixbuf = None
+		self.__size = None
+		
+		if mask:
+			self.set_mask(mask)
+	
+	def get_size(self):
+		"""Get the dimension of the mask of the pencil.
+		
+		Returns:
+			tuple: A tuple containing the width and the height of the
+				pencils mask.		
+		"""
+		return self.__size
+	
+	def set_mask(self, mask):
+		"""Set the mask of the pencil.
+		
+		Args:
+			mask (list): A 2 dimensional nested list of 0s and 1s
+				representing the mask of the pencil
+		"""
+		self.__mask = mask
+		self.__size = width, height = len(mask), len(mask[0])
+		
+		img = Image.new('RGBA', self.__size, (0,0,0,0))
+		draw = ImageDraw.Draw(img)
+		for y, row in zip(range(height), mask):
+			for x, pixel in zip(range(width), row):
+				if pixel == 1:
+					draw.point((x, y), (0,0,0,255))
+		data = GLib.Bytes.new(img.tobytes())
+		self.__pixbuf = GdkPixbuf.Pixbuf.new_from_bytes(
+			data, GdkPixbuf.Colorspace.RGB, True, 8, width, height,
+			width * 4
+		)
+		
+	def get_mask(self):
+		"""Get the mask of the pencil.
+		
+		Returns:
+			list:  A 2 dimensional nested list of zeros and ones
+				representing the mask of the pencil
+		"""
+		
+		return self.__mask
+	
+	def get_pixbuf(self):
+		"""Get a pixbuf containing the mask of the pencil.
+		
+		Returns:
+			GdkPixBuf.PixBuf: A pixbuf containing the mask of the pencil		
+		"""
+		
+		return self.__pixbuf
 	
 class GlyphEditorContext(object):
 	"""This class represent the context of a glyph editor widget,
@@ -157,14 +258,39 @@ class GlyphEditorContext(object):
 	__GLYPH_SIZE = [8, 8]
 	__BLANK_PIXEL = 0
 	__SET_PIXEL = 1
+	NONE = 0
 	SET_PIXEL = 1
 	CLEAR_PIXEL = 2
+	
+	PENCIL_DOT = GlyphEditorPencil(
+		[[1]]
+	)
+	PENCIL_SQUARE_SMALL = GlyphEditorPencil(
+		[
+			[1, 1],
+			[1, 1]
+		]
+	)
+	PENCIL_CIRCLE_SMALL = GlyphEditorPencil(
+		[
+			[0, 1, 0],
+			[1, 1, 1],
+			[0, 1, 0]
+		]
+	)
 	
 	def __init__(self, glyph_editor):
 		self.__glyph_size = self.__GLYPH_SIZE[:]
 		self.__pixels = self.__get_pixel_list()
 		self.__parent_glyph_editor = glyph_editor
-		self.__on_changed_callbacks = []	
+		self.__on_changed_callbacks = []
+		self.__pencil_position = [0, 0]
+		self.__pencils = [
+			self.PENCIL_DOT,
+			self.PENCIL_SQUARE_SMALL,
+			self.PENCIL_CIRCLE_SMALL
+		]
+		self.__current_pencil = 0
 		
 	def __get_pixel_list(self):
 		"""Returns a list representing the pixels of the glyph.
@@ -181,6 +307,36 @@ class GlyphEditorContext(object):
 				for _ in range(self.__glyph_size[1])
 		]
 		
+	def get_pencils(self):
+		"""Get all pencils of the glyph editor.
+		
+		Returns:
+			list: A list of GlyphEditorPencils
+		"""
+		
+		return self.__pencils[:]
+		
+	def select_pencil(self, index):
+		"""Set the pencil of the glyph editor by its index.
+		
+		Args:
+			index (int): The index of the pencil in the list of pencils.
+		"""
+		if not index < len(self.__pencils):
+			
+			raise IndexError("Index out of bounds")
+		self.__current_pencil = index
+	
+	def get_selected_pencil_index(self):
+		"""Get the index of the current selected pencil in the list of
+		pencils.
+		
+		Returns:
+			int: The index of the current selected pencil.		
+		"""
+	
+		return self.__current_pencil
+	
 	def get_pixels(self):
 		"""Get a reference to the list representing the pixels of a
 		glyph.
@@ -235,19 +391,22 @@ class GlyphEditorContext(object):
 	def handle_pixel_event(self, x, y, action):
 		"""Call this method when a pixel of a glyph get modified.
 		
-		Action represents the action on this pixel (self.SET_PIXEL or
-		self.CLEAR_PIXEL)
+		Action represents the action on this pixel (self.SET_PIXEL,
+		self.CLEAR_PIXEL or self.NONE)
 		
 		Args:
 			x (int): The x coordinate of the pixel
 			y (int): The y coordinate of the pixel
-			action (int): The action to perform on this pixel (set or
-				clear)
+			action (int): The action to perform on this pixel (set,
+				clear or none)
 		"""
+		self.__pencil_position[:] = x, y
 		if action == self.SET_PIXEL:
-			self.__pixels[y][x] = 1
+			for x, y in self.get_pencil_affected_pixels():
+				self.__pixels[y][x] = 1
 		elif action == self.CLEAR_PIXEL:
-			self.__pixels[y][x] = 0
+			for x, y in self.get_pencil_affected_pixels():
+				self.__pixels[y][x] = 0
 		
 		for callback in self.__on_changed_callbacks:
 			callback(self.__pixels)
@@ -334,8 +493,38 @@ class GlyphEditorContext(object):
 				row.append(i)
 			data.append(row)
 				
-		self.set_pixels(data)	
-
+		self.set_pixels(data)
+	
+	def get_pencil_affected_pixels(self):
+		"""Get all the pixels that arre affected by the current position
+		of the pencil over the glyph editor.
+		
+		Returns:
+			list: A list of lists with x and y values of affected
+				pixels.		
+		"""
+		pencil = self.__pencils[self.__current_pencil]
+		pos = self.__pencil_position
+		size = pencil.get_size()
+		offset = pos[0] - size[0] // 2, pos[1] - size[1] // 2
+		
+		affected_pixels = []
+				
+		for i in range(size[0]):
+			x = i + offset[0]
+			if not 0 <= x < self.__glyph_size[0]:
+				
+				continue
+			for j in  range(size[1]):
+				y = j + offset[1]
+				if not 0 <= y < self.__glyph_size[1]:
+					
+					continue
+				if (pencil.get_mask()[i][j]):
+					affected_pixels.append([x, y])	
+		
+		return affected_pixels
+		
 class GlyphEditor(Gtk.Widget):
 	"""Custom widget for drawing glyphs.
 	
@@ -460,7 +649,7 @@ class GlyphEditor(Gtk.Widget):
 		# draw a diagonal line
 		allocation = self.get_allocation()
 		fg_color = self.get_style_context().get_color(Gtk.StateFlags.NORMAL)
-		cr.set_source_rgba(*list(fg_color));
+		cr.set_source_rgba(*list(fg_color))
 		cr.set_line_width(1)
 		glyph_size = self.__context.get_glyph_size()
 		pixels = self.__pixels
@@ -480,17 +669,6 @@ class GlyphEditor(Gtk.Widget):
 					cr.fill()
 		cr.stroke()		
 		
-		if self.__attrs.get_seperation_lines():
-			for i in range(1, glyph_size[0]):
-				cr.move_to(i * pixel_size, 0)
-				cr.line_to(i * pixel_size,
-					pixel_size * glyph_size[1])
-			for i in range(1, glyph_size[1]):
-				cr.move_to(0, i * pixel_size)
-				cr.line_to(pixel_size * glyph_size[0],
-					i * pixel_size)
-			cr.stroke()
-		
 		if self.__attrs.get_draw_unset_pixels():
 			cr.set_source_rgba(*self.__attrs.get_unset_pixel_color())
 			
@@ -504,7 +682,38 @@ class GlyphEditor(Gtk.Widget):
 							pixel_draw_size
 						)
 						cr.fill()
-			cr.stroke()				
+			cr.stroke()
+		
+		# Seperation lines
+		if self.__attrs.get_seperation_lines():
+			cr.set_source_rgba(
+				*list(self.__attrs.get_seperation_line_color())
+			)
+			for i in range(1, glyph_size[0]):
+				cr.move_to(i * pixel_size, 0)
+				cr.line_to(i * pixel_size,
+					pixel_size * glyph_size[1])
+			for i in range(1, glyph_size[1]):
+				cr.move_to(0, i * pixel_size)
+				cr.line_to(pixel_size * glyph_size[0],
+					i * pixel_size)
+			cr.stroke()
+		
+		# Pencil
+		cr.set_source_rgba(
+			*list(self.__attrs.get_pencil_outline_color())
+		)
+		affected_pixels = self.__context.get_pencil_affected_pixels()
+		
+		for pixel in affected_pixels:
+			cr.rectangle(
+				pixel[0] * pixel_size,
+				pixel[1] * pixel_size,
+				pixel_size - 1,
+				pixel_size - 1
+			)
+		cr.stroke()
+			
 			
 	def do_motion_notify_event(self, e):
 		"""This method gets called, when there is a mouse motion over
@@ -530,7 +739,7 @@ class GlyphEditor(Gtk.Widget):
 			elif state & Gdk.ModifierType.BUTTON3_MASK:
 				action = GlyphEditorContext.CLEAR_PIXEL
 			else:
-				return
+				action = GlyphEditorContext.NONE
 			
 			self.__context.handle_pixel_event(x,y, action)
 			self.queue_draw()
@@ -597,6 +806,10 @@ s.register(
 )
 s.register('seperation_lines',
 	GlyphEditorAttributes.DEFAULT_SEPERATION_LINES)
+s.register('seperation_line_color',
+	GlyphEditorAttributes.DEFAULT_SEPERATION_LINE_COLOR)
+s.register('pencil_outline_color',
+	GlyphEditorAttributes.DEFAULT_PENCIL_OUTLINE_COLOR)
 s.register('unset_pixel_color',
 	GlyphEditorAttributes.DEFAULT_UNSET_PIXEL_COLOR[:])
 s.register('draw_unset_pixels',

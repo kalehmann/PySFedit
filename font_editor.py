@@ -518,6 +518,7 @@ class FontEditorContext(object):
 		self.__bitmap_size = None
 		self.__font = font
 		self.__clipboard = Gtk.Clipboard.get(Gdk.SELECTION_CLIPBOARD)
+		self.__pencil_preview_scale = 8
 	
 	def get_font(self):
 		"""Get the font that the font editor handles.
@@ -548,6 +549,15 @@ class FontEditorContext(object):
 		"""
 		
 		return self.__clipboard.wait_for_image()
+	
+	def get_pencil_preview_scale(self):
+		"""Get the scaling for the preview images of the pencils.
+		
+		Returns:
+			int: The scaling
+		"""
+		
+		return self.__pencil_preview_scale
 		
 class FontEditor(Gtk.Box):
 	"""The font editor widget.
@@ -607,6 +617,33 @@ class FontEditor(Gtk.Box):
 		glyph_editor_wrapper.pack_start(self.glyph_editor, True, True,
 			0)
 		
+		# Pencil
+		pencil_store = Gtk.ListStore(GdkPixbuf.Pixbuf)
+		for pencil in self.glyph_editor.get_context().get_pencils():
+			pixbuf = pencil.get_pixbuf()
+			size = pixbuf.get_width(), pixbuf.get_height()
+			scale = self.context.get_pencil_preview_scale()
+			pixbuf = pencil.get_pixbuf().scale_simple(
+				size[0] * scale, size[1] * scale,
+				GdkPixbuf.InterpType.NEAREST)
+			pencil_store.append([pixbuf])
+		
+		self.pencil_showcase = Gtk.IconView.new()
+		self.pencil_showcase.set_model(pencil_store)
+		self.pencil_showcase.set_pixbuf_column(0)
+		self.pencil_showcase.set_selection_mode(
+			Gtk.SelectionMode.BROWSE)
+		
+		context = self.glyph_editor.get_context()
+		index = context.get_selected_pencil_index()
+		path = Gtk.TreePath.new_from_string("%d" % index)
+		self.pencil_showcase.select_path(path)
+		self.pencil_showcase.connect(
+			'selection-changed', self.__on_pencil_selected)
+			
+		glyph_editor_wrapper.pack_start(
+			self.pencil_showcase, True, True, 0)
+		
 		# GlyphSelector
 		self.glyph_selector_wrapper = Gtk.ScrolledWindow()
 		self.glyph_selector = GlyphSelector(
@@ -614,8 +651,22 @@ class FontEditor(Gtk.Box):
 		self.glyph_selector_wrapper.add(self.glyph_selector)
 		self.glyph_selector_wrapper.set_propagate_natural_height(True)
 		self.glyph_selector_wrapper.set_min_content_width(250)
-		self.pack_start(self.glyph_selector_wrapper, True, True, 10)
+		self.pack_start(self.glyph_selector_wrapper, False, False, 10)
+	
+	def __on_pencil_selected(self, icon_view):
+		"""This method gets called when a pencil has been selected.
 		
+		Args:
+			icon_view (Gtk.IconView): The pencil showcase icon view.		
+		"""
+		context = self.glyph_editor.get_context()
+		if not icon_view.get_selected_items():
+			
+			return
+			
+		index = icon_view.get_selected_items()[0].get_indices()[0]
+		self.glyph_editor.get_context().select_pencil(index)
+	
 	def get_font(self):
 		"""Get the font handled by this font editor.
 		
