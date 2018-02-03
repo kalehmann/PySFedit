@@ -151,8 +151,9 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 		self.entry_unicode.set_sensitive(bool(
 			self.lb_descriptions.get_children()))
 		page_hr.pack_start(self.entry_unicode, True, True, 0)
-		self.nb_editor.append_page(page_hr,
-			Gtk.Label(_("Human readable")))
+		self.nb_editor.append_page(
+			page_hr,
+			Gtk.Label.new_with_mnemonic(_("_Human readable")))
 		
 		page_values = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		# Entry for values
@@ -160,14 +161,15 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 		self.entry_values.set_sensitive(bool(
 			self.lb_descriptions.get_children()))
 		page_values.pack_start(self.entry_values, True, True, 0)
-		self.nb_editor.append_page(page_values,
-			Gtk.Label(_("Values")))
+		self.nb_editor.append_page(
+			page_values,
+			Gtk.Label.new_with_mnemonic(_("_Values")))
 		# Label for error in user input
 		self.label_error = Gtk.Label()
 		editor_wrapper.pack_start(self.label_error, True, True, 0)
 		# Button for saving
-		self.btn_save = Gtk.Button(None,
-			image=Gtk.Image(stock=Gtk.STOCK_SAVE))
+		self.btn_save = Gtk.Button.new_from_stock(Gtk.STOCK_SAVE)
+		self.btn_save.set_always_show_image(True)
 		self.btn_save.connect("clicked", self.__on_btn_save_clicked)
 		editor_wrapper.pack_start(self.btn_save, True, True, 0)
 		
@@ -216,12 +218,13 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 		Args:
 			button (Gtk.Button): The save button		
 		"""
-		current = self.__get_current_values()
 		row = self.lb_descriptions.get_selected_row()
-		
+
 		if not row:
 			
 			return
+
+		current = self.__get_current_values()
 		
 		if (self.nb_editor.get_current_page() == self.PAGE_HR):
 			user_input = self.entry_unicode.get_text()	
