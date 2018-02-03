@@ -124,53 +124,71 @@ class NewFontDialog(Gtk.Dialog):
 		)
 		box.pack_start(l1, False, False, 5)
 		
-		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
+		size_wrapper = Gtk.Grid()
+		size_wrapper.set_row_spacing(5)
+		size_wrapper.set_column_spacing(5)
 		self.entry_width = Gtk.Entry()
 		self.entry_width.set_text("8")
 		self.entry_width.set_sensitive(False)
-		hbox.pack_start(self.entry_width, False, False, 5)
+		size_wrapper.attach(self.entry_width, 0, 1, 1, 1)
+		
+		l_width = Gtk.Label.new_with_mnemonic(_("_Width:"))
+		l_width.set_mnemonic_widget(self.entry_width)
+		size_wrapper.attach(l_width, 0, 0, 1, 1)
 		
 		self.entry_height = Gtk.Entry()
 		self.entry_height.set_text("8")
-		hbox.pack_start(self.entry_height, False, False, 5)
-		box.pack_start(hbox, False, False, 5)
+		size_wrapper.attach(self.entry_height, 1, 1, 1, 1)
+		
+		l_height = Gtk.Label.new_with_mnemonic(_("_Height:"))
+		l_height.set_mnemonic_widget(self.entry_height)
+		size_wrapper.attach(l_height, 1, 0, 1, 1)
+		
+		box.pack_start(size_wrapper, False, False, 5)
 		
 		notebook = Gtk.Notebook()
 		notebook.connect("switch-page", self.__on_psf_version_changed)
 		box.pack_start(notebook, False, False, 0)
 		page1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-		rb256 = Gtk.RadioButton.new_with_label(None, _("256 Glyphs"))
+		rb256 = Gtk.RadioButton.new_with_mnemonic(
+			None, _("25_6 Glyphs"))
 		rb256.connect("toggled", self.__on_radion_btn_glyphs_changed,
 			256)
 		hbox.pack_start(rb256, False, False, 0)
-		rb512 = Gtk.RadioButton.new_from_widget(rb256)
-		rb512.set_label(_("512 Glyphs"))
+		rb512 = Gtk.RadioButton.new_with_mnemonic_from_widget(
+			rb256, _("_512 Glyphs"))
 		rb512.connect("toggled", self.__on_radion_btn_glyphs_changed,
 			512)
 		hbox.pack_start(rb512, False, False, 0)
 		page1.pack_start(hbox, False, False, 0)
 		
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-		label = Gtk.Label(_("Include unicode table:"))
-		hbox.pack_start(label, False, False, 0)
+		l_unicode_table = Gtk.Label.new_with_mnemonic(
+			_("Include _unicode table:"))
+		hbox.pack_start(l_unicode_table, False, False, 0)
 		check_button = Gtk.CheckButton()
 		check_button.connect("toggled", self.__on_btn_uni_table_toggled)
+		l_unicode_table.set_mnemonic_widget(check_button)
 		hbox.pack_start(check_button, False, False, 0)
 		page1.pack_start(hbox, False, False, 0)
 		
-		notebook.append_page(page1, Gtk.Label(_("PSF")))
+		notebook.append_page(
+			page1, Gtk.Label.new_with_mnemonic(_("_PSF")))
 		
 		page2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-		label = Gtk.Label(_("Include unicode table:"))
-		hbox.pack_start(label, False, False, 0)
+		l_unicode_table = Gtk.Label.new_with_mnemonic(
+			_("Include _unicode table:"))
+		hbox.pack_start(l_unicode_table, False, False, 0)
 		check_button = Gtk.CheckButton()
 		check_button.connect("toggled", self.__on_btn_uni_table_toggled)
+		l_unicode_table.set_mnemonic_widget(check_button)
 		hbox.pack_start(check_button, False, False, 0)
 		page2.pack_start(hbox, False, False, 0)
 		
-		notebook.append_page(page2, Gtk.Label(_("PSF2")))
+		notebook.append_page(
+			page2, Gtk.Label.new_with_mnemonic(_("PSF_2")))
 
 		self.show_all()
 		
