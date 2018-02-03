@@ -48,12 +48,16 @@ class PreferencesWindow(Gtk.Window):
 		self.add(self.notebook)
 		
 		self.page_glyph_editor = GlyphEditorPage()
-		self.notebook.append_page(self.page_glyph_editor,
-			Gtk.Label(_("GlyphEditor")))
+		self.notebook.append_page(
+			self.page_glyph_editor,
+			Gtk.Label.new_with_mnemonic(_("Glyph_Editor"))
+		)
 			
 		self.page_glyph_selector = GlyphSelectorPage()
-		self.notebook.append_page(self.page_glyph_selector,
-			Gtk.Label(_("GlyphSelector")))
+		self.notebook.append_page(
+			self.page_glyph_selector,
+			Gtk.Label.new_with_mnemonic(_("GlyphSele_ctor"))
+		)
 		
 class GlyphEditorPage(Gtk.Grid):
 	"""A page for configuring the glyph editor of pysfedit.
