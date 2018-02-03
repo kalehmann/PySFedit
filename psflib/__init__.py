@@ -1339,29 +1339,24 @@ class PcScreenFont(object):
 		
 		return None
 		
-
-	def switch_glyphs(self, first, second):
-		"""Switch the position of two glyphs in the font.
+	def move_glyph(self, old_index, new_index):
+		"""Move a glyph in the font from the old index to the new index.
 		
 		Args:
-			first (int):  The position of the first glyph to switch
-				positions
-			second (int): The position of the second glyph to switch
-				positions
+			old_index (int): The current index of the glyph that should
+				be moved.
+			new_index (int): The new index of the glyph that should be
+				moved.
 		"""
-		if max(first, second) >= self.__len__():
-			
-			return
-		g = self.__glyph_bitmaps[first]
-		self.__glyph_bitmaps[first] = self.__glyph_bitmaps[second]		
-		self.__glyph_bitmaps[first] = g
-			
+		glyph = self.__glyph_bitmaps.pop(old_index)
+		self.__glyph_bitmaps.insert(new_index, glyph)
+		
 		if not self.__header.has_unicode_table():
 			
 			return
-		d = self.__unicode_info[first]
-		self.__unicode_info[first] = self.__unicode_info[second]
-		self.__unicode_info[first] = d
+			
+		description = self.__unicode_info.pop(old_index)
+		self.__unicode_info.insert(new_index, description)
 
 	def has_glyph_for_unicode_value(self, unicode_value):
 		"""Use this method to determine whether the font has a glyph for
