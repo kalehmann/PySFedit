@@ -254,6 +254,10 @@ class GlyphEditorPencil(object):
 class GlyphEditorContext(object):
 	"""This class represent the context of a glyph editor widget,
 	therefore it holds information about the state of the widget.	
+	
+	Args:
+		glyph_editor (GlyphEditor): The glyph editor that uses this
+			context.
 	"""
 	__GLYPH_SIZE = [8, 8]
 	__BLANK_PIXEL = 0
@@ -279,9 +283,7 @@ class GlyphEditorContext(object):
 		]
 	)
 	
-	def __init__(self, glyph_editor):
-		print(glyph_editor.get_window())
-		
+	def __init__(self, glyph_editor):		
 		self.__glyph_size = self.__GLYPH_SIZE[:]
 		self.__pixels = self.__get_pixel_list()
 		self.__parent_glyph_editor = glyph_editor
@@ -311,6 +313,13 @@ class GlyphEditorContext(object):
 		]
 	
 	def get_mouse_over_widget(self):
+		"""Get whether the mouse pointer is currently over the glyph
+		editor or not.
+		
+		Returns:
+			bool: Whether the mouse pointer is currently over the glyph
+				editor or not.
+		"""
 		if self.__mouse_over_widget != None:
 			
 			return self.__mouse_over_widget
@@ -330,6 +339,13 @@ class GlyphEditorContext(object):
 		)
 	
 	def set_mouse_over_widget(self, mouse_over_widget):
+		"""Tell the context whether the mouse pointer is currently over
+		the glyph editor or not.
+		
+		Args:
+			mouse_over_widget (bool): Whether the mouse is currently
+				over the glyph editor or not.		
+		"""
 		self.__mouse_over_widget = mouse_over_widget
 		
 	def get_pencils(self):
@@ -581,19 +597,26 @@ class GlyphEditor(Gtk.Widget):
 		self.connect(
 			'enter-notify-event',
 			lambda widget, event:
-				self.__do_draw_pencil(True)
+				self.__set_draw_pencil(True)
 		)
 		
 		self.connect(
 			'leave-notify-event',
 			lambda widget, event:
-				self.__do_draw_pencil(False)
+				self.__set_draw_pencil(False)
 		)
 	
-	def __do_draw_pencil(self, draw):
+	def __set_draw_pencil(self, draw):
+		"""Set whether to draw the pencil of the glyph editor or not.
+		
+		This method is used to show and hide the pencil of the glyph
+		editor when the mouse pointer enters and leaves the widget.
+		
+		Args:
+			draw (bool): Whether to show the pencil or not.		
+		"""
 		self.__context.set_mouse_over_widget(draw)
 		self.queue_draw()
-		print("Queued draw")
 		
 	def get_data(self):
 		"""Get a reference to the data representing the pixels of a
