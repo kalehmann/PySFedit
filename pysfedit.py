@@ -26,6 +26,7 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 from gi.repository import Gdk
+from gi.repository import GLib
 import gettext
 import locale
 
@@ -681,5 +682,5 @@ class PySFeditWindow(Gtk.Window):
 if __name__ == "__main__":
 	window = PySFeditWindow()
 	window.show_all()
-	Gtk.main()
+	GLib.MainLoop().run()
 
