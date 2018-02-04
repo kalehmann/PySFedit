@@ -382,10 +382,16 @@ class PySFeditWindow(Gtk.Window):
 	Initially only the menu bar and two buttons for creating and
 	importing a font are visible on this window. After a font has been
 	created or imported the two buttons get destroyed and the
-	PySFeditContent containing the font editor becomes visible.	
+	PySFeditContent containing the font editor becomes visible.
+	
+	Args:
+		main_loop (GLib.MainLoop): The main loop of the application.
 	"""
-	def __init__(self):
+	def __init__(self, main_loop):
 		Gtk.Window.__init__(self, title=_("PySFedit"))
+		
+		self.__main_loop = main_loop
+		
 		self.set_default_size(500, 400)
 		self.connect("delete-event", self.__on_window_delete)
 		self.set_default_icon_from_file(c.IMG_DIR + "icon.png")
@@ -651,7 +657,7 @@ class PySFeditWindow(Gtk.Window):
 		
 	def __on_quit(self):
 		"""This method terminates the application"""
-		Gtk.main_quit()
+		self.__main_loop.quit()
 		
 	def __on_but_new_clicked(self, button):
 		"""This method gets called when the initial button for creating
@@ -680,7 +686,8 @@ class PySFeditWindow(Gtk.Window):
 			
 
 if __name__ == "__main__":
-	window = PySFeditWindow()
+	main = GLib.MainLoop()
+	window = PySFeditWindow(main)
 	window.show_all()
-	GLib.MainLoop().run()
+	main.run()
 
