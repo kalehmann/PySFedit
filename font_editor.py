@@ -491,6 +491,9 @@ class GlyphSelector(Gtk.ListBox):
 			return
 		
 		row = self.get_row_at_y(y)
+		if not row:
+			
+			return
 		self.select_row(row)
 		
 	def _on_drag_data_received(self, widget, context, x, y, data, info,
