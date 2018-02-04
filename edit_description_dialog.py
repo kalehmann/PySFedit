@@ -124,7 +124,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 		scrolled_window.set_min_content_width(100)
 		self.lb_descriptions = Gtk.ListBox()
 		self.lb_descriptions.set_selection_mode(
-			Gtk.SelectionMode.SINGLE)
+			Gtk.SelectionMode.BROWSE)
 		self.lb_descriptions.connect('row-selected',
 			self.__on_row_selected)
 		scrolled_window.add(self.lb_descriptions)
@@ -309,15 +309,14 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 		index = row.get_index()
 		if index > 0:
 			next_row = self.lb_descriptions.get_row_at_index(index - 1)
-			self.lb_descriptions.select_row(next_row)
 		elif len(self.lb_descriptions.get_children()) > 1:
 			# The row that will be deleted is the first row. Select the
 			# second row.
 			next_row = self.lb_descriptions.get_row_at_index(1)
-			self.lb_descriptions.select_row(next_row)
 		
 		self.__remove_current_values()
 		row.destroy()
+		self.lb_descriptions.select_row(next_row)		
 		
 		if not self.lb_descriptions.get_children():
 			self.entry_unicode.set_text('')
