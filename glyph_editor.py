@@ -254,6 +254,10 @@ class GlyphEditorPencil(object):
 class GlyphEditorContext(object):
 	"""This class represent the context of a glyph editor widget,
 	therefore it holds information about the state of the widget.	
+	
+	Args:
+		glyph_editor (GlyphEditor): The glyph editor that uses this
+			context.
 	"""
 	__GLYPH_SIZE = [8, 8]
 	__BLANK_PIXEL = 0
@@ -279,7 +283,7 @@ class GlyphEditorContext(object):
 		]
 	)
 	
-	def __init__(self, glyph_editor):
+	def __init__(self, glyph_editor):		
 		self.__glyph_size = self.__GLYPH_SIZE[:]
 		self.__pixels = self.__get_pixel_list()
 		self.__parent_glyph_editor = glyph_editor
@@ -291,6 +295,7 @@ class GlyphEditorContext(object):
 			self.PENCIL_CIRCLE_SMALL
 		]
 		self.__current_pencil = 0
+		self.__mouse_over_widget = None
 		
 	def __get_pixel_list(self):
 		"""Returns a list representing the pixels of the glyph.
@@ -306,6 +311,42 @@ class GlyphEditorContext(object):
 			[0 for _ in range(self.__glyph_size[0])]
 				for _ in range(self.__glyph_size[1])
 		]
+	
+	def get_mouse_over_widget(self):
+		"""Get whether the mouse pointer is currently over the glyph
+		editor or not.
+		
+		Returns:
+			bool: Whether the mouse pointer is currently over the glyph
+				editor or not.
+		"""
+		if self.__mouse_over_widget != None:
+			
+			return self.__mouse_over_widget
+		window = self.__parent_glyph_editor.get_window()
+		if not window:
+			
+			return False
+		seat = Gdk.Display.get_default().get_default_seat()
+		pointer = seat.get_pointer()
+		
+		w, x, y, mask = window.get_device_position(pointer)
+		
+		return (
+			0 <= x < self.__parent_glyph_editor.get_allocated_height()
+				and
+			0 <= y < self.__parent_glyph_editor.get_allocated_width()
+		)
+	
+	def set_mouse_over_widget(self, mouse_over_widget):
+		"""Tell the context whether the mouse pointer is currently over
+		the glyph editor or not.
+		
+		Args:
+			mouse_over_widget (bool): Whether the mouse is currently
+				over the glyph editor or not.		
+		"""
+		self.__mouse_over_widget = mouse_over_widget
 		
 	def get_pencils(self):
 		"""Get all pencils of the glyph editor.
@@ -553,6 +594,30 @@ class GlyphEditor(Gtk.Widget):
 		self.set_context(GlyphEditorContext(self))
 		self.set_attributes(GlyphEditorAttributes(self))
 		
+		self.connect(
+			'enter-notify-event',
+			lambda widget, event:
+				self.__set_draw_pencil(True)
+		)
+		
+		self.connect(
+			'leave-notify-event',
+			lambda widget, event:
+				self.__set_draw_pencil(False)
+		)
+	
+	def __set_draw_pencil(self, draw):
+		"""Set whether to draw the pencil of the glyph editor or not.
+		
+		This method is used to show and hide the pencil of the glyph
+		editor when the mouse pointer enters and leaves the widget.
+		
+		Args:
+			draw (bool): Whether to show the pencil or not.		
+		"""
+		self.__context.set_mouse_over_widget(draw)
+		self.queue_draw()
+		
 	def get_data(self):
 		"""Get a reference to the data representing the pixels of a
 		glyph
@@ -700,19 +765,22 @@ class GlyphEditor(Gtk.Widget):
 			cr.stroke()
 		
 		# Pencil
-		cr.set_source_rgba(
-			*list(self.__attrs.get_pencil_outline_color())
-		)
-		affected_pixels = self.__context.get_pencil_affected_pixels()
-		
-		for pixel in affected_pixels:
-			cr.rectangle(
-				pixel[0] * pixel_size,
-				pixel[1] * pixel_size,
-				pixel_size - 1,
-				pixel_size - 1
+		if self.__context.get_mouse_over_widget():
+			cr.set_line_width(3.0)
+			cr.set_source_rgba(
+				*list(self.__attrs.get_pencil_outline_color())
 			)
-		cr.stroke()
+			affected_pixels = \
+				self.__context.get_pencil_affected_pixels()
+			
+			for pixel in affected_pixels:
+				cr.rectangle(
+					pixel[0] * pixel_size,
+					pixel[1] * pixel_size,
+					pixel_size - 1,
+					pixel_size - 1
+				)
+			cr.stroke()
 			
 			
 	def do_motion_notify_event(self, e):
@@ -786,7 +854,9 @@ class GlyphEditor(Gtk.Widget):
 			Gdk.EventMask.BUTTON1_MOTION_MASK |
 			Gdk.EventMask.BUTTON3_MOTION_MASK |
 			Gdk.EventMask.BUTTON_PRESS_MASK |
-			Gdk.EventMask.POINTER_MOTION_HINT_MASK
+			Gdk.EventMask.POINTER_MOTION_HINT_MASK |
+			Gdk.EventMask.ENTER_NOTIFY_MASK |
+			Gdk.EventMask.LEAVE_NOTIFY_MASK
 		)
 		
 		WAT = Gdk.WindowAttributesType
