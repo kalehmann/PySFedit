@@ -280,6 +280,8 @@ class GlyphEditorContext(object):
 	)
 	
 	def __init__(self, glyph_editor):
+		print(glyph_editor.get_window())
+		
 		self.__glyph_size = self.__GLYPH_SIZE[:]
 		self.__pixels = self.__get_pixel_list()
 		self.__parent_glyph_editor = glyph_editor
@@ -291,6 +293,7 @@ class GlyphEditorContext(object):
 			self.PENCIL_CIRCLE_SMALL
 		]
 		self.__current_pencil = 0
+		self.__mouse_over_widget = None
 		
 	def __get_pixel_list(self):
 		"""Returns a list representing the pixels of the glyph.
@@ -306,6 +309,28 @@ class GlyphEditorContext(object):
 			[0 for _ in range(self.__glyph_size[0])]
 				for _ in range(self.__glyph_size[1])
 		]
+	
+	def get_mouse_over_widget(self):
+		if self.__mouse_over_widget != None:
+			
+			return self.__mouse_over_widget
+		window = self.__parent_glyph_editor.get_window()
+		if not window:
+			
+			return False
+		seat = Gdk.Display.get_default().get_default_seat()
+		pointer = seat.get_pointer()
+		
+		w, x, y, mask = window.get_device_position(pointer)
+		
+		return (
+			0 <= x < self.__parent_glyph_editor.get_allocated_height()
+				and
+			0 <= y < self.__parent_glyph_editor.get_allocated_width()
+		)
+	
+	def set_mouse_over_widget(self, mouse_over_widget):
+		self.__mouse_over_widget = mouse_over_widget
 		
 	def get_pencils(self):
 		"""Get all pencils of the glyph editor.
@@ -553,6 +578,23 @@ class GlyphEditor(Gtk.Widget):
 		self.set_context(GlyphEditorContext(self))
 		self.set_attributes(GlyphEditorAttributes(self))
 		
+		self.connect(
+			'enter-notify-event',
+			lambda widget, event:
+				self.__do_draw_pencil(True)
+		)
+		
+		self.connect(
+			'leave-notify-event',
+			lambda widget, event:
+				self.__do_draw_pencil(False)
+		)
+	
+	def __do_draw_pencil(self, draw):
+		self.__context.set_mouse_over_widget(draw)
+		self.queue_draw()
+		print("Queued draw")
+		
 	def get_data(self):
 		"""Get a reference to the data representing the pixels of a
 		glyph
@@ -700,19 +742,21 @@ class GlyphEditor(Gtk.Widget):
 			cr.stroke()
 		
 		# Pencil
-		cr.set_source_rgba(
-			*list(self.__attrs.get_pencil_outline_color())
-		)
-		affected_pixels = self.__context.get_pencil_affected_pixels()
-		
-		for pixel in affected_pixels:
-			cr.rectangle(
-				pixel[0] * pixel_size,
-				pixel[1] * pixel_size,
-				pixel_size - 1,
-				pixel_size - 1
+		if self.__context.get_mouse_over_widget():
+			cr.set_source_rgba(
+				*list(self.__attrs.get_pencil_outline_color())
 			)
-		cr.stroke()
+			affected_pixels = \
+				self.__context.get_pencil_affected_pixels()
+			
+			for pixel in affected_pixels:
+				cr.rectangle(
+					pixel[0] * pixel_size,
+					pixel[1] * pixel_size,
+					pixel_size - 1,
+					pixel_size - 1
+				)
+			cr.stroke()
 			
 			
 	def do_motion_notify_event(self, e):
@@ -786,7 +830,9 @@ class GlyphEditor(Gtk.Widget):
 			Gdk.EventMask.BUTTON1_MOTION_MASK |
 			Gdk.EventMask.BUTTON3_MOTION_MASK |
 			Gdk.EventMask.BUTTON_PRESS_MASK |
-			Gdk.EventMask.POINTER_MOTION_HINT_MASK
+			Gdk.EventMask.POINTER_MOTION_HINT_MASK |
+			Gdk.EventMask.ENTER_NOTIFY_MASK |
+			Gdk.EventMask.LEAVE_NOTIFY_MASK
 		)
 		
 		WAT = Gdk.WindowAttributesType

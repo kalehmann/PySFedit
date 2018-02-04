@@ -645,7 +645,7 @@ class FontEditor(Gtk.Box):
 			self.__on_btn_remove_clicked)
 		button_wrapper.pack_start(self.button_remove, True, True, 0)
 		
-		glyph_editor_wrapper.pack_start(self.glyph_editor, True, True,
+		glyph_editor_wrapper.pack_start(self.glyph_editor, False, False,
 			0)
 		
 		# Pencil
