@@ -743,6 +743,7 @@ class GlyphEditor(Gtk.Widget):
 		
 		# Pencil
 		if self.__context.get_mouse_over_widget():
+			cr.set_line_width(3.0)
 			cr.set_source_rgba(
 				*list(self.__attrs.get_pencil_outline_color())
 			)

@@ -673,7 +673,7 @@ class FontEditor(Gtk.Box):
 			'selection-changed', self.__on_pencil_selected)
 			
 		glyph_editor_wrapper.pack_start(
-			self.pencil_showcase, True, True, 0)
+			self.pencil_showcase, False, False, 0)
 		
 		# GlyphSelector
 		self.glyph_selector_wrapper = Gtk.ScrolledWindow()
