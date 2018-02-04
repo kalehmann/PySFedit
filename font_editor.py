@@ -459,6 +459,9 @@ class GlyphSelector(Gtk.ListBox):
 			first_row = self.get_row_at_index(0)
 			self.select_row(first_row)
 
+		self.connect('button-release-event', self.__on_button_release)
+
+
 	def get_context(self):
 		"""Get the context of the glyph selector.
 		
@@ -467,6 +470,28 @@ class GlyphSelector(Gtk.ListBox):
 		"""
 		
 		return self.context
+		
+	def __on_button_release(self, widget, event):
+		"""This method gets called each time a mouse button gets
+		release over the glyph selector. Since after drag and drop
+		clicking on a row of the glyph selector does not always select
+		that row, but the button release over the row gets detected we
+		connect to that event and select the row manually.
+		
+		Args:
+			widget (Gtk.Widget): The widget the was is under the cursor
+				while the mouse button gets released.
+			event (Gdk.EventButton): The event which triggered this
+				signal.		
+		"""
+		y = int(event.y)
+		
+		if not event.button == Gdk.BUTTON_PRIMARY:
+			
+			return
+		
+		row = self.get_row_at_y(y)
+		self.select_row(row)
 		
 	def _on_drag_data_received(self, widget, context, x, y, data, info,
 		time, row):
