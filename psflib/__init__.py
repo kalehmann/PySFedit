@@ -28,6 +28,7 @@ files and importing these.
 """
 
 from abc import ABC, abstractmethod
+import gzip
 
 from .byteutils import Byte, ByteArray
 from .asmutils import AsmParser
@@ -1027,7 +1028,49 @@ class PsfImporter(Importer):
 			glyph.set_data_from_bytes(
 				ByteArray.from_bytes(self._get_data()[start:end])
 			)
-			
+
+class PsfGzExporter(PsfExporter):
+	"""Implementation for exporting a PcScreenFont to a gzip compressed
+	psf file. For usage see the Exporter base class.
+	
+	Args:
+		font (PcScreenFont): The font to export
+	"""
+	def export_to_data(self):
+		"""We simply override the export_to_data method of the psf
+		exporter to compress our data before exporting.
+		
+		Returns:
+			bytes: A bytes object with the compressed psf data.
+		"""
+		data = super(PsfExporter, self).export_to_data()
+		
+		return gzip.compress(data)
+
+class PsfGzImporter(PsfImporter):
+	"""Implementation for importing a PCScreenFont from a gzip
+	compressed psf file.
+	For usage see the Importer base class.
+	
+	Args:
+		data (bytes): The data to build the font from	
+	"""
+	@classmethod
+	def import_from_data(cls, data):
+		"""We simply override the import_to_data method of the psf
+		importer to decompress our data before importing.
+		
+		Args:
+			data (bytes): The binary data containing the compressed psf
+				data.
+				
+		Returns:
+			PcScreenFont: The font imported from the compressed data.		
+		"""
+		data = gzip.decompress(data)
+		
+		return PsfImporter.import_from_data(data)
+		
 class PsfHeader(ABC):
 	"""This class is the base for a header for the PC Screen Font
 	
