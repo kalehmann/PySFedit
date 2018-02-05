@@ -1,137 +1,223 @@
 # SOME DESCRIPTIVE TITLE.
-# Copyright (C) YEAR ORGANIZATION
+# Copyright (C) YEAR THE PACKAGE'S COPYRIGHT HOLDER
+# This file is distributed under the same license as the PACKAGE package.
 # FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: \n"
-"POT-Creation-Date: 2018-01-07 19:11+0100\n"
-"PO-Revision-Date: 2018-01-08 20:31+0100\n"
-"Last-Translator: \n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2018-02-05 21:28+0100\n"
+"PO-Revision-Date: 2018-02-05 21:36+0100\n"
 "Language-Team: \n"
-"Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Generated-By: pygettext.py 1.5\n"
 "X-Generator: Poedit 1.8.11\n"
+"Last-Translator: \n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Language: de_DE\n"
 
-#: font_editor.py:171 pysfedit.py:99 pysfedit.py:230
-msgid "New Font"
-msgstr "Neue Schrift"
+#: edit_description_dialog.py:89
+msgid "Edit unicode description"
+msgstr "Unicode Repräsentation bearbeiten"
 
-#: font_editor.py:687 font_editor.py:700
-msgid "Add Unicode Representation"
-msgstr "Unicode Repräsentation hinzufügen"
+#: edit_description_dialog.py:156
+msgid "_Human readable"
+msgstr "_Menschen lesbar"
 
-#: font_editor.py:691
-msgid "Remove Unicode Representation"
-msgstr "Unicode Repräsentation entfernen"
+#: edit_description_dialog.py:166
+msgid "_Values"
+msgstr "_Werte"
 
-#: font_editor.py:748 font_editor.py:759
-msgid "Confirmation"
-msgstr "Bestätigen"
+#: edit_description_dialog.py:240
+msgid "Error, must be a single letter"
+msgstr "Fehler, muss ein einzelner Buchstabe sein"
 
-#: font_editor.py:750
-msgid ""
-"You cannot remove this representation, because it\n"
-"is the primary representation for this glyph"
+#: edit_description_dialog.py:251
+msgid "Error, can not parse unicode values"
+msgstr "Fehler, konnte Unicodewerte nicht einlesen"
+
+#: edit_description_dialog.py:265
+msgid "Error, entering sequences is not enabled"
+msgstr "Fehler, die Eingabe von Sequenzen ist nicht aktiviert"
+
+#: preferences_window.py:41
+msgid "Preferences"
+msgstr "Einstellungen"
+
+#: preferences_window.py:53
+msgid "Glyph_Editor"
 msgstr ""
-"Du kannst diese Repräsentation nicht entfernen, weil sie\n"
-"die primäre Repräsentation für dieses Zeichen ist"
 
-#: font_editor.py:760
-msgid ""
-"Please confirm, that you want \n"
-"to remove this additional unicode representation"
+#: preferences_window.py:59
+msgid "GlyphSele_ctor"
 msgstr ""
-"Bitte bestätige, dass du diese zusätzliche\n"
-"Unicode Repräsentation entfernen willst"
 
-#: pysfedit.py:41 pysfedit.py:223
+#: preferences_window.py:76
+msgid "Draw seperation _lines:"
+msgstr "Trenn_linien zeichnen"
+
+#: preferences_window.py:88
+msgid "Pixel _size:"
+msgstr "Pixel_größe"
+
+#: preferences_window.py:101
+msgid "Pixel _margin:"
+msgstr "Pixel_abstand"
+
+#: preferences_window.py:161
+msgid "Glyph _preview size:"
+msgstr "Zeichen_vorschaugröße"
+
+#: preferences_window.py:177
+msgid "Show glyph _indices:"
+msgstr "Zeichen_nummern zeigen"
+
+#: preferences_window.py:192
+msgid "Allow unicode _sequences:"
+msgstr "Unicode _Sequenzen erlauben"
+
+#: pysfedit.py:44
 msgid "About"
 msgstr "Über"
 
-#: pysfedit.py:50 pysfedit.py:192
+#: pysfedit.py:53 pysfedit.py:402
 msgid "PySFedit"
-msgstr "PySFedit"
-
-#: pysfedit.py:73
-msgid "An editor for psf files written in python"
-msgstr "Ein in Python geschriebener Editor für PSF Datein"
-
-#: pysfedit.py:74
-msgid "Copyright (c) 2018 by"
-msgstr "Copyright (c) 2018 bei"
-
-#: pysfedit.py:75
-msgid ""
-"\n"
-"PSF is short for pc screen font...\n"
-"\t\t\t"
 msgstr ""
 
-#: pysfedit.py:81
-msgid "Info"
-msgstr "Info"
+#: pysfedit.py:74
+msgid "An editor for psf files written in python"
+msgstr "Ein in Python geschriebener Editor für psf Dateien"
 
-#: pysfedit.py:94
-msgid "Licence"
-msgstr "Lizenz"
+#: pysfedit.py:75
+msgid "Copyright (c) 2018 by"
+msgstr ""
 
-#: pysfedit.py:108
+#: pysfedit.py:77
+msgid "PSF is short for pc screen font...\n"
+msgstr ""
+
+#: pysfedit.py:83
+msgid "_Info"
+msgstr "_Info"
+
+#: pysfedit.py:97
+msgid "_Licence"
+msgstr "_Lizenz"
+
+#: pysfedit.py:109
+msgid "New Font"
+msgstr "Neue Schrift"
+
+#: pysfedit.py:124
 msgid "Font Size:"
 msgstr "Schriftgröße"
 
-#: pysfedit.py:140
-msgid "Number of Glyphs:"
-msgstr "Anzahl der Zeichen"
+#: pysfedit.py:136
+msgid "_Width:"
+msgstr "_Breite"
+
+#: pysfedit.py:144
+msgid "_Height:"
+msgstr "_Höhe"
 
 #: pysfedit.py:156
-msgid "Include unicode table:"
-msgstr "Unicode Tabelle nutzen"
+msgid "25_6 Glyphs"
+msgstr "25_6 Zeichen"
 
-#: pysfedit.py:203
-msgid "File"
-msgstr "Datei"
+#: pysfedit.py:161
+msgid "_512 Glyphs"
+msgstr "_512 Zeichen"
 
-#: pysfedit.py:206
-msgid "New"
-msgstr "Neu"
+#: pysfedit.py:169 pysfedit.py:183
+msgid "Include _unicode table:"
+msgstr "_Unicode Tabelle einfügen"
 
-#: pysfedit.py:209 pysfedit.py:235
-msgid "Import"
-msgstr "Importieren"
+#: pysfedit.py:178
+msgid "_PSF"
+msgstr ""
 
-#: pysfedit.py:212
-msgid "Export"
-msgstr "Exportieren"
+#: pysfedit.py:192
+msgid "PSF_2"
+msgstr ""
 
-#: pysfedit.py:215
-msgid "Quit"
-msgstr "Beenden"
+#: pysfedit.py:278
+msgid "PSF files"
+msgstr "PSF Dateien"
 
-#: pysfedit.py:220
-msgid "Help"
-msgstr "Hilfe"
+#: pysfedit.py:283
+msgid "ASM files"
+msgstr "ASM Dateien"
 
-#: pysfedit.py:255
-msgid "PSF files\t.psf"
-msgstr "PSF Datein\t.psf"
+#: pysfedit.py:288
+msgid "Gzip compressed PSF files"
+msgstr "Gzip komprimierte PSF Dateien"
 
-#: pysfedit.py:260
-msgid "ASM files\t.asm"
-msgstr "ASM Datein\t.asm"
-
-#: pysfedit.py:315
+#: pysfedit.py:318
 msgid "Import file"
 msgstr "Datei importieren"
 
-#: pysfedit.py:337
+#: pysfedit.py:346
 msgid "You have not created a font yet."
-msgstr "Es wurde noch keine Schrift erstellt"
+msgstr "Du hast noch keine Schrift erstellt."
 
-#: pysfedit.py:342
+#: pysfedit.py:351
 msgid "Export file"
-msgstr "Datei exportieren"
+msgstr "Datei  exportieren"
+
+#: pysfedit.py:423
+msgid "_File"
+msgstr "_Datei"
+
+#: pysfedit.py:426
+msgid "_New"
+msgstr "_Neu"
+
+#: pysfedit.py:433 pysfedit.py:523
+msgid "_Import"
+msgstr "_Importieren"
+
+#: pysfedit.py:440
+msgid "_Export"
+msgstr "_Exportieren"
+
+#: pysfedit.py:447
+msgid "_Preferences"
+msgstr "_Einstellungen"
+
+#: pysfedit.py:450
+msgid "_Quit"
+msgstr "_Beenden"
+
+#: pysfedit.py:459
+msgid "_Edit"
+msgstr "_Bearbeiten"
+
+#: pysfedit.py:462
+msgid "_Copy"
+msgstr "_Kopieren"
+
+#: pysfedit.py:470
+msgid "Cu_t"
+msgstr "_Ausschneiden"
+
+#: pysfedit.py:478
+msgid "_Paste"
+msgstr "_Einfügen"
+
+#: pysfedit.py:486
+msgid "_Delete"
+msgstr "_Löschen"
+
+#: pysfedit.py:504
+msgid "_Help"
+msgstr "_Hilfe"
+
+#: pysfedit.py:507
+msgid "_About"
+msgstr "_Über"
+
+#: pysfedit.py:518
+msgid "_New Font"
+msgstr "_Neue Schrift"
