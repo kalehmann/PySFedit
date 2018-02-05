@@ -173,7 +173,6 @@ class AsmParser(object):
 				i = i.replace('h', '')
 				ints.append(int(i, 16))
 			elif None != self.__DECIMAL_EXPR.match(i):
-				print(i)
 				i = i.replace('d', '')
 				ints.append(int(i, 10))
 			else:
