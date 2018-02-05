@@ -275,17 +275,17 @@ class PySFeditContent(Gtk.Grid):
 		if _type == "save":
 			dialog.set_do_overwrite_confirmation(True)
 		filter_psf = Gtk.FileFilter()
-		filter_psf.set_name(_("PSF files	.psf"))
+		filter_psf.set_name(_("PSF files"))
 		filter_psf.add_mime_type("application/x-font-linux-psf")
 		dialog.add_filter(filter_psf)
 		
 		filter_asm = Gtk.FileFilter()
-		filter_asm.set_name(_("ASM files	.asm"))
+		filter_asm.set_name(_("ASM files"))
 		filter_asm.add_pattern("*.asm")
 		dialog.add_filter(filter_asm)
 		
 		filter_psfgz = Gtk.FileFilter()
-		filter_psfgz.set_name(_("Gz compressed PSF files	.psf.gz"))
+		filter_psfgz.set_name(_("Gzip compressed PSF files"))
 		filter_psfgz.add_pattern("*.psf.gz")
 		dialog.add_filter(filter_psfgz)
 
