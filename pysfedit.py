@@ -700,5 +700,7 @@ if __name__ == "__main__":
 	main = GLib.MainLoop()
 	window = PySFeditWindow(main)
 	window.show_all()
-	main.run()
-
+	try:
+		main.run()
+	except KeyboardInterrupt:
+		pass
