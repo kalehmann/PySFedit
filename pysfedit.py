@@ -283,6 +283,11 @@ class PySFeditContent(Gtk.Grid):
 		filter_asm.set_name(_("ASM files	.asm"))
 		filter_asm.add_pattern("*.asm")
 		dialog.add_filter(filter_asm)
+		
+		filter_psfgz = Gtk.FileFilter()
+		filter_psfgz.set_name(_("Gz compressed PSF files	.psf.gz"))
+		filter_psfgz.add_pattern("*.psf.gz")
+		dialog.add_filter(filter_psfgz)
 
 		response = dialog.run()
 		if response == Gtk.ResponseType.OK:
@@ -320,7 +325,10 @@ class PySFeditContent(Gtk.Grid):
 			font = psflib.AsmImporter.import_from_file(path)
 		elif path.lower().endswith('.psf'):
 			font = psflib.PsfImporter.import_from_file(path)
+		elif path.lower().endswith(".psf.gz"):
+			font = psflib.PsfGzImporter.import_from_file(path)
 		else:
+			
 			return
 		self.font_editor = font_editor.FontEditor(
 			font.get_header(), font)
@@ -349,7 +357,10 @@ class PySFeditContent(Gtk.Grid):
 		elif path.lower().endswith(".psf"):
 			exporter = psflib.PsfExporter(self.font_editor.get_font())
 			exporter.export_to_file(path)
-			
+		elif path.lower().endswith(".psf.gz"):
+			exporter = psflib.PsfGzExporter(self.font_editor.get_font())
+			exporter.export_to_file(path)
+		
 	def copy_current_bitmap(self):
 		"""Copy the data of the glyph bitmap that is currently selected
 		in the glyph selector to the clipboard		

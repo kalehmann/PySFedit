@@ -28,6 +28,7 @@ files and importing these.
 """
 
 from abc import ABC, abstractmethod
+import gzip
 
 from .byteutils import Byte, ByteArray
 from .asmutils import AsmParser
@@ -1027,7 +1028,20 @@ class PsfImporter(Importer):
 			glyph.set_data_from_bytes(
 				ByteArray.from_bytes(self._get_data()[start:end])
 			)
-			
+
+class PsfGzExporter(PsfExporter):
+	def export_to_data(self):
+		data = super(PsfExporter, self).export_to_data()
+		
+		return gzip.compress(data)
+
+class PsfGzImporter(PsfImporter):
+	@classmethod
+	def import_from_data(cls, data):
+		data = gzip.decompress(data)
+		
+		return PsfImporter.import_from_data(data)
+		
 class PsfHeader(ABC):
 	"""This class is the base for a header for the PC Screen Font
 	
