@@ -19,7 +19,7 @@
 #	long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
 
 """
-@ToDo: Add module docstring
+PySFedit is an editor for pc screen fonts written in python 3.
 """
 
 import gi
@@ -40,6 +40,9 @@ translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 translation.install()
 		
 class AboutWindow(Gtk.Window):
+	"""A window with information about this software and the gpl license
+	text.	
+	"""
 	def __init__(self):
 		Gtk.Window.__init__(self, title=_("About"))
 		self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -257,6 +260,12 @@ class NewFontDialog(Gtk.Dialog):
 		return header
 		
 class PySFeditContent(Gtk.Grid):
+	"""This class holds the font editor of PySFedit and is a wrapper
+	about it for the main window.	
+	
+	Args:
+		window (Gtk.Window): The main window of the application.
+	"""
 	def __init__(self, window):
 		Gtk.Grid.__init__(self)
 		self.window = window
@@ -264,6 +273,23 @@ class PySFeditContent(Gtk.Grid):
 		self.font_editor = None
 				
 	def get_file_path(self, title, _type="open"):
+		"""Let the user select a file which can be handled by PySFedit.
+		
+		The following file formats are supported:
+			.psf
+			.psf.gz
+			.asm
+		
+		Args:
+			title (str): The title of the dialog for choosing the file.
+			_type (str): Can be "open" or "save". This parameter sets
+				whether the dialog for choosing the file appears as
+				dialog for opening or saving a file.
+		
+		Returns:
+			string: If the user has selected a file
+			None: If the user has aborted		
+		"""
 		if _type == "open":
 			action = Gtk.FileChooserAction.OPEN
 		elif _type == "save":
@@ -293,10 +319,19 @@ class PySFeditContent(Gtk.Grid):
 		if response == Gtk.ResponseType.OK:
 			path = dialog.get_filename()
 			dialog.destroy()
+			
 			return path
 		dialog.destroy()
 		
-	def new_font_dialog(self):
+		return None
+		
+	def new_font(self):
+		"""Show the user a dialog for creating a new font and create a
+		font if the user confirms the dialog.
+		
+		Returns:
+			bool: Whether a new font has been created or not
+		"""
 		if self.font_editor:
 			self.font_editor.destroy()
 			self.window.set_menu_edit_items_sensitive(False)
@@ -314,7 +349,12 @@ class PySFeditContent(Gtk.Grid):
 			return True
 		d.destroy()
 	
-	def import_font_dialog(self):
+	def import_font(self):
+		"""Let the user select a font file and import it.
+		
+		Returns:
+			bool: Whether a font has been imported or not.		
+		"""
 		path = self.get_file_path(_("Import file"))
 		if not path:
 			return
@@ -338,7 +378,10 @@ class PySFeditContent(Gtk.Grid):
 
 		return True
 		
-	def export_font_dialog(self):
+	def export_font(self):
+		"""Export the current font and let the user decide where and in
+		which format.
+		"""
 		if not self.font_editor:
 			dialog = Gtk.MessageDialog(self.window, 0, Gtk.MessageType.ERROR,
 				Gtk.ButtonsType.OK, "Error!")
@@ -547,7 +590,7 @@ class PySFeditWindow(Gtk.Window):
 		Args:
 			menu_item (Gtk.MenuItem): The "new" item of the "file" menu		
 		"""
-		if self.content.new_font_dialog() and not self.has_font:
+		if self.content.new_font() and not self.has_font:
 			self.button_import.destroy()
 			self.button_new.destroy()
 
@@ -560,7 +603,7 @@ class PySFeditWindow(Gtk.Window):
 			menu_item (Gtk.MenuItem): The "import" item of the "file"
 				menu		
 		"""
-		if self.content.import_font_dialog() and not self.has_font:
+		if self.content.import_font() and not self.has_font:
 			self.button_import.destroy()
 			self.button_new.destroy()
 
@@ -573,7 +616,7 @@ class PySFeditWindow(Gtk.Window):
 			menu_item (Gtk.MenuItem): The "export" item of the "file"
 				menu			
 		"""
-		self.content.export_font_dialog()
+		self.content.export_font()
 		
 	def __on_menu_preferences_clicked(self, menu_item):
 		"""This method gets called when the entry "preferences" of the
@@ -679,7 +722,7 @@ class PySFeditWindow(Gtk.Window):
 			button (Gtk.Button): The intial button for creating a new
 				font		
 		"""
-		if self.content.new_font_dialog() and not self.has_font:
+		if self.content.new_font() and not self.has_font:
 			self.button_import.destroy()
 			self.button_new.destroy()
 
@@ -691,7 +734,7 @@ class PySFeditWindow(Gtk.Window):
 		Args:
 			button (Gtk.Button): The initial button for importing a font		
 		"""
-		if self.content.import_font_dialog() and not self.has_font:
+		if self.content.import_font() and not self.has_font:
 			self.button_import.destroy()
 			self.button_new.destroy()
 			
