@@ -328,9 +328,11 @@ class Importer(ABC):
 		
 		for (_, ud), descriptions in zip(font, uc_descriptions):
 			if descriptions:
-				for codepoint in descriptions:
-					ud.add_unicode_value(codepoint)
-		
+				for desc in descriptions:
+					if type(desc) == int:
+						ud.add_unicode_value(desc)
+					else:
+						ud.add_sequence(desc)
 		return font				
 	
 	def _get_data(self):
@@ -479,12 +481,13 @@ class AsmImporter(Importer):
 				i = 0
 				while i < len(data) and data[i] != PSF1_SEPARATOR:
 					if data[i] == PSF1_STARTSEQ:
+						sequence = []
 						while ( i < len(data) and
 								data[i] != PSF1_SEPARATOR and
 								data[i] != PSF1_STARTSEQ):
-							pass # @ToDo: Add support for parsing
-								 # sequences
+							sequence.append(data[i])
 							i+=1
+						descs.append(sequence)
 					descs.append(data[i])
 					i += 1 
 				descriptions.append(descs)
@@ -508,17 +511,16 @@ class AsmImporter(Importer):
 				i = 0
 				while i < len(data) and data[i] != PSF2_SEPARATOR:
 					if data[i] == PSF1_STARTSEQ:
+						sequence = []
 						while ( i < len(data) and
 								data[i] != PSF2_SEPARATOR and
 								data[i] != PSF2_STARTSEQ):
-							pass # @ToDo: Add support for parsing
-								 # sequences
+							sequence.append(data[i])
 							i+=1
+						descs.append(sequence)
 					descs.append(data[i])
 					i += 1 
 				descriptions.append(descs)
-			elif label.startswith('Placeholder'):
-				descriptions.append(None)
 				
 		return descriptions
 				
@@ -972,7 +974,10 @@ class PsfImporter(Importer):
 				descs.append(i)
 				
 			if len(d) > 1:
-				pass # @ToDo: Parse sequences
+				for sequence in d[1:]:
+					descs.append(
+						ByteArray.from_bytes(sequence).to_ints(2)
+					)
 			descriptions.append(descs)
 
 		return descriptions				
@@ -1001,7 +1006,8 @@ class PsfImporter(Importer):
 				descs.append(ord(i))
 				
 			if len(d) > 1:
-				pass # @ToDo: Parse sequences
+				for sequence in d[1:]:
+					descs.append(list(sequence))
 			
 			descriptions.append(descs)
 		
