@@ -654,6 +654,10 @@ class AsmExporter(Exporter):
 				_bytes = ByteArray()
 				for uc in description.get_unicode_values():
 					_bytes += ByteArray.from_int(uc, 2)
+				for seq in description.get_sequences():
+					_bytes += ByteArray.from_int(0xFFFE, 2)
+					for uc in seq:
+						_bytes += ByteArray.from_int(uc, 2)
 				_bytes += ByteArray.from_int(0xFFFF, 2)		
 				data += _bytes.to_asm('Unicodedescription%d' % i)
 					
@@ -797,6 +801,10 @@ class PsfExporter(Exporter):
 				_bytes = ByteArray()
 				for uc in ud.get_unicode_values():
 					_bytes += ByteArray.from_int(uc, 2)
+				for seq in ud.get_sequences():
+					_bytes += ByteArray.from_int(0xFFFE, 2)
+					for uc in seq:
+						_bytes += ByteArray.from_int(uc, 2)
 				_bytes += ByteArray.from_int(0xFFFF, 2)		
 				ba += _bytes
 		else:	# psf2

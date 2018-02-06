@@ -75,6 +75,30 @@ class TestAsmExporter(unittest.TestCase):
 
 		self.assertEqual(exporter.export_to_data(),
 			TEST_FONT_PSF1_256_UNICODE_ASM)
+	
+	def test_psf_256_sequences(self):	
+		header = psflib.PsfHeaderv1((8,8))
+		header.set_mode(psflib.PSF1_MODEHASTAB)
+		
+		font = psflib.PcScreenFont(header)
+		
+		glyph, description = font[0]
+		description.add_unicode_value(48)
+		description.add_unicode_value(79)
+		description.add_sequence([0x41, 0x30A])
+		
+		b = psflib.Byte.from_int
+		
+		ba = psflib.ByteArray(
+			[b(0), b(0x38), b(0x44), b(0x44), b(0x44), b(0x44), b(0x38),
+			 b(0)])
+		
+		glyph.set_data_from_bytes(ba)
+		
+		exporter = psflib.AsmExporter(font)
+
+		self.assertEqual(exporter.export_to_data(),
+			TEST_FONT_PSF1_256_SEQUENCES_ASM)
 			
 	def test_psf2_simple(self):
 		header = psflib.PsfHeaderv2((10, 8))
