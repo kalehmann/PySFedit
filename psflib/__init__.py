@@ -813,6 +813,13 @@ class PsfExporter(Exporter):
 				for uc in ud.get_unicode_values():
 					_bytes += ByteArray.from_bytes(
 						chr(uc).encode('utf8'))
+				for seq in ud.get_sequences():
+					_bytes += ByteArray.from_int(0xFE, 1)
+					seq_str = u''
+					for uc in seq:
+						seq_str += chr(uc)
+					seq_bytes = bytes(seq_str, 'utf8')
+					_bytes += ByteArray.from_bytes(seq_bytes)
 				_bytes += ByteArray.from_int(0xFF, 1)	
 				ba += _bytes
 		
@@ -1015,7 +1022,11 @@ class PsfImporter(Importer):
 				
 			if len(d) > 1:
 				for sequence in d[1:]:
-					descs.append(list(sequence))
+					seq_str = bytes.decode('utf8')
+					seq = []
+					for i in seq_str:
+						seq.append(ord(i))
+				ddescs.append(seq)
 			
 			descriptions.append(descs)
 		
