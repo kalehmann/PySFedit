@@ -514,13 +514,15 @@ class AsmImporter(Importer):
 				while i < len(data) and data[i] != PSF2_SEPARATOR:
 					if data[i] == PSF2_STARTSEQ:
 						i += 1
-						sequence = []
+						seq_bytes = bytearray()
 						while ( i < len(data) and
 								data[i] != PSF2_SEPARATOR and
 								data[i] != PSF2_STARTSEQ):
-							sequence.append(data[i])
+							seq_bytes.append(data[i])
 							i+=1
-						descs.append(sequence)
+						descs.append(
+							[ord(i)for i in seq_bytes.decode('utf8')]
+						)
 					else:
 						descs.append(data[i])
 					i += 1 

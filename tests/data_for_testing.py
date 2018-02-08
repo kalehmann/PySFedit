@@ -137,8 +137,6 @@ for uc in u"\u0041\u030A".encode('utf8'):
 	TEST_FONT_PSF2_SEQUENCES_ASM += "0x"+("%02x, " % uc).upper()
 TEST_FONT_PSF2_SEQUENCES_ASM += "0xFF\n"
 
-print(TEST_FONT_PSF2_SEQUENCES_ASM)
-
 TEST_FONT_PSF2_UNICODE = bytearray([
 	0x72, 0xb5, 0x4a, 0x86,			# magic bytes
 	0x00, 0x00, 0x00, 0x00,			# version
