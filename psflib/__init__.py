@@ -597,9 +597,13 @@ class AsmExporter(Exporter):
 		"""
 		data = "font_header:\n"
 		if self.version == PSF1_VERSION:
+			mode = self.__header.mode
+			if self._get_font().has_sequences():
+				mode = (mode & 1) | PSF1_MODEHASSEQ
+			
 			magic_bytes = ByteArray(self.__header.magic_bytes)
 			data += magic_bytes.to_asm("magic_bytes")
-			data += "mode: db %s\n" % hex(self.__header.mode)
+			data += "mode: db %s\n" % hex(mode)
 			data += "charsize: db %s\n\n" % hex(
 				self.__header.charsize)
 			
@@ -759,7 +763,10 @@ class PsfExporter(Exporter):
 		for i in self.__header.magic_bytes:
 			_bytes.append(i)
 		if self.version == PSF1_VERSION:
-			_bytes.append(self.__header.mode)
+			mode = self.__header.mode
+			if self._get_font().has_sequences():
+				mode = (mode & 1) | PSF1_MODEHASSEQ
+			_bytes.append(mode)
 			_bytes.append(self.__header.charsize)
 		elif self.version == PSF2_VERSION:
 			_bytes += self.int_to_bytes(self.__header.version)
@@ -1317,6 +1324,24 @@ class PcScreenFont(object):
 		
 		return self.__header.has_unicode_table()
 		
+	def has_sequences(self):
+		"""Get if any glyph bitmap of the font is described by an
+		unicode sequence.
+		
+		Returns:
+			bool: Whether any glyph bitmap of the font is described by
+				an unicode sequence or not.		
+		"""
+		if not self.has_unicode_table():
+			
+			return		
+		for ud in self.__unicode_info:
+			if ud.get_sequences():
+				
+				return True
+		
+		return False
+			
 	def get_header(self):
 		"""Get the header of this font.
 		

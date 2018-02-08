@@ -63,7 +63,7 @@ for i in range(1,256):
 
 TEST_FONT_PSF1_256_SEQUENCES_ASM = """font_header:
 magic_bytes: db 0x36, 0x04
-mode: db 0x2
+mode: db 0x4
 charsize: db 0x8
 
 font_bitmaps:
@@ -241,7 +241,7 @@ TEST_FONT_PSF1_256_UNICODE = bytearray(
 )
 
 TEST_FONT_PSF1_256_SEQUENCES = bytearray(
-	[0x36, 0x04, 0x02, 0x08] +
+	[0x36, 0x04, 0x04, 0x08] +
 	# Glyph1
 	[0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00] + 
 	[0x00 for _ in range(8 * 255)] +
