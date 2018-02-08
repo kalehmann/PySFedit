@@ -61,6 +61,29 @@ class TestPsfImporter(unittest.TestCase):
 		self.assertEqual(data,
 			[0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00])
 	
+	def test_import_psf_sequences(self):
+		font = psflib.PsfImporter.import_from_data(
+			TEST_FONT_PSF1_256_SEQUENCES)
+		
+		self.assertTrue(font.has_unicode_table())
+		self.assertEqual(len(font), 256)
+		
+		glyph = font.get_glyph_for_unicode_value(0x41)
+		index = font.get_glyph_index(glyph)
+		
+		_, ud = font[index]
+		
+		self.assertEqual(
+			ud.get_sequences(),
+			[[0x41, 0x30A]]
+		)
+		
+		data = [int(psflib.Byte(row)) for row in glyph.get_data()]
+				
+		self.assertEqual(data,
+			[0x00, 0x10, 0x10, 0x10, 0x10, 0x10, 0x10, 0x00])
+		
+	
 	def test_import_psf2_simple(self):
 		font = psflib.PsfImporter.import_from_data(TEST_FONT_PSF2_SIMPLE)
 		
