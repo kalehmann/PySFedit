@@ -125,3 +125,31 @@ class TestAsmImporter(unittest.TestCase):
 				[0,0,0,0,0,0,0,0,0,0]
 			]
 		)
+	
+	def test_parse_psf2_sequences(self):
+		font = psflib.AsmImporter.import_from_data(
+			TEST_FONT_PSF2_SEQUENCES_ASM)
+			
+		self.assertEqual(len(font), 1)
+		self.assertTrue(font.has_unicode_table())
+		self.assertTrue(font.has_glyph_for_unicode_value(0x41))
+		
+		glyph, ud = font[0]
+		
+		self.assertEqual(
+			glyph.get_data(),
+			[
+				[0,0,0,0,0,0,0,0,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,1,0,0],
+				[0,0,0,0,0,0,0,0,0,0]
+			]
+		)
+		self.assertEqual(
+			ud.get_sequences(),
+			[[0x41, 0x30A]]
+		)
