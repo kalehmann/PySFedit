@@ -481,6 +481,7 @@ class AsmImporter(Importer):
 				i = 0
 				while i < len(data) and data[i] != PSF1_SEPARATOR:
 					if data[i] == PSF1_STARTSEQ:
+						i += 1
 						sequence = []
 						while ( i < len(data) and
 								data[i] != PSF1_SEPARATOR and
@@ -488,7 +489,8 @@ class AsmImporter(Importer):
 							sequence.append(data[i])
 							i+=1
 						descs.append(sequence)
-					descs.append(data[i])
+					else:
+						descs.append(data[i])
 					i += 1 
 				descriptions.append(descs)
 			elif label.startswith('Placeholder'):
@@ -510,7 +512,8 @@ class AsmImporter(Importer):
 				descs = []
 				i = 0
 				while i < len(data) and data[i] != PSF2_SEPARATOR:
-					if data[i] == PSF1_STARTSEQ:
+					if data[i] == PSF2_STARTSEQ:
+						i += 1
 						sequence = []
 						while ( i < len(data) and
 								data[i] != PSF2_SEPARATOR and
@@ -518,7 +521,8 @@ class AsmImporter(Importer):
 							sequence.append(data[i])
 							i+=1
 						descs.append(sequence)
-					descs.append(data[i])
+					else:
+						descs.append(data[i])
 					i += 1 
 				descriptions.append(descs)
 				
