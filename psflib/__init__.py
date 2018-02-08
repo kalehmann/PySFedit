@@ -1022,11 +1022,11 @@ class PsfImporter(Importer):
 				
 			if len(d) > 1:
 				for sequence in d[1:]:
-					seq_str = bytes.decode('utf8')
+					seq_str = sequence.decode('utf8')
 					seq = []
 					for i in seq_str:
 						seq.append(ord(i))
-				ddescs.append(seq)
+				descs.append(seq)
 			
 			descriptions.append(descs)
 		

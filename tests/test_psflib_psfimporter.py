@@ -112,3 +112,24 @@ class TestPsfImporter(unittest.TestCase):
 		self.assertEqual(glyph_A.get_size(), (10, 8))
 		
 		self.assertEqual(6, sum([sum(row) for row in glyph_B.get_data()]))
+
+	def test_import_psf2_sequences(self):
+		font = psflib.PsfImporter.import_from_data(TEST_FONT_PSF2_SEQUENCES)
+		
+		self.assertTrue(font.has_unicode_table())
+		self.assertEqual(len(font), 1)
+		
+		self.assertTrue(font.has_glyph_for_unicode_value(ord('A')))
+		
+		glyph_A = font.get_glyph_for_unicode_value(ord('A'))
+		index = font.get_glyph_index(glyph_A)
+		
+		_, ud = font[index]
+		
+		self.assertEqual(
+			ud.get_sequences(),
+			[[0x41, 0x30A]]
+		)
+		
+		self.assertEqual(glyph_A.get_size(), (10, 8))
+		
