@@ -27,11 +27,8 @@ long_line_behaviour=1
 long_line_column=72
 
 [files]
-current_page=2
-FILE_NAME_0=6562;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpysfedit.py;0;4
-FILE_NAME_1=853;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpsflib%2F__init__.py;0;4
-FILE_NAME_2=5184;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpreferences_window.py;0;4
-FILE_NAME_3=1051;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fconstants.py;0;4
-FILE_NAME_4=3597;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ffont_editor.py;0;4
-FILE_NAME_5=1038;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fglyph_editor.py;0;4
-FILE_NAME_6=7782;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fedit_description_dialog.py;0;4
+current_page=3
+FILE_NAME_0=6863;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpysfedit.py;0;4
+FILE_NAME_1=0;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpreferences_window.py;0;4
+FILE_NAME_2=0;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Ftests%2Ftest_psflib_asmexporter.py;0;4
+FILE_NAME_3=25342;Python;0;EUTF-8;1;1;0;%2Froot%2FPySFedit%2Fpsflib%2F__init__.py;0;4

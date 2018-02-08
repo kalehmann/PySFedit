@@ -162,3 +162,31 @@ class TestPsfExporter(unittest.TestCase):
 		data = exp.export_to_data()
 		
 		self.assertEqual(data, TEST_FONT_PSF2_UNICODE)
+		
+	def test_export_psf2_sequences(self):
+		header = psflib.PsfHeaderv2((10, 8))
+		header.set_flags(psflib.PSF2_HAS_UNICODE_TABLE)
+		
+		font = psflib.PcScreenFont(header)
+		
+		glyph_A, udA = font.add_glyph()
+		
+		udA.add_unicode_value(ord('A'))
+		udA.add_sequence([0x41, 0x30A])
+		
+		data_A = bytearray([
+			0x00, 0x00,
+			0x00, 0x00,
+			0x00, 0x00,
+			0x00, 0x00,
+			0x00, 0x00,
+			0x00, 0x00,
+			0x00, 0x00,
+			0x00, 0x00,
+		])
+		glyph_A.set_data_from_bytes(data_A)
+		
+		exp = psflib.PsfExporter(font)
+		data = exp.export_to_data()
+		
+		self.assertEqual(data, TEST_FONT_PSF2_SEQUENCES)
