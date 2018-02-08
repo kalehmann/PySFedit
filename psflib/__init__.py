@@ -673,6 +673,12 @@ class AsmExporter(Exporter):
 			_bytes = ByteArray()
 			for uc in description.get_unicode_values():
 				_bytes += ByteArray.from_bytes(chr(uc).encode('utf8'))
+			for seq in description.get_sequences():
+				_bytes += ByteArray.from_int(0xFE, 1)
+				seq_str = u""
+				for uc in seq:
+					seq_str += chr(uc)
+				_bytes += ByteArray.from_bytes(seq_str.encode('utf8'))
 			_bytes += ByteArray.from_int(0xFF, 1)	
 			data += _bytes.to_asm('Unicodedescription%d' % i)	
 			

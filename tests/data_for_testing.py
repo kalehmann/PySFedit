@@ -131,11 +131,11 @@ font_bitmaps:
 glyph_0: db 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01
     db 0x00, 0x01, 0x00, 0x00, 0x00
 unicode_table:
-Unicodedescription0: db 0x41, 0xFE, """
+Unicodedescription0: db 0x41, 0xfe, """
 
 for uc in u"\u0041\u030A".encode('utf8'):
-	TEST_FONT_PSF2_SEQUENCES_ASM += "0x"+("%02x, " % uc).upper()
-TEST_FONT_PSF2_SEQUENCES_ASM += "0xFF\n"
+	TEST_FONT_PSF2_SEQUENCES_ASM += "0x"+("%02x, " % uc)
+TEST_FONT_PSF2_SEQUENCES_ASM += "0xff\n"
 
 TEST_FONT_PSF2_UNICODE = bytearray([
 	0x72, 0xb5, 0x4a, 0x86,			# magic bytes
