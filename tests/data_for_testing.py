@@ -35,12 +35,14 @@ class TestFont(object):
 	Args:
 		font_data: The data of a pc screen font as a string or binary
 			object.
+		charsize (tuple): The size of a glyph bitmap in pixels
 		unicode_tab (bool): Whether the font contains an unicode table
 			or not.
 	"""
-	def __init__(self, font_data, unicode_tab=False):
+	def __init__(self, font_data, charsize, unicode_tab=False):
 		self.__font_data = font_data
 		self.__glyphs = []
+		self.__charsize = charsize
 		self.__has_tab = unicode_tab
 		
 		
@@ -73,6 +75,16 @@ class TestFont(object):
 		"""
 		
 		return self.__glyphs
+		
+	def get_charsize(self):
+		"""Get the size of each glyph bitmap in the font data in pixels.
+		
+		Returns:
+			tuple: The size of each glyph bitmap in the font data in
+				pixels
+		"""
+		
+		return self.__charsize
 	
 	def has_unicode_table(self):
 		"""Get whehter the font has an unicode table or not.
@@ -91,7 +103,6 @@ class TestFont(object):
 		"""
 		
 		return len(self.__glyphs)
-	
 
 TEST_FONT_PSF1_512_SIMPLE_ASM = """font_header:
 magic_bytes: db 0x36, 0x04
