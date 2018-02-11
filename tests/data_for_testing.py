@@ -22,6 +22,76 @@
 This module contains some data for testing importing and exporting
 functionalities.
 """
+import collections
+import psflib
+
+class TestFont(object):
+	Glyph = collections.namedtuple('Glyph',
+								   ['unicode_values', 'sequences',
+									'bitmap'])
+	
+	"""This class holds font data for testing.
+	
+	Args:
+		font_data: The data of a pc screen font as a string or binary
+			object.
+		unicode_tab (bool): Whether the font contains an unicode table
+			or not.
+	"""
+	def __init__(self, font_data, unicode_tab=False):
+		self.__font_data = font_data
+		self.__glyphs = []
+		self.__has_tab = unicode_tab
+		
+		
+	def register_glyph(self, unicode_values,
+					   glyph_data, sequences=None):
+		"""Register the unicode values, bitmap and optional unicode
+		sequences of a glyph stored in the font data.
+		
+		Notes:
+			If the font has no unicode table, you can see unicode_values
+			as the index of the glyph in the font
+		
+		Args:
+			unicode_values (tuple): The unicode values describing the
+				glyph
+			glyph_data (psflib.ByteArray): The bitmap of the glyph
+			sequences (tuple): Optionally unicode sequences describing
+				the glyph
+		"""
+		
+		self.__glyphs.append(Glyph(unicode_values=unicode_values,
+								   sequences=sequences,
+								   bitmap=glyph_data))
+	
+	def get_glyphs(self):
+		"""Get all glyphs stored in the font data.
+		
+		Returns:
+			list:A list of TestFont.Glyph objects.
+		"""
+		
+		return self.__glyphs
+	
+	def has_unicode_table(self):
+		"""Get whehter the font has an unicode table or not.
+		
+		Returns:
+			bool: Whether the font has an unicode table or not.
+		"""
+		
+		return self.__has_tab
+	
+	def __len__(self):
+		"""Get the number of glyphs in the font data.
+		
+		Returns:
+			int: The number of glyphs in the font data
+		"""
+		
+		return len(self.__glyphs)
+	
 
 TEST_FONT_PSF1_512_SIMPLE_ASM = """font_header:
 magic_bytes: db 0x36, 0x04
