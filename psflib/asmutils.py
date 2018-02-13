@@ -177,7 +177,7 @@ class AsmParser(object):
 				ints.append(int(i, 10))
 			else:
 				raise ValueError('Could not parse %s in %s as integer' %
-					i, data_string)
+					(i, data_string))
 		return ints			
 				
 	def __parse_asm(self, asm_string):

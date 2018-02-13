@@ -23,6 +23,7 @@ This module contains some data for testing importing and exporting
 functionalities.
 """
 import collections
+import gzip
 import psflib
 
 class TestFont(object):
@@ -63,9 +64,9 @@ class TestFont(object):
 				the glyph
 		"""
 		
-		self.__glyphs.append(Glyph(unicode_values=unicode_values,
-								   sequences=sequences,
-								   bitmap=glyph_data))
+		self.__glyphs.append(self.Glyph(unicode_values=unicode_values,
+										sequences=sequences,
+										bitmap=glyph_data))
 	
 	def get_glyphs(self):
 		"""Get all glyphs stored in the font data.
@@ -95,6 +96,15 @@ class TestFont(object):
 		
 		return self.__has_tab
 	
+	def get_data(self):
+		"""Get the data of the testfont.
+		
+		Returns:
+			The data of the test font.
+		"""
+		
+		return self.__font_data
+	
 	def __len__(self):
 		"""Get the number of glyphs in the font data.
 		
@@ -103,6 +113,14 @@ class TestFont(object):
 		"""
 		
 		return len(self.__glyphs)
+
+def getCompressedTestFont(test_font):
+	old = test_font.get_data		
+	test_font.get_data = lambda: gzip.compress(
+			old()
+		)
+	
+	return test_font
 
 def get_font_psf_512_simple_asm():
 	"""Get a test font in the asm format with 512 glyph bitmaps and no
@@ -120,15 +138,15 @@ font_bitmaps:
 """
 	
 	empty_bitmap = (
-		"glyph_%d: db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00," +
-		" 0x00, 0x00, 0x00\n    db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00\n"
+		"glyph_%d: db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00," +
+		" 0x00, 0x00, 0x00\n    db 0x00, 0x00, 0x00, 0x00, 0x00\n"
 	)
 	
 	empty_data = psflib.ByteArray.from_bytes([0 for _ in range(16)])
 	
 	A_bitmap = (
 		"glyph_%d: db 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08," +
-		" 0x09, 0x0a\n    db: 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10\n"
+		" 0x09, 0x0a, 0x0b\n    db 0x0c, 0x0d, 0x0e, 0x0f, 0x10\n"
 	)
 	
 	A_data = psflib.ByteArray.from_bytes([i+1 for i in range(16)])
@@ -136,7 +154,7 @@ font_bitmaps:
 	for i in range(512):
 		data += empty_bitmap % i if i != 0x41 else A_bitmap	% i
 
-	font = TestFont(TEST_FONT_PSF1_512_SIMPLE_ASM, (8, 16))
+	font = TestFont(data, (8, 16))
 
 	for i in range(512):
 		font.register_glyph(
@@ -155,32 +173,36 @@ def get_font_psf_256_unicode_asm():
 	"""
 	data = """font_header:
 magic_bytes: db 0x36, 0x04
-mode: db 0x1
+mode: db 0x2
 charsize: db 0x10
 
 font_bitmaps:
 """
 	empty_bitmap = (
 		"glyph_%d: db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00," +
-		" 0x00, 0x00, 0x00\n    db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00\n"
+		" 0x00, 0x00, 0x00, 0x00\n    db 0x00, 0x00, 0x00, 0x00, 0x00\n"
 	)
 	
 	empty_data = psflib.ByteArray.from_bytes([0 for _ in range(16)])
 	
 	A_bitmap = (
 		"glyph_%d: db 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08," +
-		" 0x09, 0x0a\n    db: 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10\n"
+		" 0x09, 0x0a, 0x0b\n    db 0x0c, 0x0d, 0x0e, 0x0f, 0x10\n"
 	)
 	
 	A_data = psflib.ByteArray.from_bytes([i+1 for i in range(16)])
 
 	for i in range(256):
 		data += empty_bitmap % i if i != 0x41 else A_bitmap	% i
-	
+	data += "unicode_table:\n"
 	for i in range(256):
+		if i == 0x41:
+			data += "Unicodedescription65: db 0x41, 0x00, 0xff, 0xff\n"
+			
+			continue
 		data += "Unicodedescription%d: db 0xff, 0xff\n" % i
 
-	font = TestFont(TEST_FONT_PSF1_512_SIMPLE_ASM, (8, 16), True)
+	font = TestFont(data, (8, 16), True)
 
 	for i in range(256):
 		if i == 0x41:
@@ -206,35 +228,35 @@ font_bitmaps:
 """
 	empty_bitmap = (
 		"glyph_%d: db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00," +
-		" 0x00, 0x00, 0x00\n    db 0x00, 0x00, 0x00, 0x00, 0x00, 0x00\n"
+		" 0x00, 0x00, 0x00, 0x00\n    db 0x00, 0x00, 0x00, 0x00, 0x00\n"
 	)
 	
 	empty_data = psflib.ByteArray.from_bytes([0 for _ in range(16)])
 	
 	A_bitmap = (
 		"glyph_%d: db 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08," +
-		" 0x09, 0x0a\n    db: 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10\n"
+		" 0x09, 0x0a, 0x0b\n    db 0x0c, 0x0d, 0x0e, 0x0f, 0x10\n"
 	)
 	
 	A_data = psflib.ByteArray.from_bytes([i+1 for i in range(16)])
 
 	for i in range(256):
 		data += empty_bitmap % i if i != 0x41 else A_bitmap	% i
-	
+	data += "unicode_table:\n"
 	for i in range(256):
 		if i == 0x41:
 			data += (
 				"Unicodedescription65: db 0x41, 0x00, 0xfe, 0xff, " + 
-				"0x41, 0x00, 0x0a, 0x03,\n   db: 0xff, 0xff\n"
+				"0x41, 0x00, 0x0a, 0x03, 0xff\n    db 0xff\n"
 			)
 		else:
 			data += "Unicodedescription%d: db 0xff, 0xff\n" % i
 
-	font = TestFont(TEST_FONT_PSF1_512_SIMPLE_ASM, (8, 16), True)
+	font = TestFont(data, (8, 16), True)
 
 	for i in range(256):
 		if i == 0x41:
-			font.register_glyph((0x41, ), A_data, [0x41, 0x30a])
+			font.register_glyph((0x41, ), A_data, [[0x41, 0x30a]])
 		else:
 			font.register_glyph((), empty_data)
 	
@@ -257,13 +279,13 @@ height: dd 0x8
 width: dd 0xa
 
 font_bitmaps:
-glyph_0: db 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00
-    db 0x01, 0x00, 0x01, 0x00, 0x01
+glyph_0: db 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01
+    db 0x00, 0x01, 0x00, 0x01, 0x00
 """
 	font = TestFont(data, (10, 8))
 	
 	data_0 = psflib.ByteArray.from_bytes([
-		1 if i % 2 else 0 for i in range(16)
+		0 if i % 2 else 1 for i in range(16)
 	])
 	
 	font.register_glyph((0,), data_0)
@@ -287,8 +309,8 @@ height: dd 0x8
 width: dd 0xa
 
 font_bitmaps:
-glyph_0: db 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00
-    db 0x01, 0x00, 0x01, 0x00, 0x01
+glyph_0: db 0xff, 0x40, 0xff, 0x40, 0xff, 0x40, 0xff, 0x40, 0xff, 0x40, 0xff
+    db 0x40, 0xff, 0x40, 0xff, 0x40
 unicode_table:
 Unicodedescription0: db 0x41, 0xff
 """
@@ -296,7 +318,7 @@ Unicodedescription0: db 0x41, 0xff
 	font = TestFont(data, (10, 8), True)
 	
 	data_0 = psflib.ByteArray.from_bytes([
-		1 if i % 2 else 0 for i in range(16)
+		0x40 if i % 2 else 0xff for i in range(16)
 	])
 	
 	font.register_glyph((0x41,), data_0)
@@ -321,8 +343,8 @@ height: dd 0x8
 width: dd 0xa
 
 font_bitmaps:
-glyph_0: db 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00, 0x01, 0x00
-    db 0x01, 0x00, 0x01, 0x00, 0x01
+glyph_0: db 0xff, 0x40, 0xff, 0x40, 0xff, 0x40, 0xff, 0x40, 0xff, 0x40, 0xff
+    db 0x40, 0xff, 0x40, 0xff, 0x40
 unicode_table:
 Unicodedescription0: db 0x41, 0xfe, """
 	for uc in u"\u0041\u030A".encode('utf8'):
@@ -331,10 +353,10 @@ Unicodedescription0: db 0x41, 0xfe, """
 	font = TestFont(data, (10, 8), True)
 	
 	data_0 = psflib.ByteArray.from_bytes([
-		1 if i % 2 else 0 for i in range(16)
+		0x40 if i % 2 else 0xff for i in range(16)
 	])
 	
-	font.register_glyph((0x41,), data_0, [0x41, 0x30a])
+	font.register_glyph((0x41,), data_0, [[0x41, 0x30a]])
 
 	return font
 
@@ -344,8 +366,8 @@ def get_font_psf2_simple():
 	Returns:
 		TestFont: The test font.	
 	"""
-	data_0 = [i for i in range(16)]
-	data_1 = [16-i for i in range(16)]
+	data_0 = [0b11000000 if i%2 else 255 for i in range(16)]
+	data_1 = [64 if i%2 else 254 for i in range(16)]
 	
 	data = bytearray([
 		0x72, 0xb5, 0x4a, 0x86,			# magic bytes
@@ -360,8 +382,8 @@ def get_font_psf2_simple():
 	
 	font = TestFont(data, (10, 8))
 	
-	font.register_glyph((0,), data_0)
-	font.register_glyph((1,), data_1)
+	font.register_glyph((0,), psflib.ByteArray.from_bytes(data_0))
+	font.register_glyph((1,), psflib.ByteArray.from_bytes(data_1))
 	
 	return font
 
@@ -371,8 +393,8 @@ def get_font_psf2_unicode():
 	Returns:
 		TestFont: The test font.	
 	"""
-	data_A = [i for i in range(16)]
-	data_B = [16-i for i in range(16)]
+	data_A = [i if not i%2 else 0  for i in range(16)]
+	data_B = [i if not i%2 else 0 for i in range(16, 0, -1)]
 	
 	data = bytearray([
 		0x72, 0xb5, 0x4a, 0x86,			# magic bytes
@@ -393,8 +415,8 @@ def get_font_psf2_unicode():
 	
 	font = TestFont(data, (10, 8), True)
 	
-	font.register_glyph((0x41,), data_A)
-	font.register_glyph((0x42,), data_B)
+	font.register_glyph((0x41,), psflib.ByteArray.from_bytes(data_A))
+	font.register_glyph((0x42,), psflib.ByteArray.from_bytes(data_B))
 	
 	return font
 
@@ -405,14 +427,14 @@ def get_font_psf2_sequences():
 	Returns:
 		TestFont: The test font.	
 	"""
-	data_A = [i for i in range(16)]
+	data_A = [i if not i%2 else 0  for i in range(16)]
 	
 	data = bytearray([
 		0x72, 0xb5, 0x4a, 0x86,			# magic bytes
 		0x00, 0x00, 0x00, 0x00,			# version
 		0x20, 0x00, 0x00, 0x00,			# headersize
 		0x01, 0x00, 0x00, 0x00,			# flags
-		0x02, 0x00, 0x00, 0x00,			# length
+		0x01, 0x00, 0x00, 0x00,			# length
 		0x10, 0x00, 0x00, 0x00,			# charsize
 		0x08, 0x00, 0x00, 0x00,			# height
 		0x0A, 0x00, 0x00, 0x00,			# width
@@ -424,7 +446,8 @@ def get_font_psf2_sequences():
 	
 	font = TestFont(data, (10, 8), True)
 	
-	font.register_glyph((0x41,), data_A, (0x41, 0x30a))
+	font.register_glyph((0x41,), psflib.ByteArray.from_bytes(data_A),
+						((0x41, 0x30a),))
 	
 	return font
 
@@ -447,10 +470,11 @@ def get_font_psf_512_simple():
 	
 	font = TestFont(data, (8, 10))
 	
-	font.register_glyph((0,), data_0)
+	font.register_glyph((0,), psflib.ByteArray.from_bytes(data_0))
 	
-	for i in range(511):
-		font.register_glyph((i,), data_empty)
+	for i in range(1, 512):
+		font.register_glyph((i,),
+							psflib.ByteArray.from_bytes(data_empty))
 		
 	return font
 	
@@ -473,11 +497,11 @@ def get_font_psf_256_unicode():
 		[0xFF for _ in range(255 * 2)]
 	)
 	
-	font = TestFont(data, (8, 10))
+	font = TestFont(data, (8, 10), True)
 	
-	font.register_glyph((0x41,), data_A)
+	font.register_glyph((0x41,), psflib.ByteArray.from_bytes(data_A))
 	for _ in range(255):
-		font.register_glyph((), data_empty)
+		font.register_glyph((), psflib.ByteArray.from_bytes(data_empty))
 	
 	return font
 
@@ -492,7 +516,7 @@ def get_font_psf_256_sequences():
 	data_empty = [0 for _ in range(10)]
 	
 	data = bytearray(
-		[0x36, 0x04, 0x02, 0x0a] +
+		[0x36, 0x04, 0x04, 0x0a] +
 		# Glyph1
 		data_A + 
 		data_empty * 255 +
@@ -500,14 +524,38 @@ def get_font_psf_256_sequences():
 		[0xFF for _ in range(255 * 2)]
 	)
 	
-	font = TestFont(data, (8, 10))
+	font = TestFont(data, (8, 10), True)
 	
-	font.register_glyph((0x41,), data_A, (0x41, 0x30a))
+	font.register_glyph((0x41,), psflib.ByteArray.from_bytes(data_A), 
+						((0x41, 0x30a),))
 	for _ in range(255):
-		font.register_glyph((), data_empty)
+		font.register_glyph((), psflib.ByteArray.from_bytes(data_empty))
 	
 	return font
+
+def get_font_psf2_sequences_compressed():
 	
+	return getCompressedTestFont(get_font_psf2_sequences())
+
+def get_font_psf2_simple_compressed():
+	
+	return getCompressedTestFont(get_font_psf2_simple())
+
+def get_font_psf2_unicode_compressed():
+	
+	return getCompressedTestFont(get_font_psf2_unicode())
+	
+def get_font_psf_256_sequences_compressed():
+	
+	return getCompressedTestFont(get_font_psf_256_sequences())
+
+def get_font_psf_256_unicode_compressed():
+	
+	return getCompressedTestFont(get_font_psf_256_unicode())
+
+def get_font_psf_512_simple_compressed():
+	
+	return getCompressedTestFont(get_font_psf_512_simple())
 
 TEST_FONT_PSF1_512_SIMPLE_ASM = """font_header:
 magic_bytes: db 0x36, 0x04

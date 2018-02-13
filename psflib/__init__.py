@@ -564,17 +564,8 @@ class AsmExporter(Exporter):
 			str: A string containing data in the nasm assembler syntax
 				representing the bitmap of the given glyph.
 		"""
-		bits = []
-		for row in glyph.get_data():
-			for bit in row:
-				bits.append(bit)
-			missing_bits = 8 - len(row) % 8
-			if missing_bits < 8:
-				for _ in range(8 - len(row) % 8):
-					bits.append(0)		
-		_bytes = ByteArray.from_bit_array(bits)
 
-		return _bytes.to_asm(label)
+		return glyph.to_bytearray().to_asm(label)
 	
 	def _write_data(self, file_path, data):
 		"""Write the data made from the font into a file.
@@ -729,16 +720,9 @@ class PsfExporter(Exporter):
 		Returns:
 			bytearray: The bytearray built from the bitmap of the glyph.
 		"""
-		ba = bytearray()
-		for row in glyph.get_data():
-			if len(row) % 8:
-				row = row[:]
-				while len(row) % 8:
-					row.append(0)
-			b = ByteArray.from_bit_array(row)
-			for i in b:
-				ba.append(int(i))
-		return ba	
+		
+		
+		return glyph.to_bytearray().to_bytearray()
 
 	def _write_data(self, file_path, data):
 		"""Write the data made from the font into a file.
@@ -1654,6 +1638,24 @@ class GlyphBitmap(object):
 			for j in range(self.__width):
 				line.append(bits[i * bits_per_line + j])
 			self.__data.append(line)
+		
+	def to_bytearray(self):
+		"""Get a byte array from the data of the glyph bitmap.
+		
+		Returns:
+			psflib.ByteArray: The byte array from the data of the glyph
+				bitmap.	
+		"""
+		
+		ba = ByteArray()
+		for row in self.get_data():
+			if len(row) % 8:
+				row = row[:]
+				while len(row) % 8:
+					row.append(0)
+			ba +=  ByteArray.from_bit_array(row)
+		
+		return ba
 		
 
 class UnicodeDescription(object):
