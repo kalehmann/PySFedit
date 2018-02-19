@@ -1,0 +1,4 @@
+
+FROM arm32v7/python:3.4-slim
+
+RUN pip install gi
