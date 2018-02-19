@@ -1,4 +1,11 @@
 
-FROM arm32v7/python:3.4-slim
+FROM arm32v7/debian:9.3-slim
 
-RUN pip install gi
+RUN apt-get update && apt-get install --no-install-recommends -y \
+	gir1.2-gtk-3.0 \
+	python3 \
+	python3-pillow \
+	python3-gi \
+	python3-gi-cairo \
+	xvfb \
+	xauth

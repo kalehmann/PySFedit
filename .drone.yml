@@ -2,6 +2,6 @@ platform: linux/arm
 
 pipeline:
   tests:
-    image: arm32v7/python:3.4-slim
+    image: karsten/pysfedit-testing:arm
     commands:
-      - python3 -m unittest
+      - xvfb-run -a python3 -m unittest -v
