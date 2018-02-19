@@ -32,10 +32,10 @@ from PIL import Image, ImageDraw
 import gettext
 import re
 
-import psflib
-from glyph_editor import GlyphEditor
-from edit_description_dialog import EditUnicodeDescriptionDialog
-import constants as c
+from . import psflib
+from .glyph_editor import GlyphEditor
+from .edit_description_dialog import EditUnicodeDescriptionDialog
+from . import constants as c
 
 translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 	fallback=True)

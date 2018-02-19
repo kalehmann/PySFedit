@@ -23,13 +23,8 @@ This module tests all exporters of the psflib.
 """
 
 import unittest
-import sys
-from os.path import dirname
-import psflib
-
-sys.path.append(dirname(__file__))
-
-from data_for_testing import *
+from ... import psflib
+from .data_for_testing import *
 
 class ExportersTest(unittest.TestCase):
 	

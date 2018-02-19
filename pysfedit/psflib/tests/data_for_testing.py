@@ -24,7 +24,7 @@ functionalities.
 """
 import collections
 import gzip
-import psflib
+from ... import psflib
 
 class TestFont(object):
 	Glyph = collections.namedtuple('Glyph',

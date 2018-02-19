@@ -23,7 +23,7 @@ This module tests the Byte class of the psflib.
 """
 
 import unittest
-import psflib
+from ... import psflib
 
 class TestByte(unittest.TestCase):
 	

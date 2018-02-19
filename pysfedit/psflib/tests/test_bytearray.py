@@ -23,7 +23,7 @@ This module tests the ByteArray class of the psflib.
 """
 
 import unittest
-import psflib
+from ... import psflib
 
 BITS = [1,1,1,1,1,1,1,1,0,0,0,0,0,0,0,0]   
 

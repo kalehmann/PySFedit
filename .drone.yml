@@ -4,4 +4,4 @@ pipeline:
   tests:
     image: arm32v7/python:3.4-slim
     commands:
-      - python3 -m unittest tests/test*.py
+      - python3 -m unittest

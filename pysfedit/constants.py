@@ -23,9 +23,16 @@
 This module contains some constants like paths to ressources.
 """
 
-from os.path import dirname
+from os.path import dirname, abspath
+import inspect
+from pathlib import Path
 
-PROJECT_ROOT = dirname(__file__) + '/'
+directory = Path(dirname(
+	abspath(inspect.getfile(inspect.currentframe()))
+	)
+)
+
+PROJECT_ROOT = directory.parent.__str__() + '/'
 RES_DIR = PROJECT_ROOT + 'res/'
 IMG_DIR = RES_DIR + 'img/'
 LOCALE_DIR = RES_DIR + 'locale/'

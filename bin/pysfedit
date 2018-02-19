@@ -19,32 +19,25 @@
 #	long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
 
 """
-This module tests the AsmParser of the psflib.
+PySFedit is an editor for pc screen fonts written in python 3.
 """
 
-import unittest
-import psflib
+try:
+	import pysfedit
+except ImportError:
+	# Module is not installed.
+	import inspect
+	import os
+	from pathlib import Path
+	directory = Path(
+		os.path.dirname(
+			os.path.abspath(inspect.getfile(inspect.currentframe()))
+		)
+	)
+	import sys
+	sys.path.insert(0, str(directory.parent))
+	import pysfedit
 
-TEST_STRING_SIMPLE = """
-test1:  db 0x10, 0x02, 0o30, 30o, 0q30, 030q
-		db 10, 0b10
-test2: db 0x03, 0x04
-test_words2:
-test_words: dw 0xff, 65535
-"""
 
-class TestAsmParser(unittest.TestCase):
-	
-	def test_standard(self):
-		ap = psflib.AsmParser(TEST_STRING_SIMPLE)
-		self.assertEqual(ap.test1.to_asm(),
-			'0x10, 0x02, 0x18, 0x18, 0x18, 0x18, 0x0a, 0x02\n')
-		self.assertEqual(ap.test2.to_asm(), '0x03, 0x04\n')
-		self.assertEqual(ap.test_words.to_asm(),
-			'0xff, 0x00, 0xff, 0xff\n')
-		self.assertEqual(ap.test_words2.to_asm(),
-			'0xff, 0x00, 0xff, 0xff\n')
-		self.assertTrue(ap.has_label('test2'))
-		self.assertFalse(ap.has_label('test3'))
-		
-		
+if __name__ == "__main__":
+	pysfedit.main()

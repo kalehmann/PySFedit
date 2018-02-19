@@ -30,10 +30,10 @@ from gi.repository import GLib
 import gettext
 import locale
 
-import psflib
-import font_editor
-import constants as c
-from preferences_window import PreferencesWindow
+from . import psflib
+from . import font_editor
+from . import constants as c
+from .preferences_window import PreferencesWindow
 
 translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
 	fallback=True)
@@ -737,9 +737,8 @@ class PySFeditWindow(Gtk.Window):
 		if self.content.import_font() and not self.has_font:
 			self.button_import.destroy()
 			self.button_new.destroy()
-			
 
-if __name__ == "__main__":
+def main():
 	main = GLib.MainLoop()
 	window = PySFeditWindow(main)
 	window.show_all()
@@ -747,3 +746,6 @@ if __name__ == "__main__":
 		main.run()
 	except KeyboardInterrupt:
 		pass
+		
+if __name__ == "__main__":
+	main()	

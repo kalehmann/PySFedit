@@ -27,10 +27,10 @@ import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
-import constants as c
+from . import constants as c
 
-from glyph_editor import GlyphEditorAttributes
-from font_editor import GlyphSelectorContext
+from .glyph_editor import GlyphEditorAttributes
+from .font_editor import GlyphSelectorContext
 
 class PreferencesWindow(Gtk.Window):
 	"""The main preferences window.

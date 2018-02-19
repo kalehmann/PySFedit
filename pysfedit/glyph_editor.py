@@ -34,7 +34,7 @@ from gi.repository import Gdk
 from gi.repository import GLib
 from gi.repository import GdkPixbuf
 from PIL import Image, ImageDraw
-import constants as c
+from . import constants as c
 
 class GlyphEditorAttributes(object):
 	"""This class represents the attributes of a GlyphEditor, for
