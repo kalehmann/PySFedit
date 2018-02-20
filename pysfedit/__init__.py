@@ -22,6 +22,8 @@
 PySFedit is an editor for pc screen fonts written in python 3.
 """
 
+__version__ = '1.0.0'
+
 import gi
 gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk

@@ -4,3 +4,7 @@
 *.psf
 *.psf.gz
 .git
+dist
+build
+*.egg-info
+*.geany
