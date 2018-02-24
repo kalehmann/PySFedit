@@ -70,7 +70,7 @@ class GlyphEditorPage(Gtk.Grid):
 		Gtk.Grid.__init__(self)
 		self.set_column_spacing(10)
 	
-		self.__storage = c.get_storage(GlyphEditorAttributes)
+		self.__storage = c.Storage.get(GlyphEditorAttributes)
 	
 		label_seperation_lines = Gtk.Label.new_with_mnemonic(
 			_('Draw seperation _lines:'))
@@ -155,7 +155,7 @@ class GlyphSelectorPage(Gtk.Grid):
 		Gtk.Grid.__init__(self)
 		self.set_column_spacing(10)
 		
-		self.__storage = c.get_storage(GlyphSelectorContext)
+		self.__storage = c.Storage.get(GlyphSelectorContext)
 		
 		label_preview_size = Gtk.Label.new_with_mnemonic(
 			_("Glyph _preview size:"))

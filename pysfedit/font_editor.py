@@ -59,7 +59,7 @@ class GlyphSelectorContext(object):
 		self.__font = font
 		self.__parent_glyph_selector = glyph_selector
 
-		self.__storage = c.get_storage(self)
+		self.__storage = c.Storage.get(self)
 		self.__storage.register_changed_callback(
 			'show_glyph_index',
 			self.__on_show_glyph_index_changed
@@ -819,7 +819,7 @@ class FontEditor(Gtk.Box):
 		if not self.glyph_selector.get_children():
 			button.set_sensitive(False)
 			
-s = c.get_storage(GlyphSelectorContext)
+s = c.Storage.get(GlyphSelectorContext)
 s.register('glyph_preview_size', 
 	GlyphSelectorContext.DEFAULT_GLYPH_SELECTOR_PREVIEW_SIZE)
 s.register('show_glyph_index', 

@@ -51,7 +51,7 @@ class GlyphEditorAttributes(object):
 	
 	def __init__(self, glyph_editor):
 		self.__glyph_editor = glyph_editor
-		self.__storage = c.get_storage(self)
+		self.__storage = c.Storage.get(self)
 		self.__storage.register_changed_callback('pixel_size',
 			lambda key, value: self.__glyph_editor.make_size_request())
 		self.__storage.register_changed_callback('pixel_margin',
@@ -867,7 +867,7 @@ class GlyphEditor(Gtk.Widget):
 		self.set_realized(True)
 		window.set_background_pattern(None)
 
-s = c.get_storage(GlyphEditorAttributes)
+s = c.Storage.get(GlyphEditorAttributes)
 s.register('pixel_margin', GlyphEditorAttributes.DEFAULT_PIXEL_MARGIN)
 s.register(
 	'pixel_size',
