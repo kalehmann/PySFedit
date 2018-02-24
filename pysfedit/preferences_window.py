@@ -41,7 +41,6 @@ class PreferencesWindow(Gtk.Window):
 		Gtk.Window.__init__(self, title=_("Preferences"))
 		self.set_default_size(600, 450)
 		self.set_resizable(True)
-		self.set_has_resize_grip(True)
 		self.set_skip_taskbar_hint(True)
 		
 		self.notebook =Gtk.Notebook()
@@ -87,7 +86,14 @@ class GlyphEditorPage(Gtk.Grid):
 		label_pixel_size = Gtk.Label.new_with_mnemonic(
 			_('Pixel _size:'))
 		self.spin_pixel_size = Gtk.SpinButton()
-		adj = Gtk.Adjustment(10, 10, 32, 1, 10, 1)
+		adj = Gtk.Adjustment(
+			value=10,
+			lower=10,
+			upper=32,
+			step_increment=1,
+			page_increment=10,
+			page_size=1
+		)
 		self.spin_pixel_size.set_adjustment(adj)
 		self.spin_pixel_size.set_value(self.__storage['pixel_size'])
 		self.spin_pixel_size.connect('value-changed',
@@ -100,7 +106,14 @@ class GlyphEditorPage(Gtk.Grid):
 		label_pixel_margin = Gtk.Label.new_with_mnemonic(
 			_('Pixel _margin:'))
 		self.spin_pixel_margin = Gtk.SpinButton()
-		adj = Gtk.Adjustment(0, 0, 10, 1, 10, 1)
+		adj = Gtk.Adjustment(
+			value=0,
+			lower=0,
+			upper=10,
+			step_increment=1,
+			page_increment=10,
+			page_size=1
+		)
 		self.spin_pixel_margin.set_adjustment(adj)
 		self.spin_pixel_margin.set_value(self.__storage['pixel_margin'])
 		self.spin_pixel_margin.connect('value-changed',
@@ -160,7 +173,14 @@ class GlyphSelectorPage(Gtk.Grid):
 		label_preview_size = Gtk.Label.new_with_mnemonic(
 			_("Glyph _preview size:"))
 		self.spin_preview_size = Gtk.SpinButton()
-		adj = Gtk.Adjustment(24, 24, 64, 1, 10, 0)
+		adj = Gtk.Adjustment(
+			value=24,
+			lower=24,
+			upper=64,
+			step_increment=1,
+			page_increment=10, 
+			page_size=0
+		)
 		self.spin_preview_size.set_adjustment(adj)
 		self.spin_preview_size.set_value(
 			self.__storage['glyph_preview_size'])
