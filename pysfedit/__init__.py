@@ -161,23 +161,23 @@ class NewFontDialog(Gtk.Dialog):
 		box.pack_start(self.notebook, False, False, 0)
 		page1 = self.page1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
-		rb256 = Gtk.RadioButton.new_with_mnemonic(
+		self.rb256 = Gtk.RadioButton.new_with_mnemonic(
 			None, _("25_6 Glyphs"))
-		rb256.connect("toggled", self.__on_radion_btn_glyphs_changed,
+		self.rb256.connect("toggled", self.__on_radion_btn_glyphs_changed,
 			256)
-		hbox.pack_start(rb256, False, False, 0)
-		rb512 = Gtk.RadioButton.new_with_mnemonic_from_widget(
-			rb256, _("_512 Glyphs"))
-		rb512.connect("toggled", self.__on_radion_btn_glyphs_changed,
+		hbox.pack_start(self.rb256, False, False, 0)
+		self.rb512 = Gtk.RadioButton.new_with_mnemonic_from_widget(
+			self.rb256, _("_512 Glyphs"))
+		self.rb512.connect("toggled", self.__on_radion_btn_glyphs_changed,
 			512)
-		hbox.pack_start(rb512, False, False, 0)
+		hbox.pack_start(self.rb512, False, False, 0)
 		page1.pack_start(hbox, False, False, 0)
 		
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		l_unicode_table = Gtk.Label.new_with_mnemonic(
 			_("Include _unicode table:"))
 		hbox.pack_start(l_unicode_table, False, False, 0)
-		check_button = Gtk.CheckButton()
+		self.btn_unicode_psf1 = check_button = Gtk.CheckButton()
 		check_button.connect("toggled", self.__on_btn_uni_table_toggled)
 		l_unicode_table.set_mnemonic_widget(check_button)
 		hbox.pack_start(check_button, False, False, 0)
@@ -191,7 +191,7 @@ class NewFontDialog(Gtk.Dialog):
 		l_unicode_table = Gtk.Label.new_with_mnemonic(
 			_("Include _unicode table:"))
 		hbox.pack_start(l_unicode_table, False, False, 0)
-		check_button = Gtk.CheckButton()
+		self.btn_unicode_psf2 = check_button = Gtk.CheckButton()
 		check_button.connect("toggled", self.__on_btn_uni_table_toggled)
 		l_unicode_table.set_mnemonic_widget(check_button)
 		hbox.pack_start(check_button, False, False, 0)
