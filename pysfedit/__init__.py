@@ -111,9 +111,13 @@ class NewFontDialog(Gtk.Dialog):
 		parent (Gtk.Widget): The parent widget creating this dialog.	
 	"""
 	def __init__(self, parent):
-		Gtk.Dialog.__init__(self, _("New Font"), parent, 0,
-			(Gtk.STOCK_OK, Gtk.ResponseType.OK,
-			 Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL))
+		super(NewFontDialog, self).__init__(transient_for=parent)
+		self.set_title(_("New Font"))
+		self.add_buttons(
+			Gtk.STOCK_OK, Gtk.ResponseType.OK,
+			Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL
+		)
+		
 		self.set_default_size(200,200)
 		
 		self.psf_version = psflib.PSF1_VERSION
@@ -152,10 +156,10 @@ class NewFontDialog(Gtk.Dialog):
 		
 		box.pack_start(size_wrapper, False, False, 5)
 		
-		notebook = Gtk.Notebook()
-		notebook.connect("switch-page", self.__on_psf_version_changed)
-		box.pack_start(notebook, False, False, 0)
-		page1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		self.notebook = Gtk.Notebook()
+		self.notebook.connect("switch-page", self.__on_psf_version_changed)
+		box.pack_start(self.notebook, False, False, 0)
+		page1 = self.page1 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		rb256 = Gtk.RadioButton.new_with_mnemonic(
 			None, _("25_6 Glyphs"))
@@ -179,10 +183,10 @@ class NewFontDialog(Gtk.Dialog):
 		hbox.pack_start(check_button, False, False, 0)
 		page1.pack_start(hbox, False, False, 0)
 		
-		notebook.append_page(
+		self.notebook.append_page(
 			page1, Gtk.Label.new_with_mnemonic(_("_PSF")))
 		
-		page2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
+		page2 = self.page2 = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		hbox = Gtk.Box(orientation=Gtk.Orientation.HORIZONTAL)
 		l_unicode_table = Gtk.Label.new_with_mnemonic(
 			_("Include _unicode table:"))
@@ -193,7 +197,7 @@ class NewFontDialog(Gtk.Dialog):
 		hbox.pack_start(check_button, False, False, 0)
 		page2.pack_start(hbox, False, False, 0)
 		
-		notebook.append_page(
+		self.notebook.append_page(
 			page2, Gtk.Label.new_with_mnemonic(_("PSF_2")))
 
 		self.show_all()
