@@ -43,7 +43,7 @@ class TextRow(Gtk.ListBoxRow):
 		self.box = Gtk.Box()
 		self.add(self.box)
 		
-		self.__label = Gtk.Label(text)
+		self.__label = Gtk.Label(label=text)
 		self.box.pack_start(self.__label, True, True, 0)
 		
 	def get_text(self):
@@ -86,10 +86,11 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 			selector
 	"""
 	def __init__(self, parent, description, context):
-		Gtk.Dialog.__init__(self, _("Edit unicode description"), parent,
-			0, (Gtk.STOCK_OK, Gtk.ResponseType.OK, Gtk.STOCK_CANCEL,
-			Gtk.ResponseType.CANCEL))
+		Gtk.Dialog.__init__(self, transient_for=parent)
 		self.set_default_size(200,200)
+		self.set_title(_("Edit unicode description"))
+		self.add_buttons(Gtk.STOCK_OK, Gtk.ResponseType.OK, Gtk.STOCK_CANCEL,
+			Gtk.ResponseType.CANCEL)
 		self.connect("response", self.__on_response)
 		
 		self.__description = psflib.UnicodeDescription()
@@ -106,13 +107,13 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 		box_buttons = Gtk.Box()
 		descriptions_wrapper.pack_start(box_buttons, False, False, 0)
 		# Button add
-		self.btn_add = Gtk.Button(None,
-			image=Gtk.Image(stock=Gtk.STOCK_ADD))
+		self.btn_add = Gtk.Button.new_from_icon_name(
+			'list-add', Gtk.IconSize.BUTTON)
 		self.btn_add.connect("clicked", self.__on_btn_add_clicked)
 		box_buttons.pack_start(self.btn_add, False, False, 0)
 		# Button remove
-		self.btn_remove = Gtk.Button(None,
-			image=Gtk.Image(stock=Gtk.STOCK_REMOVE))
+		self.btn_remove = Gtk.Button.new_from_icon_name(
+			'list-remove', Gtk.IconSize.BUTTON)
 		self.btn_remove.connect("clicked", self.__on_btn_remove_clicked)
 		self.btn_remove.set_sensitive(
 			bool(len(description.get_unicode_values())) or
@@ -168,7 +169,9 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
 		self.label_error = Gtk.Label()
 		editor_wrapper.pack_start(self.label_error, True, True, 0)
 		# Button for saving
-		self.btn_save = Gtk.Button.new_from_stock(Gtk.STOCK_SAVE)
+		self.btn_save = Gtk.Button.new_with_label(_("Save"))
+		self.btn_save.set_image(Gtk.Image.new_from_icon_name(
+			'document-save', Gtk.IconSize.BUTTON))
 		self.btn_save.set_always_show_image(True)
 		self.btn_save.connect("clicked", self.__on_btn_save_clicked)
 		editor_wrapper.pack_start(self.btn_save, True, True, 0)
