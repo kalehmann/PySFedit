@@ -1714,7 +1714,7 @@ class UnicodeDescription(object):
 				from the description		
 		"""
 		if sequence in self.__sequences:
-			self.sequences.remove(sequence)
+			self.__sequences.remove(sequence)
 		
 	def get_sequences(self):
 		"""Get a list with all sequences from the description
