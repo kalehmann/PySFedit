@@ -1733,3 +1733,131 @@ class UnicodeDescription(object):
 		"""
 		self.__unicode_values = other.get_unicode_values()[:]
 		self.__sequences = other.get_sequences()[:]
+        
+class UnicodeValue(object):
+    """This class represents a single unicode value.
+    
+    Args:
+        value (int): The codepoint of the unicode value
+    """
+    def __init__(self, value):
+        self.__value = value
+
+    @classmethod
+    def new_from_string(cls, string):
+        """Use this method to create an UnicodeValue instance from a
+        string.
+        
+        Args:
+            string (str): The string to create the UnicodeValue instance
+                          from.
+                          
+        Returns:
+            UnicodeValue: The UnicodeValue instance from the string.        
+        """
+        return cls(ord(string))
+    
+    def get_value(self):
+        """Get the codepoint of the unicode value.
+        
+        Returns:
+            int: The codepoint of the unicode value.        
+        """
+        return self.__value
+
+    def set_value(self, value):
+        """Set the codepoint of the unicode value.
+        
+        Args:
+            value (int): The codepoint of the unicode value.        
+        """
+        self.__value = value
+        
+    def get_printable(self):
+        """Get a printable representation of the unicode value.
+        
+        This method returns a char from the unicode value.
+        
+        Returns:
+            str: A string with the char from the unicode value.
+        """
+        return chr(self.__value)
+    
+    def __int__(self):
+        """Get an integer representation of the unicode value (its 
+        codepoint)
+        
+        Returns:
+            int: The codepoint of the unicode value        
+        """
+        return self.get_value()
+        
+    def __str__(self):
+        """Get a printable representation of the unicode value.
+        
+        This method returns a char from the unicode value.
+        
+        Returns:
+            str: A string with the char from the unicode value.
+        """
+        return self.get_printable()
+        
+class SequenceTooShortException(Exception):
+    """Exception for trying to create an unicode sequence with less than
+    two values.    
+    """
+    MESSAGE = ("Error, an unicode sequence should at least consist of "
+               "2 unicode values"
+               )
+    
+    def __init__(self):
+        super().__init__(self, self.MESSAGE)
+
+class UnicodeSequence(object):
+    """This class represents a sequence of combining unicode values.
+    
+    Args:
+        values (list): A list of either the codepoints of the unicode
+                       values or UnicodeValue instances.    
+    """
+    def __init__(self, values):
+        self.__values = []
+        self.set_values(values)
+        
+    def get_values(self):
+        """Get the combining unicode values of the sequence.
+        
+        Returns:
+            list: A list of UnicodeValues
+        """
+        return self.__values
+        
+    def set_values(self, values):
+        """Set the combining unicode values of the sequence.
+        
+        Args:
+            values (list): A list of either the codepoints of the unicode
+                           values or UnicodeValue instances.    
+        """
+        if len(values) < 2:
+            
+            raise SequenceTooShortException()
+        self.__values.clear()
+        for value in values:
+            if type(value) == UnicodeValue:
+                values.append(value)
+                
+                continue
+            values.append(UnicodeValue(value))
+
+    def get_printable(self):
+        """Get a string representation of the sequence.
+        
+        Returns:
+            str: The string representation of the sequence.
+        """
+        _str = u""
+        for value in self.__values:
+            _str += str(value)
+        
+        return _str
