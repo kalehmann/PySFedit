@@ -39,7 +39,7 @@ class SeparatorRow(Gtk.ListBoxRow):
 class TextRow(Gtk.ListBoxRow):
     TYPE_SINGLE_VALUE = 0
     TYPE_SEQUENCE = 1
-    """A simple row for a list box containing text.
+    """A simple row for a list box containing text.a
     
     Args:
         text (str): The text the row should contain
@@ -49,32 +49,18 @@ class TextRow(Gtk.ListBoxRow):
         index (int): The index of the content of the row in the
                  unicode description
     """
-    def __init__(self, text, _type, index):
+    def __init__(self, payload):
         Gtk.ListBoxRow.__init__(self)
-        self.__text = text
         self.box = Gtk.Box()
         self.add(self.box)
         
-        self.__label = Gtk.Label(label=text)
-        self.box.pack_start(self.__label, True, True, 0)
+        self.payload = payload
+        self.label = Gtk.Label(label=str(payload))
+        self.box.pack_start(self.label, True, True, 0)
+
+    def update_label(self):
+        self.label.set_text(str(self.payload))
         
-    def get_text(self):
-        """Get the text the row contains.
-        
-        Returns:
-            str: The text the row contains
-        """
-        
-        return self.__text
-        
-    def set_text(self, text):
-        """Set the text the row contains.
-        
-        Args:
-            text (str): The text the row contains.
-        """
-        self.__text = text
-        self.__label.set_text(text)
 
 class EditUnicodeDescriptionDialog(Gtk.Dialog):
     
@@ -97,7 +83,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         context (GlyphSelectorContext): The context of the parent glyph
             selector
     """
-    def __init__(self, parent, description, context):
+    def __init__(self, parent, description, context):        
         Gtk.Dialog.__init__(self, transient_for=parent)
         self.set_default_size(200,200)
         self.set_title(_("Edit unicode description"))
@@ -105,11 +91,11 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
             Gtk.ResponseType.CANCEL)
         self.connect("response", self.__on_response)
         
-        self.__description = psflib.UnicodeDescription()
-        self.__description.copy(description)
-        self.__orig_desc = description
+        self.description = psflib.UnicodeDescription()
+        self.old_description = description
+        self.__copy_desc(description, self.description)
         
-        self.__context = context
+        self.context = context
         
         box = Gtk.Box()
         self.get_content_area().pack_start(box, True, True, 0)
@@ -128,8 +114,8 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
             'list-remove', Gtk.IconSize.BUTTON)
         self.btn_remove.connect("clicked", self.__on_btn_remove_clicked)
         self.btn_remove.set_sensitive(
-            bool(len(description.get_unicode_values())) or
-            bool(len(description.get_sequences()))
+            bool(len(description.unicode_values)) or
+            bool(len(description.sequences))
         )
         box_buttons.pack_start(self.btn_remove, False, False, 0)
         # Button up
@@ -152,20 +138,15 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         descriptions_wrapper.pack_start(scrolled_window, True, True, 0)
         box.pack_start(descriptions_wrapper, False, False, 0)
         
-        values = description.get_unicode_values()
-        sequences = description.get_sequences()
-        
-        for value, i in zip(values, range(len(values))):
-            row = TextRow(chr(value), TextRow.TYPE_SINGLE_VALUE, i)
+        values = self.description.unicode_values
+        sequences = self.description.sequences
+        for value in values:
+            row = TextRow(value)
             self.lb_descriptions.add(row)
         if sequences:
             self.lb_descriptions.add(SeparatorRow())
-        for sequence, i in zip(sequences, range(len(sequences))):
-            row = TextRow(
-                psflib.get_str_form_unicode_sequence(sequence),
-                TextRow.TYPE_SEQUENCE,
-                i
-            )
+        for sequence in sequences:
+            row = TextRow(sequence)
             self.lb_descriptions.add(row)
                     
         editor_wrapper = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
@@ -203,7 +184,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         editor_wrapper.pack_start(self.btn_save, True, True, 0)
         
         # Select the first row
-        if description.get_unicode_values():
+        if description.unicode_values:
             first_row = self.lb_descriptions.get_row_at_index(0)
             self.lb_descriptions.select_row(first_row)
         
@@ -211,8 +192,15 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
             self.__on_nb_editor_switch_page)
         
         self.show_all()
-    
-    def __update_description(self, old, new):
+
+    def __copy_desc(self, first, second):
+        values = first.codepoints
+        seqs = first.seq_codepoints
+
+        second.unicode_values = [psflib.UnicodeValue(v) for v in values]
+        second.sequences = [psflib.UnicodeSequence(s) for s in seqs]
+        
+    def __update_description(self, row, user_input):
         """Update a value or sequence of the unicode description.
         
         Args:
@@ -221,23 +209,38 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
             new: A string/integer or list containg the new unicode value
                 or sequence     
         """
-        if isinstance(old, str):
-            self.__description.remove_unicode_value(ord(old))
-        elif isinstance(old, int):
-            self.__description.remove_unicode_value(old)
-        elif len(old) == 1:
-            self.__description.remove_unicode_value(old[0])
-        else:
-            self.__description.remove_sequence(old)
+        payload = row.payload
+        if type(payload) == psflib.UnicodeValue:
+            if isinstance(user_input, str):
+                payload.value = ord(user_input)
+            elif isinstance(user_input, int):
+                payload.value = user_input
+            elif len(user_input) == 1:
+                payload.value = user_input[0]
+            else:
+                self.description.unicode_values.remove(payload)
+                payload = psflib.UnicodeSequence([psflib.UnicodeValue(v) for v in user_input])
+                row.payload = payload
+            row.update_label()
+            return
         
-        if isinstance(new, str):
-            self.__description.add_unicode_value(ord(new))
-        elif isinstance(new, int):
-            self.__description.add_unicode_value(new)
-        elif len(new) == 1:
-            self.__description.add_unicode_value(new[0])
-        else:
-            self.__description.add_sequence(new)
+        if not isinstance(user_input, int) or isinstance(user_input, str) or len(user_input) == 1:
+            payload.values = [psflib.UnicodeValue(v) for v in user_input]
+            row.update_label()
+            
+            return
+        
+        self.__description.get_sequences().remove(payload)
+        payload = psflib.UnicodeValue(0)
+        row.payload = payload
+        
+        if isinstance(user_input, str):
+            payload.value = ord(user_input)
+        elif isinstance(user_input, int):
+            payload.value = user_input
+        elif len(user_input) == 1:
+            payload.value = user_input[0]
+        row.update_label()
 
     
     def __on_btn_save_clicked(self, button):
@@ -253,14 +256,11 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
             
             return
 
-        current = self.__get_current_values()
-        
         if (self.nb_editor.get_current_page() == self.PAGE_HR):
             user_input = self.entry_unicode.get_text()  
             if len(user_input) == 1:
                 self.label_error.set_markup('')
-                self.__update_description(current, user_input)
-                row.set_text(user_input)
+                self.__update_description(row, user_input)
                 self.entry_values.set_text('\\u%04x' % ord(user_input))
             
                 return
@@ -287,7 +287,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
                 for m in self.REGEX_VALUES.findall(user_input)]
         
             if (len(values) > 1 and
-                not self.__context.get_allow_entering_sequences()):
+                not self.context.get_allow_entering_sequences()):
                 
                 self.label_error.set_markup(
                     '<span fgcolor="#FF0000">' + 
@@ -298,10 +298,9 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
                 return
         
             self.label_error.set_markup('')
-            self.__update_description(current, values)
+            self.__update_description(row, values)
             row = self.lb_descriptions.get_selected_row()
             hr = psflib.get_str_form_unicode_sequence(values)
-            row.set_text(hr)
             self.entry_unicode.set_text(hr)
                 
     def __on_btn_add_clicked(self, button):
@@ -311,13 +310,17 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         Args:
             button (Gtk.Button): The add button     
         """
+        values = []
+        for value in self.description.unicode_values:
+            values.append(int(value))
+        
         i = 0
-        while i in self.__description.get_unicode_values():
+        while i in values:
             i += 1
-        self.__description.add_unicode_value(i)
-        row = TextRow(chr(i), TextRow.TYPE_SINGLE_VALUE,
-                      len(self.__description.get_unicode_values()) - 1)
-        self.lb_descriptions.add(row)
+        value = psflib.UnicodeValue(i)
+        self.description.add_unicode_value(value)
+        row = TextRow(value)
+        self.lb_descriptions.insert(row, 0)
         self.lb_descriptions.show_all()
         self.lb_descriptions.select_row(row)
         self.entry_unicode.set_sensitive(True)
@@ -377,31 +380,14 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         if not row:
             
             return
-        index = row.get_index()
-        values = self.__description.get_unicode_values()
-        sequences = self.__description.get_sequences()
-        if index < len(values):
-            self.__description.remove_unicode_value(values[index])
-        else:
-            index -= len(values)
-            self.__description.remove_sequence(sequences[index])
-            
-    def __get_current_values(self):
-        """Get the unicode value/sequence referenced by the currently
-        selected row
+        payload= row.payload
         
-        Returns:
-            list: A list containing one or more unicode values      
-        """
-        row = self.lb_descriptions.get_selected_row()
-        index = row.get_index()
-        values = self.__description.get_unicode_values()
+        if type(payload) == psflib.UnicodeValue:
+            self.description.get_unicode_values().remove(payload)
+            return
+            
         sequences = self.__description.get_sequences()
-        if index < len(values):
-            return [values[index]]
-        else:
-            index -= len(values)
-            return sequences[index]
+        sequences.remove(payload)
         
     def __on_row_selected(self, listbox, row):
         """This method gets called when the selected row in the listbox
@@ -412,18 +398,16 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
             row (Gtk.ListBoxRow): The newly selected row        
         """
         if not row:
-            
             return
         
-        values = self.__get_current_values()
-        
-        printable = psflib.get_str_form_unicode_sequence(values)
+        payload = row.payload
+        values = [int(payload)] if type(payload) == psflib.UnicodeValue else [int(v) for v in payload.get_values()]
         v = ''
         for value in values:
             v += '\\u%04x, ' % value
-        v = v[:-2]
+        v = v[:-2] # Remove trailing comma
         
-        self.entry_unicode.set_text(printable)
+        self.entry_unicode.set_text(str(payload))
         self.entry_values.set_text(v)
         self.label_error.set_markup('')
 
@@ -438,5 +422,4 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         if response_id != Gtk.ResponseType.OK:
         
             return
-        self.__orig_desc.copy(self.__description)
-        
+        self.__copy_desc(self.description, self.old_description)

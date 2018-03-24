@@ -4,7 +4,7 @@ gi.require_version("Gtk", "3.0")
 from gi.repository import Gtk
 
 from . import MockedParent
-from ..psflib import UnicodeDescription
+from ..psflib import UnicodeDescription, UnicodeValue, UnicodeSequence
 from ..edit_description_dialog import EditUnicodeDescriptionDialog
 
 class EditDescriptionDialogTest(unittest.TestCase):
@@ -27,8 +27,13 @@ class EditDescriptionDialogTest(unittest.TestCase):
 	def setUp(self):
 		self.description = desc = UnicodeDescription()
 		self.context = self.MockedGlyphSelectorContext()
-		desc.add_unicode_value(0x41)
-		desc.add_sequence((0x30a, 0x41))
+		desc.add_unicode_value(UnicodeValue(0x41))
+		desc.add_sequence(
+            UnicodeSequence([
+                UnicodeValue(0x30a),
+                UnicodeValue(0x41)
+            ])
+        )
 		self.dialog = EditUnicodeDescriptionDialog(
 			MockedParent(), desc, self.context)
 		
@@ -38,9 +43,11 @@ class EditDescriptionDialogTest(unittest.TestCase):
 		self.dialog.btn_save.clicked()
 		self.dialog.response(Gtk.ResponseType.OK)
 		
-		self.assertIn(0x41, self.description.get_unicode_values())
-		self.assertIn(ord('a'), self.description.get_unicode_values())
-		self.assertIn((0x30a, 0x41), self.description.get_sequences())
+		self.assertIn(0x41, self.description.codepoints)
+		self.assertIn(ord('a'), self.description.codepoints)
+		self.assertIn([0x30a, 0x41],
+            [[int(v) for v in seq.values]
+                for seq in self.description.sequences])
 				
 	def tearDown(self):
 		self.dialog.destroy()
