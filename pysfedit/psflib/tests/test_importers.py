@@ -76,7 +76,7 @@ class ImportersTest(unittest.TestCase):
 					self.assertEqual(real_glyph.to_bytearray(),
 									 glyph.bitmap)
 					self.assertEqual(
-						list(description.get_unicode_values()),
+						list(description.codepoints),
 						list(glyph.unicode_values)
 					)
 					
@@ -104,21 +104,21 @@ class ImportersTest(unittest.TestCase):
 					self.assertEqual(real_glyph.to_bytearray(),
 									 glyph.bitmap)
 					self.assertEqual(
-						list(description.get_unicode_values()),
+						list(description.codepoints),
 						list(glyph.unicode_values)
 					)
 					if glyph.sequences:
 						self.assertEqual(
 							len(glyph.sequences),
-							len(description.get_sequences())
+							len(description.sequences)
 						)
 						for test_seq, real_seq in zip(
 								glyph.sequences,
-								description.get_sequences()):
+								description.sequences):
 							self.assertEqual(
-								list(test_seq), list(real_seq)
+								list(test_seq), real_seq.codepoints
 							)
-
+                            
 	def test_importing_psf2_simple(self):
 		to_test = [
 			[psflib.AsmImporter, get_font_psf2_simple_asm()],
@@ -167,7 +167,7 @@ class ImportersTest(unittest.TestCase):
 					self.assertEqual(real_glyph.to_bytearray(),
 									 glyph.bitmap)
 					self.assertEqual(
-						list(description.get_unicode_values()),
+						list(description.codepoints),
 						list(glyph.unicode_values)
 					)
 	
@@ -195,17 +195,17 @@ class ImportersTest(unittest.TestCase):
 					self.assertEqual(real_glyph.to_bytearray(),
 									 glyph.bitmap)
 					self.assertEqual(
-						list(description.get_unicode_values()),
+						list(description.codepoints),
 						list(glyph.unicode_values)
 					)
 					if glyph.sequences:
 						self.assertEqual(
 							len(glyph.sequences),
-							len(description.get_sequences())
+							len(description.sequences)
 						)
 						for test_seq, real_seq in zip(
 								glyph.sequences,
-								description.get_sequences()):
+								description.sequences):
 							self.assertEqual(
-								list(test_seq), list(real_seq)
+								real_seq.codepoints, list(test_seq)
 							)

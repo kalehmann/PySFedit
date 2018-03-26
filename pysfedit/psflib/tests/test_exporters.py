@@ -72,7 +72,7 @@ class ExportersTest(unittest.TestCase):
 					
 					real_desc = font.get_unicode_description(i)
 					for uv in glyph.unicode_values:
-						real_desc.add_unicode_value(uv)
+						real_desc.add_unicode_value(psflib.UnicodeValue(uv))
 				
 				data = exporter(font).export_to_data()
 				self.assertEqual(data, test_font.get_data())
@@ -104,7 +104,11 @@ class ExportersTest(unittest.TestCase):
 						
 						continue
 					for seq in glyph.sequences:
-						real_desc.add_sequence(seq)
+						real_desc.add_sequence(
+                            psflib.UnicodeSequence(
+                                [psflib.UnicodeValue(v) for v in seq]
+                            )
+                        )
 				
 				data = exporter(font).export_to_data()
 				self.assertEqual(data, test_font.get_data())
@@ -148,7 +152,7 @@ class ExportersTest(unittest.TestCase):
 					real_glyph, real_desc = font.add_glyph()
 					real_glyph.set_data_from_bytes(glyph.bitmap)
 					for uv in glyph.unicode_values:
-						real_desc.add_unicode_value(uv)
+						real_desc.add_unicode_value(psflib.UnicodeValue(uv))
 				
 				data = exporter(font).export_to_data()
 				self.assertEqual(data, test_font.get_data())
@@ -172,12 +176,13 @@ class ExportersTest(unittest.TestCase):
 					real_glyph, real_desc = font.add_glyph()
 					real_glyph.set_data_from_bytes(glyph.bitmap)
 					for uv in glyph.unicode_values:
-						real_desc.add_unicode_value(uv)
+						real_desc.add_unicode_value(psflib.UnicodeValue(uv))
 					if not glyph.sequences:
 						
 						continue
 					for seq in glyph.sequences:
-						real_desc.add_sequence(seq)
+						real_desc.add_sequence(
+                            psflib.UnicodeSequence(seq))
 				
 				data = exporter(font).export_to_data()
 				self.assertEqual(data, test_font.get_data())
