@@ -492,7 +492,7 @@ class GlyphEditorContext(object):
 		"""
 		width, height = size = self.__glyph_size
 		data = self.__pixels
-				
+	     		
 		img = Image.new('RGBA', size, (0,0,0,0))
 		draw = ImageDraw.Draw(img)
 		for y, row in zip(range(height), data):

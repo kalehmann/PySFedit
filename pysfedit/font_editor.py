@@ -152,7 +152,7 @@ class GlyphSelectorContext(object):
 		row.destroy()
 		self.__font.remove_glyph(index)
 	
-		if self.__show_glyph_index:
+		if self.get_show_glyph_index():
 			self.update_rows()
 	
 	def update_rows(self):
@@ -626,8 +626,8 @@ class FontEditor(Gtk.Box):
 		glyph_editor_wrapper.pack_start(button_wrapper, False, True, 1)
 		
 		# ButtonAdd
-		self.button_add = Gtk.Button(None,
-				image=Gtk.Image(stock=Gtk.STOCK_ADD))
+		self.button_add = Gtk.Button.new_from_icon_name(
+                        'list-add', Gtk.IconSize.BUTTON)
 		self.button_add.connect("clicked", self.__on_btn_add_clicked)
 		self.button_add.set_sensitive(
 			header.version_psf != psflib.PSF1_VERSION
@@ -635,8 +635,8 @@ class FontEditor(Gtk.Box):
 		button_wrapper.pack_start(self.button_add, True, True, 1)
 		
 		# ButtonRemove
-		self.button_remove = Gtk.Button(None,
-				image=Gtk.Image(stock=Gtk.STOCK_REMOVE))
+		self.button_remove = Gtk.Button.new_from_icon_name(
+                        'list-remove', Gtk.IconSize.BUTTON)
 		self.button_remove.set_sensitive(
 			bool(len(font)) and
 			header.version_psf != psflib.PSF1_VERSION
