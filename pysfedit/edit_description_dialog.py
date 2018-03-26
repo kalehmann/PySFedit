@@ -131,7 +131,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         scrolled_window.set_min_content_width(100)
         self.lb_descriptions = Gtk.ListBox()
         self.lb_descriptions.set_selection_mode(
-            Gtk.SelectionMode.BROWSE)
+            Gtk.SelectionMode.SINGLE)
         self.lb_descriptions.connect('row-selected',
             self.__on_row_selected)
         scrolled_window.add(self.lb_descriptions)
@@ -143,8 +143,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         for value in values:
             row = TextRow(value)
             self.lb_descriptions.add(row)
-        if sequences:
-            self.lb_descriptions.add(SeparatorRow())
+        self.lb_descriptions.add(SeparatorRow())
         for sequence in sequences:
             row = TextRow(sequence)
             self.lb_descriptions.add(row)
@@ -383,11 +382,10 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         payload= row.payload
         
         if type(payload) == psflib.UnicodeValue:
-            self.description.get_unicode_values().remove(payload)
+            self.description.values.remove(payload)
             return
             
-        sequences = self.__description.get_sequences()
-        sequences.remove(payload)
+        self.description.sequences.remove(payload)
         
     def __on_row_selected(self, listbox, row):
         """This method gets called when the selected row in the listbox
@@ -400,8 +398,23 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         if not row:
             return
         
+        if type(row) == SeparatorRow:
+            index = row.get_index()
+            if index == 0:
+                new_row = self.lb_descriptions.get_row_at_index(1)
+                if new_row:
+                    self.lb_descriptions.select_row(new_row)
+                else:
+                    self.lb_descriptions.unselect_row(row)
+            else:
+                new_row = self.lb_descriptions.get_row_at_index(index-1)
+                self.lb_descriptions.select_row(new_row)
+            return
+        
         payload = row.payload
-        values = [int(payload)] if type(payload) == psflib.UnicodeValue else [int(v) for v in payload.get_values()]
+        values = ([int(payload)]
+                    if type(payload) == psflib.UnicodeValue
+                    else [int(v) for v in payload.get_values()])
         v = ''
         for value in values:
             v += '\\u%04x, ' % value
