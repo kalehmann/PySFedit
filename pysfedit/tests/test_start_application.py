@@ -19,9 +19,6 @@ class StartApplicationTest(unittest.TestCase):
 	def test_start(self):
 		self.assertIsNotNone(self.window.button_new)
 		self.assertIsNotNone(self.window.button_import)
-	
-	def test_create_new_font(self):
-		self.window.button_new
 		
 	def tearDown(self):
 		self.window.destroy()
