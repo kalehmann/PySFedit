@@ -1,2 +1,1 @@
-recursive-include res *.png *.mo *.po
-include gpl-3.0.txt
+recursive-include pysfedit/res *.png *.mo *.po *.txt

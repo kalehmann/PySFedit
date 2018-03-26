@@ -31,13 +31,14 @@ from gi.repository import Gdk
 from gi.repository import GLib
 import gettext
 import locale
+import pkg_resources
 
 from . import psflib
 from . import font_editor
 from . import constants as c
 from .preferences_window import PreferencesWindow
 
-translation = gettext.translation('pysfedit', localedir=c.LOCALE_DIR,
+translation = gettext.translation('pysfedit', localedir=pkg_resources.resource_filename(__name__, "res/locale"),
 	fallback=True)
 translation.install()
 		
@@ -50,7 +51,7 @@ class AboutWindow(Gtk.Window):
 		self.box = Gtk.Box(orientation=Gtk.Orientation.VERTICAL)
 		top_box = Gtk.Box()
 		top_box.pack_start(
-			Gtk.Image.new_from_file(c.IMG_DIR + 'icon.png'), False,
+			Gtk.Image.new_from_pixbuf(c.get_pixbuf_from_file('res/img/icon.png')), False,
 			False, 5)
 		l = Gtk.Label()
 		l.set_markup(
@@ -96,8 +97,8 @@ class AboutWindow(Gtk.Window):
 		textview.set_editable(False)
 		textbuffer = textview.get_buffer()
 		scrolled_window.add(textview)
-		with open(c.PROJECT_ROOT + 'gpl-3.0.txt', "r") as f:
-			textbuffer.set_text(f.read())
+		with pkg_resources.resource_stream(__name__, 'res/txt/gpl-3.0.txt') as f:
+			textbuffer.set_text(f.read().decode("utf-8"))
 		self.notebook.append_page(
 			self.page2, Gtk.Label.new_with_mnemonic(_("_Licence")))
 		
@@ -454,7 +455,7 @@ class PySFeditWindow(Gtk.Window):
 		
 		self.set_default_size(500, 400)
 		self.connect("delete-event", self.__on_window_delete)
-		self.set_default_icon_from_file(c.IMG_DIR + "icon.png")
+		self.set_default_icon(c.get_pixbuf_from_file("res/img/icon.png"))
 
 		self.accel_group = Gtk.AccelGroup()
 		self.add_accel_group(self.accel_group)
