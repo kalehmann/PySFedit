@@ -334,6 +334,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         Args:
             button (Gtk.Button): The remove button      
         """
+        
         row = self.lb_descriptions.get_selected_row()
         if not row:
             
@@ -382,7 +383,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         payload= row.payload
         
         if type(payload) == psflib.UnicodeValue:
-            self.description.values.remove(payload)
+            self.description.unicode_values.remove(payload)
             return
             
         self.description.sequences.remove(payload)
@@ -414,7 +415,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         payload = row.payload
         values = ([int(payload)]
                     if type(payload) == psflib.UnicodeValue
-                    else [int(v) for v in payload.get_values()])
+                    else [int(v) for v in payload.values])
         v = ''
         for value in values:
             v += '\\u%04x, ' % value

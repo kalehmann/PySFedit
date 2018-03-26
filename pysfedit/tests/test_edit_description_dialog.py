@@ -48,7 +48,17 @@ class EditDescriptionDialogTest(unittest.TestCase):
 		self.assertIn([0x30a, 0x41],
             [[int(v) for v in seq.values]
                 for seq in self.description.sequences])
-				
+
+	def test_removing_values(self):
+		first_row = self.dialog.lb_descriptions.get_row_at_index(0)
+		self.dialog.lb_descriptions.select_row(first_row)
+		self.dialog.btn_remove.clicked()
+		self.dialog.response(Gtk.ResponseType.OK)
+		
+		self.assertEqual(self.description.unicode_values, [])
+		self.assertIn([0x30a, 0x41], self.description.seq_codepoints)
+
+
 	def tearDown(self):
 		self.dialog.destroy()
 
