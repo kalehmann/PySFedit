@@ -36,7 +36,7 @@ Then you can run PySFedit with `python3 bin/pysfedit`
 ### Adding translations
 This application uses gettext for internationalization. First extract
 the strings with the following command:
-`$ xgettext --keyword=_ --language=python -o res/locale/pysfedit.pot *.py`
+`$ xgettext --keyword=_ --language=python -o pysfedit/res/locale/pysfedit.pot *.py`
 
 After that you can use poedit to edit existing translations or add new
 ones.
