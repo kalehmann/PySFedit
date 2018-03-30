@@ -7,217 +7,239 @@ msgid ""
 msgstr ""
 "Project-Id-Version: \n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2018-02-05 21:28+0100\n"
-"PO-Revision-Date: 2018-02-05 21:36+0100\n"
+"POT-Creation-Date: 2018-03-30 11:13+0200\n"
+"PO-Revision-Date: 2018-03-30 11:25+0200\n"
+"Last-Translator: \n"
 "Language-Team: \n"
+"Language: de_DE\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"X-Generator: Poedit 1.8.11\n"
-"Last-Translator: \n"
+"X-Generator: Poedit 2.0.6\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"Language: de_DE\n"
 
 #: edit_description_dialog.py:89
 msgid "Edit unicode description"
 msgstr "Unicode Repräsentation bearbeiten"
 
-#: edit_description_dialog.py:156
+#: edit_description_dialog.py:163
 msgid "_Human readable"
 msgstr "_Menschen lesbar"
 
-#: edit_description_dialog.py:166
+#: edit_description_dialog.py:173
 msgid "_Values"
 msgstr "_Werte"
 
-#: edit_description_dialog.py:240
+#: edit_description_dialog.py:178
+msgid "Save"
+msgstr "Speichern"
+
+#: edit_description_dialog.py:268
 msgid "Error, must be a single letter"
 msgstr "Fehler, muss ein einzelner Buchstabe sein"
 
-#: edit_description_dialog.py:251
+#: edit_description_dialog.py:279
 msgid "Error, can not parse unicode values"
 msgstr "Fehler, konnte Unicodewerte nicht einlesen"
 
-#: edit_description_dialog.py:265
+#: edit_description_dialog.py:293
 msgid "Error, entering sequences is not enabled"
 msgstr "Fehler, die Eingabe von Sequenzen ist nicht aktiviert"
+
+#: __init__.py:50
+msgid "About"
+msgstr "Über"
+
+#: __init__.py:59 __init__.py:456
+msgid "PySFedit"
+msgstr ""
+
+#: __init__.py:80
+msgid "An editor for psf files written in python"
+msgstr "Ein in Python geschriebener Editor für psf Dateien"
+
+#: __init__.py:81
+msgid "Copyright (c) 2018 by"
+msgstr "Copyright (c) 2018 bei"
+
+#: __init__.py:83
+msgid ""
+"PySFedit is an editor for pc screen fonts written in python3 with the Gtk+-"
+"binding pygobject.\n"
+"\n"
+"The main features of the application are creating headers for a font, "
+"painting glyph bitmaps,\n"
+"adding unicode information for glyphs and exporting the font to many "
+"formats. Supported are\n"
+"binary psf files and even assembler files.\n"
+msgstr ""
+"PySFedit ist ein Editor für Pc Screen Fonts, welcher in Python3 "
+"geschrieben ist und das Gtk+-\n"
+"Binding pygobject nutzt.\n"
+"Die Hauptfeatures der Anwendung sind das Erstellen von Headern für "
+"Schriften, das malen von\n"
+"Zeichen, Unicodeinformationen zu dne Zeichen hinzufügen und das "
+"Exportieren der Schrift in viele\n"
+"verschiedene Formate. Unterstützt sind zum Beispiel binäre PSF-Dateien und "
+"sogar Assembler-\n"
+"Dateien\n"
+
+#: __init__.py:93
+msgid "_Info"
+msgstr "_Info"
+
+#: __init__.py:107
+msgid "_Licence"
+msgstr "_Lizenz"
+
+#: __init__.py:120
+msgid "New Font"
+msgstr "Neue Schrift"
+
+#: __init__.py:138
+msgid "Font Size:"
+msgstr "Schriftgröße:"
+
+#: __init__.py:150
+msgid "_Width:"
+msgstr "_Breite:"
+
+#: __init__.py:158
+msgid "_Height:"
+msgstr "_Höhe:"
+
+#: __init__.py:170
+msgid "25_6 Glyphs"
+msgstr "25_6 Zeichen"
+
+#: __init__.py:175
+msgid "_512 Glyphs"
+msgstr "_512 Zeichen"
+
+#: __init__.py:183 __init__.py:197
+msgid "Include _unicode table:"
+msgstr "_Unicode Tabelle einfügen:"
+
+#: __init__.py:192
+msgid "_PSF"
+msgstr ""
+
+#: __init__.py:206
+msgid "PSF_2"
+msgstr ""
+
+#: __init__.py:315
+msgid "PSF files"
+msgstr "PSF Dateien"
+
+#: __init__.py:320
+msgid "ASM files"
+msgstr "ASM Dateien"
+
+#: __init__.py:325
+msgid "Gzip compressed PSF files"
+msgstr "Gzip komprimierte PSF Dateien"
+
+#: __init__.py:369
+msgid "Import file"
+msgstr "Datei importieren"
+
+#: __init__.py:400
+msgid "You have not created a font yet."
+msgstr "Du hast noch keine Schrift erstellt."
+
+#: __init__.py:405
+msgid "Export file"
+msgstr "Datei  exportieren"
+
+#: __init__.py:477
+msgid "_File"
+msgstr "_Datei"
+
+#: __init__.py:480
+msgid "_New"
+msgstr "_Neu"
+
+#: __init__.py:487 __init__.py:577
+msgid "_Import"
+msgstr "_Importieren"
+
+#: __init__.py:494
+msgid "_Export"
+msgstr "_Exportieren"
+
+#: __init__.py:501
+msgid "_Preferences"
+msgstr "_Einstellungen"
+
+#: __init__.py:504
+msgid "_Quit"
+msgstr "_Beenden"
+
+#: __init__.py:513
+msgid "_Edit"
+msgstr "_Bearbeiten"
+
+#: __init__.py:516
+msgid "_Copy"
+msgstr "_Kopieren"
+
+#: __init__.py:524
+msgid "Cu_t"
+msgstr "_Ausschneiden"
+
+#: __init__.py:532
+msgid "_Paste"
+msgstr "_Einfügen"
+
+#: __init__.py:540
+msgid "_Delete"
+msgstr "_Löschen"
+
+#: __init__.py:558
+msgid "_Help"
+msgstr "_Hilfe"
+
+#: __init__.py:561
+msgid "_About"
+msgstr "_Über"
+
+#: __init__.py:572
+msgid "_New Font"
+msgstr "_Neue Schrift"
 
 #: preferences_window.py:41
 msgid "Preferences"
 msgstr "Einstellungen"
 
-#: preferences_window.py:53
+#: preferences_window.py:52
 msgid "Glyph_Editor"
 msgstr ""
 
-#: preferences_window.py:59
+#: preferences_window.py:58
 msgid "GlyphSele_ctor"
 msgstr ""
 
-#: preferences_window.py:76
+#: preferences_window.py:75
 msgid "Draw seperation _lines:"
-msgstr "Trenn_linien zeichnen"
+msgstr "Trenn_linien zeichnen:"
 
-#: preferences_window.py:88
+#: preferences_window.py:87
 msgid "Pixel _size:"
-msgstr "Pixel_größe"
+msgstr "Pixel_größe:"
 
-#: preferences_window.py:101
+#: preferences_window.py:107
 msgid "Pixel _margin:"
-msgstr "Pixel_abstand"
+msgstr "Pixel_abstand:"
 
-#: preferences_window.py:161
+#: preferences_window.py:174
 msgid "Glyph _preview size:"
-msgstr "Zeichen_vorschaugröße"
+msgstr "Zeichen_vorschaugröße:"
 
-#: preferences_window.py:177
+#: preferences_window.py:197
 msgid "Show glyph _indices:"
-msgstr "Zeichen_nummern zeigen"
+msgstr "Zeichen_nummern zeigen:"
 
-#: preferences_window.py:192
+#: preferences_window.py:212
 msgid "Allow unicode _sequences:"
-msgstr "Unicode _Sequenzen erlauben"
-
-#: pysfedit.py:44
-msgid "About"
-msgstr "Über"
-
-#: pysfedit.py:53 pysfedit.py:402
-msgid "PySFedit"
-msgstr ""
-
-#: pysfedit.py:74
-msgid "An editor for psf files written in python"
-msgstr "Ein in Python geschriebener Editor für psf Dateien"
-
-#: pysfedit.py:75
-msgid "Copyright (c) 2018 by"
-msgstr ""
-
-#: pysfedit.py:77
-msgid "PSF is short for pc screen font...\n"
-msgstr ""
-
-#: pysfedit.py:83
-msgid "_Info"
-msgstr "_Info"
-
-#: pysfedit.py:97
-msgid "_Licence"
-msgstr "_Lizenz"
-
-#: pysfedit.py:109
-msgid "New Font"
-msgstr "Neue Schrift"
-
-#: pysfedit.py:124
-msgid "Font Size:"
-msgstr "Schriftgröße"
-
-#: pysfedit.py:136
-msgid "_Width:"
-msgstr "_Breite"
-
-#: pysfedit.py:144
-msgid "_Height:"
-msgstr "_Höhe"
-
-#: pysfedit.py:156
-msgid "25_6 Glyphs"
-msgstr "25_6 Zeichen"
-
-#: pysfedit.py:161
-msgid "_512 Glyphs"
-msgstr "_512 Zeichen"
-
-#: pysfedit.py:169 pysfedit.py:183
-msgid "Include _unicode table:"
-msgstr "_Unicode Tabelle einfügen"
-
-#: pysfedit.py:178
-msgid "_PSF"
-msgstr ""
-
-#: pysfedit.py:192
-msgid "PSF_2"
-msgstr ""
-
-#: pysfedit.py:278
-msgid "PSF files"
-msgstr "PSF Dateien"
-
-#: pysfedit.py:283
-msgid "ASM files"
-msgstr "ASM Dateien"
-
-#: pysfedit.py:288
-msgid "Gzip compressed PSF files"
-msgstr "Gzip komprimierte PSF Dateien"
-
-#: pysfedit.py:318
-msgid "Import file"
-msgstr "Datei importieren"
-
-#: pysfedit.py:346
-msgid "You have not created a font yet."
-msgstr "Du hast noch keine Schrift erstellt."
-
-#: pysfedit.py:351
-msgid "Export file"
-msgstr "Datei  exportieren"
-
-#: pysfedit.py:423
-msgid "_File"
-msgstr "_Datei"
-
-#: pysfedit.py:426
-msgid "_New"
-msgstr "_Neu"
-
-#: pysfedit.py:433 pysfedit.py:523
-msgid "_Import"
-msgstr "_Importieren"
-
-#: pysfedit.py:440
-msgid "_Export"
-msgstr "_Exportieren"
-
-#: pysfedit.py:447
-msgid "_Preferences"
-msgstr "_Einstellungen"
-
-#: pysfedit.py:450
-msgid "_Quit"
-msgstr "_Beenden"
-
-#: pysfedit.py:459
-msgid "_Edit"
-msgstr "_Bearbeiten"
-
-#: pysfedit.py:462
-msgid "_Copy"
-msgstr "_Kopieren"
-
-#: pysfedit.py:470
-msgid "Cu_t"
-msgstr "_Ausschneiden"
-
-#: pysfedit.py:478
-msgid "_Paste"
-msgstr "_Einfügen"
-
-#: pysfedit.py:486
-msgid "_Delete"
-msgstr "_Löschen"
-
-#: pysfedit.py:504
-msgid "_Help"
-msgstr "_Hilfe"
-
-#: pysfedit.py:507
-msgid "_About"
-msgstr "_Über"
-
-#: pysfedit.py:518
-msgid "_New Font"
-msgstr "_Neue Schrift"
+msgstr "Unicode _Sequenzen erlauben:"

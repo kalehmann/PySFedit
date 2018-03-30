@@ -80,7 +80,11 @@ class AboutWindow(Gtk.Window):
 			_("An editor for psf files written in python"),
 			_("Copyright (c) 2018 by"),
 			_(
-"""PSF is short for pc screen font...
+"""PySFedit is an editor for pc screen fonts written in python3 with the Gtk+-binding pygobject.
+
+The main features of the application are creating headers for a font, painting glyph bitmaps,
+adding unicode information for glyphs and exporting the font to many formats. Supported are
+binary psf files and even assembler files.
 """			)
 			)
 		)
