@@ -2,6 +2,6 @@ platform: linux/arm
 
 pipeline:
   tests:
-    image: karsten/pysfedit-testing:arm
+    image: registry.banana.pi:5000/pysfedit-testing:arm
     commands:
       - xvfb-run -a python3 -m unittest -v
