@@ -47,6 +47,7 @@ class GlyphEditorAttributes(object):
 	DEFAULT_SEPERATION_LINE_COLOR = [0.5, 0.5, 0.5, 1]
 	DEFAULT_PENCIL_OUTLINE_COLOR = [0.1, 0.7, 0.1, 1]
 	DEFAULT_UNSET_PIXEL_COLOR = [0.8, 0.8, 0.8, 1]
+	DEFAULT_PIXEL_COLOR = [0.1, 0.1, 0.1, 1]
 	DEFAULT_DRAW_UNSET_PIXELS = False
 	
 	def __init__(self, glyph_editor):
@@ -152,6 +153,25 @@ class GlyphEditorAttributes(object):
 		"""
 		self.__storage['pencil_outline_color'] = color
 	
+	def set_pixel_color(self, pixel_color):
+		"""Set the color of pixels in the glyph editor.
+
+		Args:
+			pixel_color (list): A list of four floating point
+				values [red, gree, blue, alpha]
+		"""
+		self.__storage['pixel_color'] = pixel_color[:]
+
+	def get_pixel_color(self):
+		"""Get the color of the pixels in the glyph editor
+
+		Returns:
+			list: A list of four floating point values
+				[red, green, blue, alpha]
+		"""
+		return self.__storage['pixel_color']
+
+
 	def set_unset_pixel_color(self, unset_pixel_color):
 		"""Use this method to set the color of unset pixels.
 		
@@ -713,8 +733,9 @@ class GlyphEditor(Gtk.Widget):
 		cr.paint()
 		# draw a diagonal line
 		allocation = self.get_allocation()
-		fg_color = self.get_style_context().get_color(Gtk.StateFlags.NORMAL)
-		cr.set_source_rgba(*list(fg_color))
+		cr.set_source_rgba(
+			*self.__attrs.get_pixel_color()
+		)
 		cr.set_line_width(1)
 		glyph_size = self.__context.get_glyph_size()
 		pixels = self.__pixels
@@ -880,6 +901,8 @@ s.register('seperation_line_color',
 	GlyphEditorAttributes.DEFAULT_SEPERATION_LINE_COLOR)
 s.register('pencil_outline_color',
 	GlyphEditorAttributes.DEFAULT_PENCIL_OUTLINE_COLOR)
+s.register('pixel_color',
+	   GlyphEditorAttributes.DEFAULT_PIXEL_COLOR)
 s.register('unset_pixel_color',
 	GlyphEditorAttributes.DEFAULT_UNSET_PIXEL_COLOR[:])
 s.register('draw_unset_pixels',
