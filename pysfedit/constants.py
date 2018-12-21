@@ -46,15 +46,16 @@ IMG_DIR = RES_DIR + 'img/'
 LOCALE_DIR = RES_DIR + 'locale/'
 
 def get_pixbuf_from_file(path):
-    img_fp = pkg_resources.resource_stream(__name__, path)
-    img = PIL.Image.open(img_fp).convert("RGBA")
-    img.load()
-    data = img.tobytes()
-    w, h = img.size
-    data = GLib.Bytes.new(data)
-    return GdkPixbuf.Pixbuf.new_from_bytes(
-        data, GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4
-    )
+    with pkg_resources.resource_stream(__name__, path) as img_fp:
+        img = PIL.Image.open(img_fp).convert("RGBA")
+        img.load()
+        data = img.tobytes()
+        w, h = img.size
+        data = GLib.Bytes.new(data)
+        
+        return GdkPixbuf.Pixbuf.new_from_bytes(
+            data, GdkPixbuf.Colorspace.RGB, True, 8, w, h, w * 4
+        )
 
 class Storage(dict):
         """A key value based storage for application data.
