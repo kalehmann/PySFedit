@@ -1,22 +1,22 @@
 #! /usr/bin/env python3
 # -*- coding: utf-8 -*-
+# Copyright (c) 2018 by Karsten Lehmann <mail@kalehmann.de>
+#
+#    This file is part of PySFedit.
+#
+#    PySFedit is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    PySFedit is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
 
-# Copyright (c) 2018 by Karsten Lehmann <ka.lehmann@yahoo.com>
-
-#	This file is part of PySFedit.
-#
-#	PySFedit is free software: you can redistribute it and/or modify
-#	it under the terms of the GNU General Public License as published by
-#	the Free Software Foundation, either version 3 of the License, or
-# 	(at your option) any later version.
-#
-#	PySFedit is distributed in the hope that it will be useful,
-#	but WITHOUT ANY WARRANTY; without even the implied warranty of
-#	MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-#	GNU General Public License for more details.
-#
-# 	You should have received a copy of the GNU General Public License
-#	long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
 
 """
 This module tests the UnicodeDescription, UnicodeSequence and UnicodeValues
@@ -45,7 +45,7 @@ class TestUnicodeDescription(unittest.TestCase):
         uv = UnicodeValue
 
         self.assertEqual(seq, UnicodeSequence([uv(0x41), uv(0x30A)]))
-        
+
     def test_description_add_value(self):
         description = UnicodeDescription()
         description.add_unicode_value(ord('a'))
@@ -80,7 +80,7 @@ class TestUnicodeDescription(unittest.TestCase):
 
         desc.add_sequence(seq2)
         self.assertEqual(desc.seq_codepoints, [[1, 2, 3], [4, 5, 6]])
-        
+
     def test_description_remove_sequence(self):
         seq1 = UnicodeSequence([1, 2, 3])
         seq2 = UnicodeSequence([4, 5, 6])
@@ -92,7 +92,6 @@ class TestUnicodeDescription(unittest.TestCase):
         desc.remove_sequence(seq1)
 
         self.assertEqual(desc.seq_codepoints, [[4, 5, 6]])
-        
+
         desc.remove_sequence(seq2)
         self.assertEqual(desc.seq_codepoints, [])
-        

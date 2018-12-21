@@ -1,3 +1,22 @@
+#! /usr/bin/env python3
+# -*- coding: utf-8 -*-
+# Copyright (c) 2018 by Karsten Lehmann <mail@kalehmann.de>
+#
+#    This file is part of PySFedit.
+#
+#    PySFedit is free software: you can redistribute it and/or modify
+#    it under the terms of the GNU General Public License as published by
+#    the Free Software Foundation, either version 3 of the License, or
+#    (at your option) any later version.
+#
+#    PySFedit is distributed in the hope that it will be useful,
+#    but WITHOUT ANY WARRANTY; without even the implied warranty of
+#    MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#    GNU General Public License for more details.
+#
+#    You should have received a copy of the GNU General Public License
+#    long with PySFedit. If not, see <http://www.gnu.org/licenses/>.
+
 import unittest
 from ..psflib import PsfHeaderv2, PcScreenFont
 from ..font_editor import FontEditor
@@ -8,14 +27,14 @@ class FontEditorTest(unittest.TestCase):
                 self.header = None
                 self.font = None
                 self.font_editor = None
-                
+
         def setUp(self):
                 self.header = PsfHeaderv2((8, 8))
                 self.font = PcScreenFont(self.header)
                 for i in range(5):
                         glyph, desc = self.font.add_glyph()
                 self.font_editor = FontEditor(self.header, self.font)
-                
+
         def test_add_glyph(self):
                 self.font_editor.button_add.clicked()
 
@@ -45,7 +64,7 @@ class FontEditorTest(unittest.TestCase):
                 row = glyph_selector.get_row_at_index(1)
                 glyph_selector.select_row(row)
                 self.font_editor.copy_current_bitmap_to_clipboard()
-                
+
                 row = glyph_selector.get_row_at_index(0)
                 glyph_selector.select_row(row)
                 self.font_editor.paste_bitmap_from_clipboard()
@@ -60,6 +79,6 @@ class FontEditorTest(unittest.TestCase):
                 self.font_editor.paste_bitmap_from_clipboard()
                 data2 = self.font.get_glyph(2).get_data()
                 self.assertEqual(data1, data2)
-                
+
         def tearDown(self):
                 self.font_editor.destroy()
