@@ -347,6 +347,8 @@ class GlyphRow(Gtk.ListBoxRow):
             printable = ""
             for uc in self.__description.unicode_values:
                 printable += str(uc)
+            for seq in self.__description.sequences:
+                printable += str(seq)
             self.l_descriptions.set_text(printable)
 
             return

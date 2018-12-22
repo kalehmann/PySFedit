@@ -29,12 +29,6 @@ from gi.repository import Gtk, Gdk
 
 from . import psflib
 
-class SeparatorRow(Gtk.ListBoxRow):
-    def __init__(self):
-        Gtk.ListBoxRow.__init__(self)
-        self.separator = Gtk.Separator.new(Gtk.Orientation.VERTICAL)
-        self.add(self.separator)
-
 class TextRow(Gtk.ListBoxRow):
     TYPE_SINGLE_VALUE = 0
     TYPE_SEQUENCE = 1
@@ -120,10 +114,12 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         # Button up
         self.btn_up = Gtk.Button.new_from_icon_name(
             'go-up', Gtk.IconSize.BUTTON)
+        self.btn_up.connect("clicked", self.__on_btn_up_clicked)
         box_buttons.pack_start(self.btn_up, False, False, 0)
         # Button down
         self.btn_down = Gtk.Button.new_from_icon_name(
             'go-down', Gtk.IconSize.BUTTON)
+        self.btn_down.connect("clicked", self.__on_btn_down_clicked)
         box_buttons.pack_start(self.btn_down, False, False, 0)
         # Listbox with all descriptions
         scrolled_window = Gtk.ScrolledWindow()
@@ -142,7 +138,6 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         for value in values:
             row = TextRow(value)
             self.lb_descriptions.add(row)
-        self.lb_descriptions.add(SeparatorRow())
         for sequence in sequences:
             row = TextRow(sequence)
             self.lb_descriptions.add(row)
@@ -219,16 +214,17 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
                 self.description.unicode_values.remove(payload)
                 payload = psflib.UnicodeSequence([psflib.UnicodeValue(v) for v in user_input])
                 row.payload = payload
+                self.description.add_sequence(payload)
             row.update_label()
             return
 
-        if not isinstance(user_input, int) or isinstance(user_input, str) or len(user_input) == 1:
+        if not isinstance(user_input, (int, str)) and len(user_input) > 1:
             payload.values = [psflib.UnicodeValue(v) for v in user_input]
             row.update_label()
 
             return
 
-        self.__description.get_sequences().remove(payload)
+        self.description.sequences.remove(payload)
         payload = psflib.UnicodeValue(0)
         row.payload = payload
 
@@ -236,10 +232,10 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
             payload.value = ord(user_input)
         elif isinstance(user_input, int):
             payload.value = user_input
-        elif len(user_input) == 1:
+        else:
             payload.value = user_input[0]
         row.update_label()
-
+        self.description.add_unicode_value(payload.value)
 
     def __on_btn_save_clicked(self, button):
         """Gets called when the user clicks the button to save an
@@ -318,7 +314,7 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         value = psflib.UnicodeValue(i)
         self.description.add_unicode_value(value)
         row = TextRow(value)
-        self.lb_descriptions.insert(row, 0)
+        self.lb_descriptions.add(row)
         self.lb_descriptions.show_all()
         self.lb_descriptions.select_row(row)
         self.entry_unicode.set_sensitive(True)
@@ -333,11 +329,10 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         Args:
             button (Gtk.Button): The remove button
         """
-
         row = self.lb_descriptions.get_selected_row()
         if not row:
-
             return
+
         index = row.get_index()
         if index > 0:
             next_row = self.lb_descriptions.get_row_at_index(index - 1)
@@ -356,6 +351,45 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
             self.entry_values.set_text('')
             self.entry_values.set_sensitive(False)
             button.set_sensitive(False)
+
+    def __on_btn_up_clicked(self, btn):
+        """Gets called when the user clicks the button for moving an unicode
+        description up.
+
+        Args:
+            button (Gtk.Button): The up button
+        """
+        row = self.lb_descriptions.get_selected_row()
+        if not row:
+            return
+
+        index = row.get_index()
+        if index < 1:
+            return
+
+        previous_row = self.lb_descriptions.get_row_at_index(index - 1)
+        self.lb_descriptions.remove(previous_row)
+        self.lb_descriptions.insert(previous_row, index)
+
+
+    def __on_btn_down_clicked(self, btn):
+        """Gets called when the user clicks the button for moving an unicode
+        description down.
+
+        Args:
+            button (Gtk.Button): The down button
+        """
+        row = self.lb_descriptions.get_selected_row()
+        if not row:
+            return
+
+        index = row.get_index()
+        if index + 1 >= len(self.lb_descriptions.get_children()):
+            return
+
+        next_row = self.lb_descriptions.get_row_at_index(index + 1)
+        self.lb_descriptions.remove(next_row)
+        self.lb_descriptions.insert(next_row, index)
 
 
     def __on_nb_editor_switch_page(self, notebook, page, page_num):
@@ -398,19 +432,6 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
         if not row:
             return
 
-        if type(row) == SeparatorRow:
-            index = row.get_index()
-            if index == 0:
-                new_row = self.lb_descriptions.get_row_at_index(1)
-                if new_row:
-                    self.lb_descriptions.select_row(new_row)
-                else:
-                    self.lb_descriptions.unselect_row(row)
-            else:
-                new_row = self.lb_descriptions.get_row_at_index(index-1)
-                self.lb_descriptions.select_row(new_row)
-            return
-
         payload = row.payload
         values = ([int(payload)]
                     if type(payload) == psflib.UnicodeValue
@@ -433,6 +454,6 @@ class EditUnicodeDescriptionDialog(Gtk.Dialog):
                 Gtk.ResponseTypes
         """
         if response_id != Gtk.ResponseType.OK:
-
             return
+
         self.__copy_desc(self.description, self.old_description)

@@ -89,7 +89,7 @@ class EditDescriptionDialogTest(unittest.TestCase):
     def test_editing_sequence(self):
         self.context.allow_sequences()
 
-        second_row = self.dialog.lb_descriptions.get_row_at_index(2)
+        second_row = self.dialog.lb_descriptions.get_row_at_index(1)
         self.dialog.lb_descriptions.select_row(second_row)
         self.dialog.nb_editor.set_current_page(self.dialog.PAGE_VALUES)
         self.dialog.entry_values.set_text(r"\u0042, \u030A")
