@@ -422,7 +422,15 @@ class GlyphRow(Gtk.ListBoxRow):
         d.run()
         d.destroy()
         self.set_label_descriptions()
-
+        # The GlyphSelector has a listener for the button-release-event, the
+        # selects the row under the cursor. This listener gets also called after
+        # the EditDescriptionDialog is closed.
+        # This tick callback reselects the current row aftwards.  
+        self.add_tick_callback(
+            lambda widget, clock, self:
+                self.get_parent().select_row(self),
+            self
+        )
 
 class GlyphSelector(Gtk.ListBox):
     """A widget for displaying glyphs from a pc screen font.
@@ -485,13 +493,12 @@ class GlyphSelector(Gtk.ListBox):
         y = int(event.y)
 
         if not event.button == Gdk.BUTTON_PRIMARY:
-
             return
 
         row = self.get_row_at_y(y)
         if not row:
-
             return
+
         self.select_row(row)
 
     def _on_drag_data_received(self, widget, context, x, y, data, info,
