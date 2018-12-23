@@ -303,12 +303,14 @@ class PySFeditContent(Gtk.Grid):
         """
         if _type == "open":
             action = Gtk.FileChooserAction.OPEN
+            item = Gtk.STOCK_OPEN
         elif _type == "save":
             action = Gtk.FileChooserAction.SAVE
+            item = Gtk.STOCK_SAVE
         dialog = Gtk.FileChooserDialog(title, self.window,
             action,
             (Gtk.STOCK_CANCEL, Gtk.ResponseType.CANCEL,
-             Gtk.STOCK_OPEN, Gtk.ResponseType.OK))
+             item, Gtk.ResponseType.OK))
         if _type == "save":
             dialog.set_do_overwrite_confirmation(True)
         filter_psf = Gtk.FileFilter()
