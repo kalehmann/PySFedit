@@ -12,13 +12,13 @@ compressed psf files and even assembler files.
 
 ## Installation
 Simply run `# python3 setup.py install` to install it globally for all
-users on your system. If you do not have root privilegs or want to 
+users on your system. If you do not have root privilegs or want to
 install PySFedit only for yourself, you can use
 `$ python3 setup.py install --user`
 
 ## Running without installation
 Install the following dependencies:
-- gir1.2-gtk-3.0 
+- gir1.2-gtk-3.0
 - python3
 - python3-pillow
 - python3-gi
@@ -29,9 +29,6 @@ Then you can run PySFedit with `python3 bin/pysfedit`
 
 ### Running unit tests
 `$ xvfb-run -a python3 -m unittest -v`
-
-### Building the docker image for continuos integration
-`$ docker build -f Dockerfile.arm -t karsten/pysfedit-testing:arm .`
 
 ### Adding translations
 This application uses gettext for internationalization. First extract
