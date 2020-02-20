@@ -1,7 +1,13 @@
-platform: linux/arm
+---
+kind: "pipeline"
+name: "default"
 
-pipeline:
-  tests:
-    image: registry.banana.pi:5000/pysfedit-testing:arm
-    commands:
-      - xvfb-run -a python3 -m unittest -v
+steps:
+        - name: "unit tests"
+          image: "registry.kalehmann.de/testing/pysfedit:latest"
+          commands:
+                - "xvfb-run -a python3 -m unittest -v"
+
+image_pull_secrets:
+        - "dockerconfigjson"
+...
