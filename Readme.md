@@ -1,5 +1,10 @@
 # PySFedit
 
+| Drone CI Build Status (private) | Travis CI Build Status |
+|---------------------------------|------------------------|
+| [![Build Status](https://drone.kalehmann.de/api/badges/karsten/PySFedit/status.svg)](https://drone.kalehmann.de/karsten/PySFedit) | [![Build Status](https://travis-ci.org/kalehmann/pysfedit.svg?branch=master)](https://travis-ci.org/kalehmann/pysfedit) |
+
+
 ## Summary
 PySFedit is an editor for pc screen fonts written in Python3 with the
 Gtk+-binding pygobject.
