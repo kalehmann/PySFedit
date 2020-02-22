@@ -1,0 +1,7 @@
+---
+image: "lehmannka/pysfedit:testing"
+
+unit-tests:
+    script:
+        - "xvfb-run -a python3 -m unittest -v"
+...
